@@ -466,6 +466,62 @@ def check_compile_pitfalls(d, errs, warns):
                          "Расчёт веди в отдельной переменной")
 
 
+# Widths of {{$var}} in generated tios strings: float -> ftofixed(x,4), integers -> str(), boolean -> str()
+TIOS_WIDTH = {"float": 12, "real": 12, "dword": 10, "long": 11, "word": 5, "short": 6, "integer": 6, "char": 4,
+              "byte": 3, "boolean": 1}
+OPS = re.compile(r"[-+*/]")
+
+
+def check_runtime_limits(d, errs, warns):
+    """Runtime limits found on TOTAL SMART SCHOOL GREENHOUSE 2 (Nov 2026), checked in the generated Tibbo BASIC."""
+    F = d["features"]
+    gv = next((f["settings"] for f in F if f["id"] == "global_vars"), {}) or {}
+    vtype = {v.get("settings", {}).get("ID"): v.get("settings", {}).get("DATATYPE", "float")
+             for k in ("VARS", "AUTOVARS") for v in (gv.get(k) or [])}
+    tios = (d.get("runtime") or "tios") == "tios"
+    for f in F:
+        st = f["settings"]
+        args = {a["settings"].get("TARGETPARAM"): a["settings"].get("ARGVALUE", "")
+                for a in st.get("ARGUMENTS") or [] if isinstance(a, dict) and "settings" in a}
+        # 7. MQTT payload: mqtt_publish(topic, data) builds chr(0)+chr(len)+topic+data in ONE string -> 255 bytes on tios
+        if tios and f["id"] == "node_mqtt_pub":
+            topic, data = str(args.get("topic", "")), str(args.get("publish_data", ""))
+            unknown = []
+            n = len(topic) + 2 + len(REF.sub("", data))
+            for m in REF.findall(data):
+                t = vtype.get(m)
+                if t is None or t == "string":
+                    unknown.append(m)
+                else:
+                    n += TIOS_WIDTH.get(t, 12)
+            where = f"узел node_mqtt_pub {st.get('ID')} ({topic})"
+            if n > 255:
+                errs.append(f"{where}: сообщение до {n} байт вместе с топиком - строка Tibbo BASIC вмещает 255, "
+                            "mqtt_publish соберёт пакет в одну строку и хвост пропадёт без ошибки. Раздели на несколько "
+                            "сообщений (по топикам) или сократи ключи; float выводится как ftofixed(x,4)")
+            elif n > 230 or (unknown and n > 120):
+                warns.append(f"{where}: сообщение до {n} байт" + (f" плюс строковые переменные {len(unknown)} шт." if unknown else "")
+                             + " - близко к пределу строки Tibbo BASIC 255 байт вместе с топиком")
+        # 8. Delay with an expression: generator writes sys.timercountms + <DURATION> * 1000
+        if f["id"] == "node_time_delay":
+            dur = str(st.get("DURATION", ""))
+            if OPS.search(REF.sub("v", dur).lstrip("-")) and not (dur.startswith("(") and dur.endswith(")")):
+                errs.append(f"узел node_time_delay {st.get('ID')}: DURATION={dur!r} - генератор пишет "
+                            f"`sys.timercountms + {dur} * 1000`, умножится только последнее слагаемое. Посчитай длительность "
+                            "в переменную блоком Variable Set и укажи её")
+    # 9. web console: widgets and password
+    wd = next((f["settings"] for f in F if f["id"] == "web_dashboard"), None)
+    if wd and wd.get("ENABLED") == "1":
+        if wd.get("WIDGETS") and not any((g.get("settings") or {}).get("WIDGETS") for g in wd.get("WIDGET_GROUPS") or []):
+            warns.append("web_dashboard: виджеты лежат в старом поле WIDGETS - генератор берёт только WIDGET_GROUPS "
+                         "(widget_group с GROUPID/NAME/WIDGETS). Без открытия в редакторе панель на устройстве будет пустой")
+        linked = {f["settings"].get("SETTINGID") for f in F if f["id"] == "linked_setting"
+                  and f["settings"].get("FEATURE") == wd.get("ID")}
+        if not wd.get("PASSWORD") and "PASSWORD" not in linked:
+            warns.append("web_dashboard: пароль администратора пуст и не связан с настройкой - веб-консоль открыта любому в сети. "
+                         "Свяжи PASSWORD с настройкой STG (linked_setting, как WBPWD в web-console-roles) и задай пароль на устройстве")
+
+
 def check_event_params(d, ids, warns, reg=None):
     """{{$param}} in a block must come from a port of a block linked straight into it (editor rule: parameters are seen
     only by the next block; after an ASYNC block or one block further they are empty)."""
@@ -593,6 +649,7 @@ def check(d):
     check_registry(d, errs, warns)
     check_codegen(d, errs, warns)
     check_compile_pitfalls(d, errs, warns)
+    check_runtime_limits(d, errs, warns)
     check_event_params(d, ids, warns)
     check_hardware(d, warns)
     for fl in d.get("featureFlags", []):

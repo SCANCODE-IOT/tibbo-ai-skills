@@ -27,7 +27,7 @@ OTA, переменные/таблицы/команды, облачные workfl
 | `data/registry.json`, `scripts/build_registry.py`, `scripts/extract_registry.js` | Реестр редактора (блоки, feature, элементы, Tibbit, периферия, виджеты) и как его обновить: JS в браузере на app.appblocks.io → `build_registry.py` пересобирает registry.json, blocks.md, features.md. |
 | `scripts/ab_api.py` | Клиент API: `me`, `projects`, `project <id> --out`, `versions`, `workspaces`, `devices`, `device`, `get`, `code`, `build` (компилятор TIDE Tibbo, без ключа), `examples`/`example <имя>` (с запасным путём через appblocks.io), запись — только `create`/`update … --yes`. |
 | `tests/run.sh` | Офлайн-тесты инструментов на примерах (и мост в tps_check, если tibbo-firmware лежит рядом). |
-| `examples/*.json` | 6 проектов Tibbo: Modbus-шлюз с LCD на 4×RS485 и Modbus→MQTT (`ModbusMQTTGateway`, он же пример modbusmqtt; zephyr, GitHub), sprinkler5, accesscontrol6, hydroponics (TPP3), water_level_control_cloud (с appblocks.io, в т.ч. tios); `greenhouse_tpp3.json` - умная теплица (TPP3W(G2): Modbus RTU, реле #06, #54, ШИМ #17, АЦП #61-2, MQTT; компилируется) и `mqtt_logger.py` - приёмник MQTT → SQLite → графики для неё. |
+| `examples/*.json` | 6 проектов Tibbo: Modbus-шлюз с LCD на 4×RS485 и Modbus→MQTT (`ModbusMQTTGateway`, он же пример modbusmqtt; zephyr, GitHub), sprinkler5, accesscontrol6, hydroponics (TPP3), water_level_control_cloud (с appblocks.io, в т.ч. tios); `greenhouse2_tpp3.json` - TOTAL SMART SCHOOL GREENHOUSE 2 (TPP3W(G2): полив «цикл и замачивание» с блокировками, контроль связи Modbus и тока насосов, настройки в EEPROM, веб-панель с кнопками, телеметрия до 255 байт на сообщение; 0 ошибок в редакторе, компилируется), `greenhouse2_logger.py` - приёмник MQTT → SQLite → графики и `greenhouse2_instruction.md` - инструкция для пользователей (пусконаладка, насосы, бак, тревоги). |
 
 **Windows:** скрипты запускай через `python` (или `python3`), вывод всегда UTF-8; при `CERTIFICATE_VERIFY_FAILED` в `ab_api.py` проверку не отключай - `pip install truststore` (или `certifi`, или `SSL_CERT_FILE` с бандлом Git), диагностика `ab_api.py tls`.
 
@@ -103,7 +103,13 @@ python3 scripts/ab_api.py build p.json --out fw      # компилятор TIDE
 - **Регистры Modbus Master** - авто-переменные, опрашиваются сами (`POLL_INTERVAL`); при потере связи значение не
   сбрасывается - ставь в логике пределы (суточный лимит полива и т.п.). Variable Set на такую переменную пишет в устройство.
 - **MQTT** - mqtt.md: IP брокера через `linked_setting`, команды из MQTT проверяют условия безопасности, логика
-  управления остаётся на контроллере (публикация без связи теряется).
+  управления остаётся на контроллере (публикация без связи теряется). **Сообщение вместе с топиком - до 255 байт**:
+  длинную телеметрию дели по топикам, иначе хвост пропадёт молча.
+- **Строки и выражения в генерации** (generated-code.md, ноябрь 2026): Delay - только число или одна переменная;
+  то, что должно пережить перезагрузку (счётчики, режимы, аварии), - в настройки STG (Variable Set пишет в EEPROM,
+  только по событию); контроль связи Modbus - On Modbus Timeout / On Modbus Response с `{{$device_id}}`; действия,
+  которые не должны совпасть по времени, - от одного такта с Delay, а не разными On Time Period.
+- **Веб-консоль**: виджеты - в `WIDGET_GROUPS`, пароль - `linked_setting` на настройку STG (format.md §4 п. 17-18).
 - **Надёжность важнее минимальной цены** (tibbo-firmware §0.1): реле с запасом по току, защищённые входы #54,
   отказобезопасное подключение датчиков, безопасное состояние выходов при старте; самый дешёвый вариант - отдельно, со списком рисков.
 - После создания/обновления проекта через API попроси пользователя открыть его и прислать вкладку Problems;

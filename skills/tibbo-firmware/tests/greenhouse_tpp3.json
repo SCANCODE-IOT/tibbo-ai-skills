@@ -20,5 +20,5 @@
  "buzzer": true,
  "ambient_c": 30,
  "extra_5v_ma": 0,
- "_comment": "Умная теплица (appblocks/examples/greenhouse_tpp3.json): #05+#54 на одном #20, #61-2 (H2) в S5-S8, #17, #06, #10+#18; 0 ошибок, 0 предупреждений"
+ "_comment": "Умная теплица (appblocks/examples/greenhouse2_tpp3.json): #05+#54 на одном #20, #61-2 (H2) в S5-S8, #17, #06, #10+#18; 0 ошибок, 0 предупреждений"
 }

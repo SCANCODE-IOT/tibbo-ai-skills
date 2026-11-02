@@ -3,6 +3,52 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-11-02
+
+Lessons from TOTAL SMART SCHOOL GREENHOUSE 2 (TPP3W(G2), rebuilt from a review of the first greenhouse): limits of the
+generated Tibbo BASIC that compile fine but break at run time, the editor's current web console format, and a fresh
+snapshot of the AppBlocks editor and its public examples and plugins.
+
+### Both skills
+- **A Tibbo BASIC string holds 255 bytes, and MQTT is no exception.** `mqtt_publish` builds the packet as one string
+  (topic + data), so a longer message is cut without an error - the first greenhouse lost the tail of its telemetry this
+  way. Split telemetry by topic; `MQTT_LARGE_PACKETS` does not help.
+- Relay and PWM notes: #06 is rated 16 A / 48 V for resistive loads - put a flyback diode and a fuse on every DC motor;
+  #17 documents no protection diodes; #54 inputs are not galvanically isolated; two floats (empty / low) and a leak sensor
+  on one #54.
+
+### appblocks
+- **`ab_tool.py check`, new run-time checks:** MQTT message longer than 255 bytes with its topic (worst case per
+  variable type: float = `ftofixed(x,4)`), Delay with an expression (the generator writes
+  `sys.timercountms + <DURATION> * 1000`), widgets in the old `WIDGETS` field (the generator reads only `WIDGET_GROUPS`,
+  so the device panel would be empty), web console without a password linked to a setting.
+- **`generated-code.md`, verified in generated code:** a Variable Set on a setting's autovariable writes EEPROM
+  (`stg_set`) - the way to keep counters, modes and fault flags over a reboot; On Modbus Response / On Modbus Timeout
+  with `{{$device_id}}` for link monitoring (the register keeps its last value); all On Time Period timers start in phase
+  at boot - shift actions with Delay from one tick; time-sync check through the DateTime formatter; web console password
+  through `linked_setting` (the `user` role is zephyr-only); button widgets and On Command sharing a chain with MQTT.
+- `format.md` §4 items 17-20: `WIDGET_GROUPS`, `linked_setting` targets (MQTT host, SNTP server, web console and cloud
+  passwords), Delay duration, and what the editor rewrites by itself when a project is opened (positions, widget IDs,
+  `WIDGETS` → `WIDGET_GROUPS`, disabled LCD features, Wi-Fi autovariable defaults).
+- `editor.md` §11: logic groups as tabs (links between tabs work but are not drawn), the status bar counters, the web
+  console preview, PCB Designer, Plugins Marketplace (still three approved Tibbo plugins on 2 Nov 2026); `api.md`:
+  `GET /cgg/extensions`.
+- `mqtt.md`: the 255-byte limit replaces the wrong "400 bytes passed" note of 1.3.0; publish an `online` event from
+  On MQTT Change.
+- **Example `greenhouse2_tpp3.json`** replaces `greenhouse_tpp3.json`: cycle-and-soak irrigation with a lockout after
+  the cycle limit, Modbus link monitoring, pump current check by the rise of the Hall sensor current, staggered pumps,
+  float debounce, low-water and leak inputs, counters and faults in EEPROM, web panel buttons and an `auto_on` switch,
+  telemetry in five messages under 255 bytes, SNTP server and console password as settings. 0 errors / 0 warnings in the
+  editor, compiles in TIDE. `greenhouse2_logger.py` (merges the five messages, migrates an old database, `status`,
+  `events`, alarms) replaces `mqtt_logger.py`; `greenhouse2_instruction.md` - the user guide (commissioning checklist,
+  settings, alarms, pumps, tank, sensors, limits).
+- Editor registry refreshed (2 Nov 2026): still 168 blocks; small changes in `smtp_client` (HTML template), MQTT,
+  web console and LCD settings. The 78 public projects on appblocks.io are unchanged.
+
+### tibbo-firmware
+- `SKILL.md` §1 and `libraries.md` (`## mqtt/`): the 255-byte string limit for concatenations and MQTT messages.
+- `tibbit-selection.md`: flyback diodes and fuses for motors on #06 and #17, #54 isolation, tank floats and leak input.
+
 ## [1.3.0] - 2026-10-30
 
 Lessons from the "smart greenhouse" project on a TPP3 (three iterations, each compiled by Tibbo's TIDE compiler and
@@ -160,6 +206,7 @@ First public release.
 - Upload-ready packages for Claude apps and the API (`tools/package.sh`, attached to releases).
 - Offline tests on every push.
 
+[1.4.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.4.0
 [1.3.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.3.0
 [1.2.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.2.0
 [1.1.2]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.1.2

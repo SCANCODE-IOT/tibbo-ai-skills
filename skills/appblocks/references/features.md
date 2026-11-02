@@ -1,6 +1,6 @@
 # Feature, сервисы, элементы, виджеты и периферия AppBlocks
 
-Снято из реестра редактора app.appblocks.io (2026-10-22). Машинная версия - `data/registry.json`.
+Снято из реестра редактора app.appblocks.io (2026-11-02). Машинная версия - `data/registry.json`.
 Значения - как в экспорте JSON (`settings`). [варианты] - допустимые значения (`значение=подпись`), =… - по умолчанию, (min..max) - пределы, `ref` - ID элемента этого типа. Скрытые поля (hidden) редактор заполняет сам и здесь не показаны.
 
 ## Feature проекта (шаг Features)
@@ -28,7 +28,7 @@
 | `lcd` | LCD for TPP2 | `ENABLED` [0=Disabled\|1=Enabled] =0; `BACKCOLOR` COLOR =#000000; `FORECOLOR` COLOR =#ffffff; `LOGFONT` [LCD_STD_FONT=Standard Font\|LCD_SMALL_FONT=Small Font] =LCD_SMALL_FONT; `WIDGETS` array; `SCREENS`→display_screen; `IMAGES`→lcd_image; `GROUPS`→luis_group; `TABLES`→console_table_item | zephyr: свои настройки; micropython: свои настройки |
 | `net` | Ethernet | `ENABLED` [0=Disabled\|1=Enabled] =0; `DHCP` [0=Disabled\|1=Enabled] =1; `IP` IP =1.0.0.1; `NM` IP =255.255.255.0; `GI` IP =1.0.0.1 | даёт: network |
 | `peripheral_wiring` | Peripheral Wiring | `ENABLED` boolean =1; `LAYOUT_DATA`; `CUSTOM_SHAPES`; `CUSTOM_GROUPS` |  |
-| `smtp_client` | E-Mail (SMTP Client) | `ENABLED` [0=Disabled\|1=Enabled] =0; `SERVER`; `PORT` number =465 (1..65535); `SECURITY` [none=None\|starttls=STARTTLS\|tls=SSL/TLS] =tls; `FROM_ADDRESS`; `AUTH_METHOD` [none=None\|plain=PLAIN\|login=LOGIN] =login; `USERNAME`; `PASSWORD` password; `TIMEOUT` number =10000 (..120000); `LOG_LEVEL` [0=None\|1=Error\|2=Warn\|3=Info\|4=Debug] =3 |  |
+| `smtp_client` | E-Mail (SMTP Client) | `ENABLED` [0=Disabled\|1=Enabled] =0; `SERVER`; `PORT` number =465 (1..65535); `SECURITY` [none=None\|starttls=STARTTLS\|tls=SSL/TLS] =tls; `FROM_ADDRESS`; `AUTH_METHOD` [none=None\|plain=PLAIN\|login=LOGIN] =login; `USERNAME`; `PASSWORD` password; `HTML_TEMPLATE` file; `TIMEOUT` number =10000 (..120000); `LOG_LEVEL` [0=None\|1=Error\|2=Warn\|3=Info\|4=Debug] =3 |  |
 | `snmp_agent` | SNMP Agent | `ENABLED` [0=Disabled\|1=Enabled] =0; `PORT` number =161 (1..65535); `READ_COMMUNITY` =public; `WRITE_COMMUNITY` =private; `OBJECTS`→snmp_object; `SYSDESCR` =Tibbo Device; `SYSOBJECTID` =1.3.6.1.4.1.20738; `SYSCONTACT`; `SYSNAME`; `SYSLOCATION`; `V3_ENABLED` [0=Disabled\|1=Enabled] =0; `USERS`→snmp_user; `OBJECT_CAPACITY` number =16 (..256); `LOG_LEVEL` [0=None\|1=Error\|2=Warn\|3=Info\|4=Debug\|5=Verbose] =4 |  |
 | `socket` | Socket | `SOCKETS`→socket_connection |  |
 | `timers` | Timers | `DEBUG_PRINT` [0=Disabled\|1=Enabled] =0; `TIMERS`→timer |  |
@@ -50,7 +50,7 @@
 | `cgg_telemetry` | Thingsboard Telemetry | `NAME` =Telemetry_Name; `TELEMETRY_ID` =Telemetry_ID |  |
 | `cron` | Scheduler | `SCHEDULES`→crontab |  |
 | `datetime` | DateTime | - |  |
-| `dhcp` | None | - |  |
+| `dhcp` | DHCP | - |  |
 | `display_lib` | Display Library | - |  |
 | `dns` | DNS | `ENABLED` [0=Disabled\|1=Enabled] =0; `SERVER1` =8.8.8.8; `SERVER2`; `DNS_TIMEOUT` number =5000 |  |
 | `ds_man` | DS Manager | `ENABLED` [0=Disabled\|1=Enabled] =0; `GROUPS`→luis_group |  |
@@ -65,11 +65,11 @@ CONFIG_MBEDTLS_HEAP_SIZE=1638 |  |
 | `modbus` | Modbus | - |  |
 | `modbus_master` | Modbus Master | `DEBUG_PRINT` [1=ON\|0=OFF] =0; `TIMEOUT` number =500; `POLL_INTERVAL` number =1000; `FRAME_DELAY` number =2; `MAX_REQUESTS` number =20; `MODBUSDEVICES`→modbus_device |  |
 | `modbus_slave` | Modbus Slave | `DEBUG_PRINT` [1=ON\|0=OFF] =0; `SLAVEPROTOCOL` [modbus_TCP=TCP\|modbus_RTU=Serial] =modbus_RTU; `DEVICEID` number =1 (..254); `SLAVE_SERIAL_PORT` =0; `SLAVE_TCP_PORT` =502; `MODBUSTABLEITEMS`→modbus_table_item |  |
-| `mqtt` | MQTT | `ENABLED` [0=Disabled\|1=Enabled] =0; `MQTT_APP_CLIENT_ID` =Client_ID_1; `MQTT_NAME` =MQTT_Name_1; `MQTT_PASSWORD` password =Password; `MQTT_SERVER_HOST` =1.0.0.1; `MQTT_DESTINATION_PORT` number =1883 (..65535); `MQTT_TLS` [0=Disabled\|1=Enabled] =0; `MQTT_KEEPALIVE_INTERVAL` number =60 (..65535); `MQTT_DEBUG_PRINT` [0=Disabled\|1=Enabled] =1; `CERTIFICATEFILE` file (..102400); `CERTIFICATE_PATH`; `CLIENT_CERTIFICATE_PATH`; `TOPICS`→mqtt_topic |  |
+| `mqtt` | MQTT | `ENABLED` [0=Disabled\|1=Enabled] =0; `MQTT_APP_CLIENT_ID` =Client_ID_1; `MQTT_NAME` =MQTT_Name_1; `MQTT_PASSWORD` password =Password; `MQTT_SERVER_HOST` =1.0.0.1; `MQTT_DESTINATION_PORT` number =1883 (..65535); `MQTT_TLS` [0=Disabled\|1=Enabled] =0; `MQTT_KEEPALIVE_INTERVAL` number =60 (..65535); `MQTT_DEBUG_PRINT` [0=Disabled\|1=Enabled] =1; `CERTIFICATEFILE` file (..102400); `CLIENT_CERTIFICATE_PATH` file; `TOPICS`→mqtt_topic |  |
 | `mqtt_lib` | MQTT Library | - |  |
 | `snmp` | SNMP | `ENABLED` [0=Disabled\|1=Enabled] =0 |  |
 | `sntp` | Time (SNTP) | `ENABLED` [0=Disabled\|1=Enabled] =1; `DEBUGPRINT` [0=Disabled\|1=Enabled] =0; `SNTP_SERVER` IP =216.239.35.0 | даёт: time |
-| `sock` | None | - |  |
+| `sock` | Sockets | - |  |
 | `stg` | Settings | `ENABLED` [0=Disabled\|1=Enabled] =0; `STG_DEBUG_PRINT` [1=Enabled\|0=Disabled] =0; `SETTINGS`→stg_setting |  |
 | `stgcmd_lib` | Settings and Commands Library | - |  |
 | `tbl` | Data Tables | `TBL_DEBUG_PRINT` [1=Enable\|0=Disable] =0; `TABLES`→tbl_table; `STORAGE_PATH` =/lfs |  |
@@ -96,7 +96,6 @@ CONFIG_MBEDTLS_HEAP_SIZE=1638 |  |
 | `http_header` | HTTP Header | `NAME`; `VALUE` stringvariable |  |
 | `http_server_endpoint` | HTTP Endpoint | `NAME` =myapi; `PATH` =data; `FILE` file |  |
 | `lcd_chart_series_source` | LCD Chart Series Source | `TABLE`→tbl_table; `VALUE_FIELD`; `AGGREGATION` [avg=Average\|min=Minimum\|max=Maximum\|last=Latest] =avg; `FILTERS`→table_update_query_term |  |
-| `lcd_group` | LCD Setting Folder | `FOLDERID` =GEN; `NAME` =General; `SETTINGS`→luis_item |  |
 | `lcd_image` | LCD Image | `NAME` =Image; `IMG` file |  |
 | `linked_setting` | Linked Setting | `SETTINGID`; `LINKEDSETTING` |  |
 | `log_key_value` | Log key-value | `NAME`; `VALUE` stringvariable |  |

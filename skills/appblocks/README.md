@@ -40,7 +40,7 @@ Runtimes covered: **`tios`** (Tibbo BASIC for TPP2, TPP3, DS1101, DS1102, EM510)
 | `scripts/ab_tool.py` | Offline project tool (see below). |
 | `data/registry.json` | The editor registry in compact form; refresh with `scripts/extract_registry.js` (run in the browser on app.appblocks.io, read-only) and `scripts/build_registry.py`. |
 | `scripts/ab_api.py` | Cloud API client (see below). |
-| `examples/` | 6 Tibbo projects: Modbus gateway with LCD on 4×RS485 and Modbus→MQTT gateway (Zephyr), sprinkler, access control, hydroponics (TPP3), water level control with cloud; plus `greenhouse_tpp3.json` (smart greenhouse: Modbus RTU sensors, relays, PWM, isolated ADC, MQTT - compiles in TIDE) and `mqtt_logger.py` (MQTT → SQLite → charts on a PC; needs paho-mqtt and matplotlib). |
+| `examples/` | 6 Tibbo projects: Modbus gateway with LCD on 4×RS485 and Modbus→MQTT gateway (Zephyr), sprinkler, access control, hydroponics (TPP3), water level control with cloud; plus `greenhouse2_tpp3.json` (TOTAL SMART SCHOOL GREENHOUSE 2: cycle-and-soak irrigation with lockouts, Modbus link and pump current monitoring, settings kept in EEPROM, device web panel with buttons; 0 errors in the editor, compiles in TIDE), `greenhouse2_logger.py` (MQTT → SQLite → charts on a PC; needs paho-mqtt and matplotlib) and `greenhouse2_instruction.md` (user guide in Russian: commissioning, pumps, tank, alarms). |
 | `tests/run.sh` | Offline tests on the examples, including the bridge to `tps_check.py`. |
 
 ## Tools
@@ -51,7 +51,7 @@ Both scripts use only the Python standard library.
 
 ```bash
 python3 scripts/ab_tool.py summary project.json              # what is in the project
-python3 scripts/ab_tool.py check   project.json              # links, references, IDs, sockets + ports, option values, features vs the editor registry (exit 1 on errors)
+python3 scripts/ab_tool.py check   project.json              # links, references, IDs, sockets + ports, option values, features vs the editor registry, compile pitfalls, MQTT message size, Delay expressions, web console (exit 1 on errors)
 python3 scripts/ab_tool.py lookup  node_table                # ports and settings of a block / feature from the registry
 python3 scripts/ab_tool.py flow    project.json flow.svg     # logic diagram
 python3 scripts/ab_tool.py tps     project.json --vin 24 --out cfg.json   # hardware → tps_check.py config
