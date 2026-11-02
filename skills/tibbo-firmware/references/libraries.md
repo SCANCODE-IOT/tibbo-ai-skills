@@ -601,6 +601,10 @@ Enums: `modbusProtocol`(modbus_TCP, modbus_RTU); `modbusFunc`(ReadCoilStatus, Re
 
 ## mqtt/mqtt.tbh
 
+**Предел сообщения.** `mqtt_publish(byref topic, byref data, …)` строит пакет одной строкой `chr(0)+chr(len(topic))+topic+data`
+(`dim buf as string`, 255 байт): данные длиннее ~(253 - длина топика) обрезаются без ошибки, `MQTT_LARGE_PACKETS` и
+`MQTT_TX_BUFF` этого не меняют. Длинную телеметрию шли несколькими сообщениями (проверено на коде библиотеки из AppBlocks, ноябрь 2026).
+
 Config defines (set before include):
 - `MQTT_LARGE_PACKETS` = 0 — MQTT Library
 - `MQTT_DEBUG_PRINT` = 0

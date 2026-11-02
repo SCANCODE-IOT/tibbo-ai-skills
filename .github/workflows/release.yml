@@ -36,6 +36,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # patch notes: the version's section from CHANGELOG.md, then the install hints
+          awk -v v="${VERSION#v}" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > changes.md
           cat > notes.md <<EOF
           Install **both** packages — \`appblocks\` uses the TPS checker from \`tibbo-firmware\`.
 
@@ -44,7 +46,8 @@ jobs:
 
           See [README](https://github.com/${GITHUB_REPOSITORY}#readme) and [CHANGELOG](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md).
           EOF
+          { cat changes.md; echo; echo "---"; echo; cat notes.md; } > release.md
           gh release create "$VERSION" dist/*.zip \
             --target "$GITHUB_SHA" \
             --title "Tibbo Skills $VERSION" \
-            --notes-file notes.md
+            --notes-file release.md

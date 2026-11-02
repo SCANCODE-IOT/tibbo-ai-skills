@@ -117,6 +117,19 @@
    переменной или регистра: Problems «Name conflict: soil1. No duplicate names allowed. Tibbo Basic identifiers are
    case-insensitive». Устройствам давай префикс (`mb_soil1`).
 
+17. **Виджеты веб-консоли** - в `web_dashboard.WIDGET_GROUPS` (`{"id":"widget_group","settings":{"ID","GROUPID":"group1","NAME","WIDGETS":[…]}}`),
+    поле `WIDGETS` оставляй пустым: генератор читает только группы. Поля виджетов - строки, как в редакторе (`"HAS_INPUT":"0"`).
+    `button_widget.VARIABLE` = ID команды из `commands`, `switch_widget`/`card_widget.VARIABLE` = ID переменной.
+18. **`linked_setting`** связывает поле feature с настройкой STG (меняется в веб-консоли без перепрошивки):
+    проверено для `mqtt.MQTT_SERVER_HOST`, `sntp.SNTP_SERVER`, `web_dashboard.PASSWORD`, `cgg.PASSWORD` (пример tbt54_adv).
+    Пароли - только так, а не значением в проекте; для поля пароля в группе настроек - `luis_item.CONTROL "PASSWORD"`, для IP - `"IPCTRL"`.
+19. **`node_time_delay.DURATION`** - число или одна ссылка `{{$var}}`, без выражений (generated-code.md).
+20. **Редактор при открытии нормализует и сохраняет проект сам**: новые координаты блоков, новые ID виджетов, перенос
+    `WIDGETS` в `WIDGET_GROUPS`, удаление выключенных LCD-feature, `POLL_INTERVAL` у авто-переменных, шаблонные значения
+    по умолчанию у авто-переменных Wi-Fi (`access_point`, `password` - это значения RAM до чтения настроек, сами настройки
+    STG не меняются). Перед `update` через API скачай текущую версию и сравни: изменения редактора не должны пропасть
+    незамеченными, а свои ты перезапишешь целиком.
+
 ## 5. Плагины (custom_feature) - формат
 Плагин живёт в проекте внутри `custom_features.FEATURES` и выглядит так (сокращённо, по плагинам маркетплейса):
 ```json

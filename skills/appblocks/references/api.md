@@ -102,6 +102,10 @@ GET `/:id/runs`. Триггеры: `Time` (cron), `Webhook` (`properties.url`), 
 `/cgg/scada` (screens[elements, connections], tagBindings, alarmLimits; import `_type:"scada"`; `/binding/devices`) ·
 `/cgg/datasources` (личные; типы MySQL, mongodb, restapi, Devices, DeviceEvents; **properties хранят пароли — не выгружай**).
 
+## Маркетплейс плагинов
+`GET /cgg/extensions` → `{data:[{_id, name, summary, author, status (approved | pending), version, features:[custom_feature…]}], count}`,
+`GET /cgg/extensions/:id` - один плагин целиком (формат format.md §5). Чтение - ключом с правом read.
+
 ## Интеграции
 ИИ-ассистент Cody (CopilotKit, `/api/copilotkit/*`) — только поиск по документации, редактирование проектов внешним клиентам недоступно; MCP нет.
 `GET /api/tibbits/docs/:model` — прокси страниц docs.tibbo.com по Tibbit (`00_3` → tibbit_00-3).

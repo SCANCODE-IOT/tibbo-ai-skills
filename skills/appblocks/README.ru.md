@@ -40,7 +40,7 @@
 | `scripts/ab_tool.py` | Офлайн-инструмент для проектов (см. ниже). |
 | `data/registry.json` | Реестр редактора в компактном виде; обновление - `scripts/extract_registry.js` (в браузере на app.appblocks.io, только чтение) и `scripts/build_registry.py`. |
 | `scripts/ab_api.py` | Клиент облачного API (см. ниже). |
-| `examples/` | 6 проектов Tibbo: Modbus-шлюз с LCD на 4×RS485 и шлюз Modbus→MQTT (Zephyr), полив, контроль доступа, гидропоника (TPP3), контроль уровня воды с облаком; а также `greenhouse_tpp3.json` (умная теплица: датчики Modbus RTU, реле, ШИМ, изолированный АЦП, MQTT - компилируется в TIDE) и `mqtt_logger.py` (MQTT → SQLite → графики на компьютере; нужны paho-mqtt и matplotlib). |
+| `examples/` | 6 проектов Tibbo: Modbus-шлюз с LCD на 4×RS485 и шлюз Modbus→MQTT (Zephyr), полив, контроль доступа, гидропоника (TPP3), контроль уровня воды с облаком; а также `greenhouse2_tpp3.json` (TOTAL SMART SCHOOL GREENHOUSE 2: полив «цикл и замачивание» с блокировками, контроль связи Modbus и тока насосов, настройки в EEPROM, веб-панель устройства с кнопками; 0 ошибок в редакторе, компилируется в TIDE), `greenhouse2_logger.py` (MQTT → SQLite → графики на компьютере; нужны paho-mqtt и matplotlib) и `greenhouse2_instruction.md` (инструкция для пользователей: пусконаладка, насосы, бак, тревоги). |
 | `tests/run.sh` | Офлайн-тесты на примерах, включая связку с `tps_check.py`. |
 
 ## Инструменты
@@ -51,7 +51,7 @@
 
 ```bash
 python3 scripts/ab_tool.py summary project.json              # что есть в проекте
-python3 scripts/ab_tool.py check   project.json              # связи, ссылки, ID, сокеты + порты, значения настроек, feature по реестру редактора (код 1 при ошибках)
+python3 scripts/ab_tool.py check   project.json              # связи, ссылки, ID, сокеты + порты, значения настроек, feature по реестру редактора, ловушки компиляции, размер MQTT-сообщений, Delay с выражением, веб-консоль (код 1 при ошибках)
 python3 scripts/ab_tool.py lookup  node_table                # порты и настройки блока / feature из реестра
 python3 scripts/ab_tool.py flow    project.json flow.svg     # схема логики
 python3 scripts/ab_tool.py tps     project.json --vin 24 --out cfg.json   # железо → конфигурация tps_check.py

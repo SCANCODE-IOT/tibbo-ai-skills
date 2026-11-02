@@ -116,11 +116,12 @@ ok = "#20 рядом с #10" in out and "нужен #00_3" in out and out.count(
 print("ok   hardware canvas warnings" if ok else "FAIL hardware canvas warnings\n" + out)
 sys.exit(0 if ok else 1)
 PY
-# compile pitfalls (Smart Greenhouse, Oct 2026): STG setting ref, Modbus name conflict, #05 port autovar, 1-Wire tables, relay boot level
+# compile pitfalls (Smart Greenhouse, Oct 2026) and runtime limits (Greenhouse 2, Nov 2026): STG setting ref, Modbus name conflict,
+# #05 port autovar, 1-Wire tables, relay boot level, MQTT payload > 255, Delay with an expression, legacy WIDGETS, open web console
 "$PY" - "$T" <<'PY' || fail=1
 import json, sys, subprocess
 T = sys.argv[1]
-base = json.load(open("examples/greenhouse_tpp3.json", encoding="utf-8"))
+base = json.load(open("examples/greenhouse2_tpp3.json", encoding="utf-8"))
 def run(mod):
     p = json.loads(json.dumps(base)); mod(p)
     json.dump(p, open(T + "/gh.json", "w", encoding="utf-8"))
@@ -147,12 +148,29 @@ def relay0(p):
     for v in gv(p)["AUTOVARS"]:
         if v["settings"]["FEATURE"] == t:
             v["settings"]["DEFAULT"] = "0"
+def long_mqtt(p):
+    for f in p["features"]:
+        if f["id"] == "node_mqtt_pub":
+            for a in f["settings"]["ARGUMENTS"]:
+                if a["settings"]["TARGETPARAM"] == "publish_data" and "soil1=" in a["settings"]["ARGVALUE"]:
+                    a["settings"]["ARGVALUE"] += ";" + a["settings"]["ARGVALUE"] + ";comment=" + "x" * 60
+def delay_expr(p):
+    st = next(x["settings"] for x in F(p, "stg")["settings"]["SETTINGS"] if x["settings"]["SETTINGID"] == "pump_sec")
+    av = next(v["settings"]["ID"] for v in gv(p)["AUTOVARS"] if v["settings"]["FEATURE"] == st["ID"])
+    next(f for f in p["features"] if f["id"] == "node_time_delay")["settings"]["DURATION"] = "{{$" + av + "}} - 2"
+def legacy_widgets(p):
+    wd = F(p, "web_dashboard")["settings"]
+    wd["WIDGETS"] = wd["WIDGET_GROUPS"][0]["settings"]["WIDGETS"]; wd["WIDGET_GROUPS"] = []
+def open_console(p):
+    w = F(p, "web_dashboard")["settings"]["ID"]
+    p["features"] = [f for f in p["features"] if not (f["id"] == "linked_setting" and f["settings"].get("FEATURE") == w)]
 rc0, out0 = run(lambda p: None)
 cases = [(stg_ref, "это ID настройки STG"), (name_conflict, "Name conflict: soil1"), (no_port_var, "нет авто-переменной порта"),
-         (onewire, "OWSENS"), (relay0, "реле активно по LOW")]
+         (onewire, "OWSENS"), (relay0, "реле активно по LOW"), (long_mqtt, "строка Tibbo BASIC вмещает 255"),
+         (delay_expr, "умножится только последнее слагаемое"), (legacy_widgets, "старом поле WIDGETS"), (open_console, "веб-консоль открыта")]
 bad = [m for f, m in cases if m not in run(f)[1]]
 ok = rc0 == 0 and not bad and "ОШИБКА" not in out0
-print("ok   compile pitfalls (greenhouse)" if ok else "FAIL compile pitfalls: " + ", ".join(bad) + "\n" + out0)
+print("ok   compile pitfalls and runtime limits (greenhouse2)" if ok else "FAIL compile pitfalls: " + ", ".join(bad) + "\n" + out0)
 sys.exit(0 if ok else 1)
 PY
 rm -rf "$T"; exit $fail
