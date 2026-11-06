@@ -791,9 +791,9 @@ Methods / functions:
 - `ssi.value(txdata as word, len as byte) as word` — For the currently selected SSI channel (see ssi.channel) outputs a data word of up to 16 bits and simultaneously inputs a data word of the same length.
 
 Enums:
-- `pl_ssi_baud`: PL_SSI_BAUD_100
-- `pl_ssi_baud`: PL_SSI_BAUD_1MH, PL_SSI_BAUD_900, PL_SSI_BAUD_800, PL_SSI_BAUD_400, PL_SSI_BAUD_300, PL_SSI_BAUD_200, PL_SSI_BAUD_100, PL_SSI_BAUD_90, PL_SSI_BAUD_80, PL_SSI_BAUD_70, PL_SSI_BAUD_60, PL_SSI_BAUD_50
-- `pl_ssi_baud`: PL_SSI_BAUD_1MH, PL_SSI_BAUD_900, PL_SSI_BAUD_800, PL_SSI_BAUD_400, PL_SSI_BAUD_300, PL_SSI_BAUD_200, PL_SSI_BAUD_100, PL_SSI_BAUD_90, PL_SSI_BAUD_80, PL_SSI_BAUD_70, PL_SSI_BAUD_60, PL_SSI_BAUD_50
+- `pl_ssi_baud`: PL_SSI_BAUD_100kHz
+- `pl_ssi_baud`: PL_SSI_BAUD_1MHz, PL_SSI_BAUD_900kHz, PL_SSI_BAUD_800kHz, PL_SSI_BAUD_400kHz, PL_SSI_BAUD_300kHz, PL_SSI_BAUD_200kHz, PL_SSI_BAUD_100kHz, PL_SSI_BAUD_90kHz, PL_SSI_BAUD_80kHz, PL_SSI_BAUD_70kHz, PL_SSI_BAUD_60kHz, PL_SSI_BAUD_50kHz
+- `pl_ssi_baud`: PL_SSI_BAUD_1MHz, PL_SSI_BAUD_900kHz, PL_SSI_BAUD_800kHz, PL_SSI_BAUD_400kHz, PL_SSI_BAUD_300kHz, PL_SSI_BAUD_200kHz, PL_SSI_BAUD_100kHz, PL_SSI_BAUD_90kHz, PL_SSI_BAUD_80kHz, PL_SSI_BAUD_70kHz, PL_SSI_BAUD_60kHz, PL_SSI_BAUD_50kHz
 - `pl_ssi_direction_options`: PL_SSI_DIRECTION_RIGHT, PL_SSI_DIRECTION_LEFT
 - `pl_ssi_modes`: PL_SSI_MODE_0, PL_SSI_MODE_1, PL_SSI_MODE_2, PL_SSI_MODE_3
 - `pl_ssi_ack_modes`: PL_SSI_ACK_OFF, PL_SSI_ACK_RX, PL_SSI_ACK_TX_ALL, PL_SSI_ACK_ALL_BUT_LAST

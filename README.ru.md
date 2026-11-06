@@ -1,16 +1,19 @@
 <div align="center">
 
-# Скиллы Tibbo для Claude
+# Скиллы Tibbo для ИИ-агентов
 
-**Навыки, которые превращают Claude в инженера по прошивкам Tibbo и проектам AppBlocks.**
+**Навыки, которые превращают вашу нейросеть в инженера по прошивкам Tibbo и проектам AppBlocks.**
 
 Писать и проверять прошивки на Tibbo BASIC, подбирать Tibbit и считать бюджет питания TPS,
 разбирать, исправлять и создавать проекты AppBlocks - на точных данных Tibbo API, а не по догадкам.
+
+Claude · ChatGPT / Codex · Gemini · Kimi · DeepSeek · GLM
 
 [![Tests](https://github.com/scancode-iot/tibbo-claude-skills/actions/workflows/tests.yml/badge.svg)](https://github.com/scancode-iot/tibbo-claude-skills/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-2-6f42c1)](#скиллы)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20·%20stdlib%20only-3776ab)](#требования)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-open%20standard-2ea44f)](https://agentskills.io)
 
 [English](README.md) · **Русский**
 
@@ -25,16 +28,18 @@
 и не проброшены хуки `*_proc_*`. У подбора Tibbit свои ловушки: формы сокетов, линии UART и прерываний,
 вход 9–18 В у части источников питания, шина ±15 В.
 
-Универсальные модели знают об этом мало и выдумывают имена API. Скиллы дают Claude точные справочные данные,
-правила работы и офлайн-инструменты проверки, поэтому его ответы можно проверить, а не принимать на веру.
+Универсальные модели знают об этом мало и выдумывают имена API. Скиллы дают модели точные справочные данные,
+правила работы и офлайн-инструменты проверки, поэтому её ответы можно проверить, а не принимать на веру.
+Скиллы сделаны в открытом формате [Agent Skills](https://agentskills.io): одни и те же папки работают в Claude,
+Codex, Gemini CLI, Kimi Code, Deep Code и других агентах, а для веб-чатов есть чат-пакет.
 
 > Скиллы протестированы инженерами Tibbo Technology на Тайване.
 
 ## Скиллы
 
-| Скилл | Что умеет Claude с ним |
+| Скилл | Что умеет ваша нейросеть с ним |
 |---|---|
-| [**tibbo-firmware**](skills/tibbo-firmware/README.ru.md) | Писать, проверять и отлаживать прошивки на Tibbo BASIC / Tibbo C для TiOS (TPP2/TPP3, DS, EM, WM, WS); подбирать Tibbit под задачу, раскладывать их по сокетам TPS и проверять линии, UART/INT, разъёмы, PoE и бюджет питания +5 В; рисовать плату и диаграммы состояний прошивки. |
+| [**tibbo-firmware**](skills/tibbo-firmware/README.ru.md) | Писать, проверять и отлаживать прошивки на Tibbo BASIC / Tibbo C для TiOS (TPP2/TPP3, DS, EM, WM, WS); проверять каждое имя API в коде (`tibbo_lint.py`); подбирать Tibbit под задачу, раскладывать их по сокетам TPS и проверять линии, UART/INT, разъёмы, PoE и бюджет питания +5 В; рисовать плату и диаграммы состояний прошивки. |
 | [**appblocks**](skills/appblocks/README.ru.md) | Объяснять, проверять, править и создавать проекты [AppBlocks](https://appblocks.io) (экспорт JSON); рисовать схему логики; проверять железо через `tibbo-firmware`; компилировать сгенерированную прошивку компилятором TIDE у Tibbo; настраивать MQTT со своим брокером; работать с AppBlocks Cloud API (проекты, устройства, OTA, workflow) с подтверждением перед любой записью. |
 
 Скиллы работают в паре: железо проекта AppBlocks проверяется скриптом TPS из `tibbo-firmware`,
@@ -42,11 +47,12 @@
 
 ```mermaid
 flowchart LR
-    U([Ваш запрос]) --> C{Claude}
+    U([Ваш запрос]) --> C{Ваш ИИ-агент}
     C -->|прошивка, Tibbit, питание| F[tibbo-firmware]
     C -->|проект или облако AppBlocks| A[appblocks]
     A -->|железо проекта| T[tps_check.py]
     F --> T
+    F --> N[tibbo_lint.py: имена API в коде]
     F --> R[(TiOS API · 46 платформ<br/>библиотеки · 84 Tibbit)]
     A --> K[(168 блоков редактора · 78 проектов<br/>справочник Cloud API)]
     T --> S[SVG платы + бюджет питания]
@@ -92,60 +98,40 @@ flowchart LR
 </tr>
 </table>
 
+## С какими нейросетями работает
+
+| Нейросеть | Как подключить | Сама запускает проверки |
+|---|---|---|
+| **Claude** - приложения, Claude Code, API | скиллы (загрузка zip, плагин, папка) | да |
+| **ChatGPT / Codex** - Codex CLI, расширение Codex для IDE | папка скиллов `~/.agents/skills` | да |
+| **Gemini** - Gemini CLI | папка скиллов | да |
+| **Kimi** - Kimi Code | папка скиллов | да |
+| **DeepSeek** - Deep Code, OpenCode, Claude Code | папка скиллов | да |
+| **GLM (Z.ai)** - Z Code, Claude Code, OpenCode, Codex | папка скиллов агента | да |
+| **Веб-чаты** - ChatGPT, Gemini, Kimi, DeepSeek, GLM | чат-пакет | ChatGPT с анализом данных - да; остальные дают вам команды |
+
+Качество всё равно зависит от модели: небольшие модели чаще пропускают шаги, поэтому их работу проверяют скрипты.
+
 ## Установка
 
-Скачайте пакеты из [последнего релиза](https://github.com/scancode-iot/tibbo-claude-skills/releases/latest):
-`tibbo-firmware.zip` и `appblocks.zip`. Ставьте **оба**: `appblocks` пользуется проверкой из `tibbo-firmware`.
+Скачайте файлы из [последнего релиза](https://github.com/SCANCODE-IOT/tibbo-claude-skills/releases/latest).
+Ставьте **оба** скилла: `appblocks` проверяет плату скриптом из `tibbo-firmware`.
+**Пошаговая инструкция для каждой нейросети: [docs/INSTALL.ru.md](docs/INSTALL.ru.md).**
 
-### Приложения Claude (claude.ai, десктоп, мобильное)
+| Чем пользуетесь | Быстрый старт |
+|---|---|
+| Приложения Claude | Customize → Skills → + → Upload a skill: `tibbo-firmware.zip`, затем `appblocks.zip` |
+| Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills`, затем `/plugin install tibbo-skills@scancode` |
+| Codex, Gemini CLI, Kimi Code, Deep Code и другие агенты | распакуйте *Source code (zip)* и запустите `python tools/install.py` |
+| ChatGPT, Gemini, Kimi, DeepSeek, GLM в браузере | `tibbo-chat-pack.zip`: инструкция + файлы знаний + скрипты |
 
-1. Проверьте, что включено выполнение кода: **Settings → Capabilities** (в тарифах Team и Enterprise скиллы для организации включает владелец).
-2. Откройте **Customize → Skills**, нажмите **+** → **Create skill** → **Upload a skill**.
-3. Загрузите `tibbo-firmware.zip`, затем так же `appblocks.zip`.
-4. Убедитесь, что оба скилла включены в списке.
-
-Если меню выглядит иначе, см. [Use skills in Claude](https://support.claude.com/en/articles/12512180-use-skills-in-claude).
-
-### Claude Code - как плагин (рекомендуется)
-
-```text
-/plugin marketplace add scancode-iot/tibbo-claude-skills
-/plugin install tibbo-skills@scancode
-```
-
-Обновление: `/plugin marketplace update scancode`.
-
-### Claude Code - вручную
-
-```bash
-git clone https://github.com/scancode-iot/tibbo-claude-skills.git
-mkdir -p ~/.claude/skills
-cp -r tibbo-claude-skills/skills/tibbo-firmware tibbo-claude-skills/skills/appblocks ~/.claude/skills/
-```
-
-Чтобы поставить только для одного проекта, используйте папку `.claude/skills/` внутри проекта вместо `~/.claude/skills/`.
-
-### Claude Code на Windows
-
-Скрипты запускаются через `python` или `python3` из PowerShell, cmd или Git Bash, дополнительных настроек не нужно.
-
-- **Кодировка консоли.** С версии 1.1.1 скрипты всегда печатают UTF-8, поэтому консоль в cp1251/cp1252 больше не роняет
-  их с `UnicodeEncodeError`. Если в старом окне `cmd` русский текст выглядит кракозябрами, выполните `chcp 65001` или
-  используйте Windows Terminal.
-- **`CERTIFICATE_VERIFY_FAILED` в `ab_api.py`**, хотя браузер и `curl` открывают `api.appblocks.io`: Python берёт не те
-  корневые сертификаты. Проверка сертификата не отключается - дайте Python правильное хранилище:
-  `pip install truststore` (хранилище Windows, предпочтительно) или `pip install certifi`, либо укажите бандл в
-  `SSL_CERT_FILE`, например `C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt` из Git для Windows.
-  `python scripts/ab_api.py tls` покажет, какое хранилище используется, и проверит соединение.
-
-### Claude API
-
-Загрузите каждую папку скилла через [Skills API](https://platform.claude.com/docs/en/build-with-claude/skills-guide)
-и передайте полученные `skill_id` в параметре `container` вместе с инструментом выполнения кода.
+Установщик кладёт оба скилла в `~/.agents/skills/` (её читают Codex, Gemini CLI, Kimi Code, Deep Code, Cline, Zed)
+и в `~/.claude/skills/`, если стоит Claude Code, затем запускает самопроверку. Есть ключи
+`--agent opencode|cursor|copilot|all`, `--project <папка>` и `--uninstall`.
 
 ## Примеры запросов
 
-Просто опишите задачу - Claude сам выберет скилл.
+Просто опишите задачу - агент сам выберет скилл.
 
 ```text
 Нужен контроллер на TPP3: опрашивает 4 счётчика по Modbus RTU через RS485 и отправляет
@@ -172,8 +158,8 @@ cp -r tibbo-claude-skills/skills/tibbo-firmware tibbo-claude-skills/skills/appbl
 - **Какие Tibbit в каких сокетах** и **от чего питание** (12/24/48 В через какой Tibbit, PoE).
 - Для кода с библиотеками - `src_lib_ver` из `.tpr`.
 
-Claude не может запустить TIDE: он проверяет код статически по справочным данным и честно пишет, что проверено,
-а что нет. Всегда собирайте и проверяйте прошивку на реальном устройстве.
+Нейросеть не может запустить TIDE: она проверяет код статически по справочным данным (а проекты AppBlocks может
+собрать сборщиком Tibbo) и честно пишет, что проверено, а что нет. Всегда собирайте и проверяйте прошивку на реальном устройстве.
 
 ## Структура репозитория
 
@@ -182,28 +168,31 @@ tibbo-claude-skills/
 ├── skills/
 │   ├── tibbo-firmware/        # SKILL.md, references/, data/, scripts/, tests/
 │   └── appblocks/             # SKILL.md, references/, scripts/, examples/, tests/
+├── chat-pack/                 # PROMPT.md и README для веб-чатов (файлы знаний собираются из скиллов)
 ├── .claude-plugin/
 │   └── marketplace.json       # каталог плагинов Claude Code
-├── docs/images/               # картинки для документации (нарисованы скриптами самих скиллов)
-├── tools/package.sh           # собирает dist/*.zip для загрузки в Claude
+├── docs/                      # INSTALL.md / INSTALL.ru.md, картинки (нарисованы скриптами самих скиллов)
+├── tools/install.py           # ставит оба скилла в Codex, Gemini CLI, Kimi Code, Claude Code и другие агенты
+├── tools/package.sh           # собирает dist/*.zip: два скилла + tibbo-chat-pack.zip (tools/build_chat_pack.py)
 └── .github/workflows/         # тесты при каждом коммите, пакеты релиза по тегам
 ```
 
 ## Требования
 
 Скриптам нужен **только Python 3.9+** - используется лишь стандартная библиотека
-(по желанию `truststore` или `certifi` для `ab_api.py` на Windows, см. выше).
-В песочнице Claude они запускаются автоматически, но их можно запускать и самостоятельно:
+(по желанию `truststore` или `certifi` для `ab_api.py` на Windows, см. [docs/INSTALL.ru.md](docs/INSTALL.ru.md#если-что-то-не-так)).
+Агент запускает их сам, но их можно запускать и самостоятельно:
 
 ```bash
 cd skills/tibbo-firmware
 python3 scripts/tps_check.py find "rs485 modbus"
 python3 scripts/tps_check.py check tests/gallery_tpp3.json --svg board.svg
+python3 scripts/tibbo_lint.py tests/lint/bad.tbs --platform "TPP3W(G2)"
 ```
 
 Клиент AppBlocks Cloud API берёт ключ только из переменной окружения `APPBLOCKS_API_KEY`.
-В песочнице claude.ai сначала добавьте `api.appblocks.io` и `appblocks.io` в разрешённые домены
-(**Settings → Capabilities**).
+Если агент работает в облачной песочнице со списком разрешённых сайтов (например, claude.ai, **Settings → Capabilities**),
+сначала добавьте туда `api.appblocks.io` и `appblocks.io`.
 
 ## Тесты
 
@@ -212,7 +201,8 @@ sh skills/tibbo-firmware/tests/run.sh
 sh skills/appblocks/tests/run.sh
 ```
 
-Оба набора работают без сети и запускаются при каждом коммите (см. [Actions](https://github.com/scancode-iot/tibbo-claude-skills/actions)).
+Оба набора работают без сети и запускаются при каждом коммите вместе с проверкой установщика, валидатором
+Agent Skills и лимитами чат-пакета (см. [Actions](https://github.com/scancode-iot/tibbo-claude-skills/actions)).
 
 ## Источники данных
 
@@ -237,7 +227,8 @@ Tibbo периодически выпускает новые библиотек�
 правообладателей - см. [NOTICE](NOTICE).
 
 Tibbo, Tibbit, TiOS, TIDE и AppBlocks - товарные знаки Tibbo Technology Inc. Проект не является официальным
-продуктом Tibbo. Claude - продукт компании Anthropic.
+продуктом Tibbo. Claude - продукт Anthropic; ChatGPT и Codex - OpenAI; Gemini - Google; Kimi - Moonshot AI;
+DeepSeek - DeepSeek; GLM и Z.ai - Zhipu AI.
 
 <div align="center">
 

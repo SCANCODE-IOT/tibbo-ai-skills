@@ -1,0 +1,37 @@
+' Clean Tibbo BASIC sample for tibbo_lint.py (TPP3W(G2)): must give 0 errors
+include "global.tbh"
+
+dim state as byte
+dim s as string(64)
+
+sub on_sys_init()
+	sys.onsystimerperiod = 50
+	ser.num = 0
+	ser.rxbuffrq(2)
+	ser.txbuffrq(2)
+	sock.num = 0
+	sock.rxbuffrq(2)
+	sock.txbuffrq(2)
+	sys.buffalloc()
+	ser.baudrate = ser.div9600 / (115200 / 9600)
+	ser.interface = PL_SER_SI_HALFDUPLEX
+	ser.enabled = YES
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+	sock.localportlist = "1001"
+	io.num = PL_IO_NUM_0
+	io.enabled = YES
+	io.state = HIGH
+	s = "sock.conect and PL_FAKE inside a string are ignored" ' and so is sock.bogus in a comment
+	#if PLATFORM_ID = EM1000
+		io.num = PL_IO_PORT_NUM_1 ' other platform branch: not checked against TPP3W(G2)
+	#endif
+end sub
+
+sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)
+	if newstatesimple = PL_SSTS_EST then
+		state = 1
+	else if newstatesimple = PL_SSTS_CLOSED then
+		state = 0
+	end if
+end sub

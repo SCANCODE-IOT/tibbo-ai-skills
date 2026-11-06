@@ -1,7 +1,7 @@
 # Карта документации Tibbo: тема → docs.tibbo.com и русская страница
 
 Сгенерировано по исходникам docs.tibbo.com (2 325 страниц, получены от Tibbo 21.10.2026) и русской базе знаний tibbo.ru/kb.
-Справочники скилла - выжимка; когда нужен полный текст, пример кода или таблица, открывай страницу (WebFetch).
+Справочники скилла - выжимка; когда нужен полный текст, пример кода или таблица, открывай страницу веб-инструментом агента (если он есть; иначе назови пользователю ссылку).
 Адрес страницы: `https://docs.tibbo.com/<slug>`, русский перевод: `https://tibbo.ru/kb/docs/<slug>.html` (русская база - с её публикации на tibbo.ru; если страница не открывается, бери docs.tibbo.com).
 Другие руководства: Serial-over-IP - https://tibbo.ru/kb/soi/ (docs.tibbo.com/soism/), Modbus Gateway - https://tibbo.ru/kb/modbus/ (docs.tibbo.com/tmgm/), OPC-сервер - https://tibbo.ru/kb/opc/ (docs.tibbo.com/opc/).
 

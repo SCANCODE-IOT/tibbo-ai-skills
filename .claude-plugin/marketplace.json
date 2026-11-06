@@ -4,20 +4,40 @@
     "name": "Scancode",
     "url": "https://github.com/scancode-iot"
   },
-  "description": "Claude skills for Tibbo firmware (TiOS, Tibbo BASIC, Tibbits, TPS) and Tibbo AppBlocks, by Scancode.",
-  "version": "1.4.0",
+  "description": "Agent skills for Tibbo firmware (TiOS, Tibbo BASIC, Tibbits, TPS) and Tibbo AppBlocks, by Scancode. Work in Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and other agents.",
+  "version": "2.0.0",
   "plugins": [
     {
       "name": "tibbo-skills",
       "displayName": "Tibbo Skills",
       "source": "./",
-      "description": "Two skills: tibbo-firmware (write and review Tibbo BASIC/C firmware, choose Tibbits, check TPS sockets and power) and appblocks (explain, review, edit and generate AppBlocks projects, AppBlocks Cloud API).",
-      "version": "1.4.0",
-      "author": { "name": "Scancode", "url": "https://github.com/scancode-iot" },
+      "description": "Two agent skills: tibbo-firmware (write and review Tibbo BASIC/C firmware, check API names, choose Tibbits, check TPS sockets and power) and appblocks (explain, review, edit and generate AppBlocks projects, AppBlocks Cloud API).",
+      "version": "2.0.0",
+      "author": {
+        "name": "Scancode",
+        "url": "https://github.com/scancode-iot"
+      },
       "homepage": "https://github.com/scancode-iot/tibbo-claude-skills",
       "repository": "https://github.com/scancode-iot/tibbo-claude-skills",
       "license": "MIT",
-      "keywords": ["tibbo", "tios", "tibbo-basic", "tibbit", "tps", "appblocks", "iot", "firmware", "modbus", "embedded"],
+      "keywords": [
+        "tibbo",
+        "tios",
+        "tibbo-basic",
+        "tibbit",
+        "tps",
+        "appblocks",
+        "iot",
+        "firmware",
+        "modbus",
+        "embedded",
+        "agent-skills",
+        "codex",
+        "gemini",
+        "deepseek",
+        "kimi",
+        "glm"
+      ],
       "category": "development",
       "strict": false
     }

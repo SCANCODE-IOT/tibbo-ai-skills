@@ -1,0 +1,12 @@
+' Seeded mistakes for tibbo_lint.py: every marked line must be reported
+sub on_sys_init()
+	sock.conect()                       ' ERR 1: misspelled method
+	ser.speed = 9600                    ' ERR 2: invented property
+	if sock.state = PL_SSTS_CONECTED then  ' ERR 3: misspelled constant
+		io.num = PL_IO_NUM_99           ' ERR 4: no such line
+	elseif sys.timercount > 10 then     ' ERR 5: elseif
+		sys.reboot()
+	end if
+	io.num = PL_IO_PORT_NUM_1           ' ERR 6 with --platform TPP3W(G2): EM-only constant
+	sys.userbuffpages = 1               ' WARNING: internal member
+end sub
