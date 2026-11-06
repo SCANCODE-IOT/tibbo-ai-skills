@@ -107,6 +107,7 @@ flowchart LR
 | **ChatGPT / Codex** - Codex CLI, Codex IDE extension | skills folder `~/.agents/skills` | yes |
 | **Gemini** - Gemini CLI | skills folder | yes |
 | **Kimi** - Kimi Code | skills folder | yes |
+| **Kimi app (K3.1 Pro)** - desktop and kimi.com, Agent mode | skill from Word documents: [Kimi set](docs/kimi/tibbo-skills-kimi-app.zip) | gives you the commands |
 | **DeepSeek** - Deep Code, OpenCode, Claude Code | skills folder | yes |
 | **GLM (Z.ai)** - Z Code, Claude Code, OpenCode, Codex | skills folder of the agent | yes |
 | **Web chats** - ChatGPT, Gemini, Kimi, DeepSeek, GLM | chat pack | ChatGPT with code interpreter: yes; others give you the commands |
@@ -124,6 +125,7 @@ Install **both** skills - `appblocks` uses the board checker from `tibbo-firmwar
 | Claude apps | Customize → Skills → + → Upload a skill: `tibbo-firmware.zip`, then `appblocks.zip` |
 | Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills`, then `/plugin install tibbo-skills@scancode` |
 | Codex, Gemini CLI, Kimi Code, Deep Code and other agents | unpack *Source code (zip)* and run `python tools/install.py` |
+| Kimi app (K3.1 Pro) | [tibbo-skills-kimi-app.zip](docs/kimi/tibbo-skills-kimi-app.zip): Agent mode → Skills → "Convert Office Documents into a Skill" ([guide](docs/kimi/tibbo-skills-kimi-guide.ru.docx), Word, RU) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM in the browser | `tibbo-chat-pack.zip`: instructions + knowledge files + scripts |
 
 The installer puts both skills into `~/.agents/skills/` (read by Codex, Gemini CLI, Kimi Code, Deep Code, Cline, Zed)

@@ -18,6 +18,7 @@ The skills work in two ways:
 | Codex: CLI, IDE extension | skills folder | [Codex](#codex) |
 | Gemini CLI | skills folder | [Gemini CLI](#gemini-cli) |
 | Kimi Code | skills folder | [Kimi Code](#kimi-code) |
+| Kimi app (K3.1 Pro), Agent mode | skill from Word documents | [Kimi Code](#kimi-code) |
 | DeepSeek in Deep Code, OpenCode or Claude Code | skills folder | [DeepSeek](#deepseek) |
 | GLM (Z.ai) in Z Code, Claude Code, OpenCode or Codex | skills folder of that agent | [GLM](#glm-zai) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM in the browser | chat pack | [Web chats](#web-chats) |

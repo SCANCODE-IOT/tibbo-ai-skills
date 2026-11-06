@@ -18,6 +18,7 @@
 | Codex: CLI, расширение для IDE | папка скиллов | [Codex](#codex) |
 | Gemini CLI | папка скиллов | [Gemini CLI](#gemini-cli) |
 | Kimi Code | папка скиллов | [Kimi Code](#kimi-code) |
+| Приложение Kimi (K3.1 Pro), режим Agent | скилл из документов Word | [Kimi Code](#kimi-code) |
 | DeepSeek в Deep Code, OpenCode или Claude Code | папка скиллов | [DeepSeek](#deepseek) |
 | GLM (Z.ai) в Z Code, Claude Code, OpenCode или Codex | папка скиллов этого агента | [GLM](#glm-zai) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM в браузере | чат-пакет | [Веб-чаты](#веб-чаты) |

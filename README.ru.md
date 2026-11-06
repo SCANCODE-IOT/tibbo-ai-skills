@@ -106,6 +106,7 @@ flowchart LR
 | **ChatGPT / Codex** - Codex CLI, расширение Codex для IDE | папка скиллов `~/.agents/skills` | да |
 | **Gemini** - Gemini CLI | папка скиллов | да |
 | **Kimi** - Kimi Code | папка скиллов | да |
+| **Приложение Kimi (K3.1 Pro)** - на компьютере и kimi.com, режим Agent | скилл из документов Word: [комплект для Kimi](docs/kimi/tibbo-skills-kimi-app.zip) | даёт вам команды |
 | **DeepSeek** - Deep Code, OpenCode, Claude Code | папка скиллов | да |
 | **GLM (Z.ai)** - Z Code, Claude Code, OpenCode, Codex | папка скиллов агента | да |
 | **Веб-чаты** - ChatGPT, Gemini, Kimi, DeepSeek, GLM | чат-пакет | ChatGPT с анализом данных - да; остальные дают вам команды |
@@ -123,6 +124,7 @@ flowchart LR
 | Приложения Claude | Customize → Skills → + → Upload a skill: `tibbo-firmware.zip`, затем `appblocks.zip` |
 | Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills`, затем `/plugin install tibbo-skills@scancode` |
 | Codex, Gemini CLI, Kimi Code, Deep Code и другие агенты | распакуйте *Source code (zip)* и запустите `python tools/install.py` |
+| Приложение Kimi (K3.1 Pro) | [tibbo-skills-kimi-app.zip](docs/kimi/tibbo-skills-kimi-app.zip): режим Agent → Skills → «Convert Office Documents into a Skill» ([инструкция в Word](docs/kimi/tibbo-skills-kimi-guide.ru.docx)) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM в браузере | `tibbo-chat-pack.zip`: инструкция + файлы знаний + скрипты |
 
 Установщик кладёт оба скилла в `~/.agents/skills/` (её читают Codex, Gemini CLI, Kimi Code, Deep Code, Cline, Zed)
