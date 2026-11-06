@@ -98,7 +98,7 @@ tpp2g2_tiles_sockets, каталог TPS (осень 2024). Цифры ниже 
 
 docs.tibbo.com/tps_common_power · /tibbit_power · /tibbit_NN (страница каждого Tibbit) · /tpp2g3 · /tpp3g2 ·
 /tpp2g2_tiles_sockets · /tpp3_tiles_sockets · /ltpp3g2_tiles_sockets. Сеть из оболочки к docs.tibbo.com
-закрыта — читай через WebFetch.
+закрыта — читай веб-инструментом агента (если он есть).
 
 ## Уточнения по docs.tibbo.com (октябрь 2026)
 - #13 и #14 сами берут от +5V 10 и 20 мА; «66 мА»/«56 мА» на страницах docs - суммарная нагрузка вместе с долей #12 (10 + 4,5 × (9 + 3,5) ≈ 66; 20 + 4,5 × 8 = 56). В `data/tibbits.json` теперь собственные 10/20 мА, долю #12 считает `tps_check.py`.

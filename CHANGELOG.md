@@ -3,6 +3,46 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-11-06
+
+**Major update: the skills now work beyond Claude** - in ChatGPT / Codex, Gemini, Kimi, DeepSeek and GLM, in coding
+agents and in web chats. Nothing changes for Claude users: the technical rules are the same, the install is the same.
+
+### Any agent, any model
+- **Agent-neutral instructions.** `SKILL.md` of both skills no longer depends on Claude-only tools or menus (WebFetch,
+  Glob, artifacts, claude.ai settings): agents use their own search, web and preview tools, Claude stays one of the
+  examples. Frontmatter follows the open [Agent Skills](https://agentskills.io) specification (`license`,
+  `compatibility`, `metadata`) and passes the reference validator `skills-ref`.
+- **"Order for any agent"** at the top of both `SKILL.md` files: the seven rules that matter most, short enough for
+  smaller models - no invented API names, scripts before answers, assumptions first, no "it compiles" claims, and what
+  to do when scripts cannot be run (say so and give the user the files and commands).
+- **`tools/install.py`** - one installer for Windows, macOS and Linux: both skills into `~/.agents/skills/`
+  (Codex CLI / IDE extension, Gemini CLI, Kimi Code, Deep Code, Cline, Zed) and `~/.claude/skills/`, or
+  `--agent opencode|cursor|copilot|gemini|kimi|all`, `--project <folder>`, `--uninstall`; self-test from the
+  installed copy.
+- **Chat pack `tibbo-chat-pack.zip`** for web chats without skills (ChatGPT custom GPT or Project, Gemini Gem, Kimi,
+  DeepSeek, GLM / chat.z.ai): `PROMPT.md` (5000 characters, fits the custom GPT limit), seven knowledge files grouped
+  by task, `tibbo-tools.zip` with all scripts for ChatGPT's code interpreter or your own computer. Built by
+  `tools/build_chat_pack.py`, which checks the limits on every build (prompt <= 8000 characters, <= 10 files for a Gem,
+  every file <= 350 KB).
+- **Docs:** `docs/INSTALL.md` and `docs/INSTALL.ru.md` - step by step for every AI; READMEs speak of "your AI agent".
+
+### tibbo-firmware
+- **New `scripts/tibbo_lint.py`** - checks API names in Tibbo BASIC / C code (`.tbs .tbh .tc .th`): unknown properties,
+  methods and events of TiOS objects with "did you mean", invented `PL_*` constants, objects and constants the
+  platform does not have (`--platform`, aware of `#if PLATFORM_ID=…` branches), `elseif`; internal `!` members give a
+  warning. Data: `data/tios_api.json`, rebuilt by `scripts/build_lint_data.py` from the references (optionally from
+  clones of `tibbotech/platforms` and `tibbotech/libraries`). Zero false errors on 1382 files of Tibbo's libraries
+  and examples; tests with seeded mistakes in `tests/lint/`.
+- **Fixed:** `references/tios-api.md` listed the SSI baud constants cut at the first lowercase letter
+  (`PL_SSI_BAUD_100`, `PL_SSI_BAUD_1MH`); the real names are `PL_SSI_BAUD_100kHz` … `PL_SSI_BAUD_1MHz`. Found by the
+  new linter.
+- The checklist and the writing / review procedure run `tibbo_lint.py` before `tps_check.py`.
+
+### Repository
+- CI: installer test on Linux and Windows (Python 3.9-3.14), `skills-ref validate`, chat pack limits.
+- Releases carry three files: `tibbo-firmware.zip`, `appblocks.zip`, `tibbo-chat-pack.zip`.
+
 ## [1.4.0] - 2026-11-02
 
 Lessons from TOTAL SMART SCHOOL GREENHOUSE 2 (TPP3W(G2), rebuilt from a review of the first greenhouse): limits of the

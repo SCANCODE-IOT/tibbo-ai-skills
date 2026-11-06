@@ -39,12 +39,14 @@ jobs:
           # patch notes: the version's section from CHANGELOG.md, then the install hints
           awk -v v="${VERSION#v}" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > changes.md
           cat > notes.md <<EOF
-          Install **both** packages — \`appblocks\` uses the TPS checker from \`tibbo-firmware\`.
+          **Which file do I need?** Install **both** skills - \`appblocks\` uses the TPS checker from \`tibbo-firmware\`.
 
           - **Claude apps:** Customize → Skills → + → Create skill → Upload a skill → upload \`tibbo-firmware.zip\`, then \`appblocks.zip\`.
           - **Claude Code:** \`/plugin marketplace add ${GITHUB_REPOSITORY}\`, then \`/plugin install tibbo-skills@scancode\`.
+          - **Codex, Gemini CLI, Kimi Code, Deep Code (DeepSeek), OpenCode (GLM and others):** download *Source code (zip)*, unpack it and run \`python tools/install.py\` - or unpack both skill zips into \`~/.agents/skills/\`.
+          - **Web chats - ChatGPT, Gemini, Kimi, DeepSeek, GLM:** \`tibbo-chat-pack.zip\` (instructions + knowledge files + scripts).
 
-          See [README](https://github.com/${GITHUB_REPOSITORY}#readme) and [CHANGELOG](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md).
+          Step-by-step: [INSTALL.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/docs/INSTALL.md) · [INSTALL.ru.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/docs/INSTALL.ru.md) · [CHANGELOG](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md).
           EOF
           { cat changes.md; echo; echo "---"; echo; cat notes.md; } > release.md
           gh release create "$VERSION" dist/*.zip \

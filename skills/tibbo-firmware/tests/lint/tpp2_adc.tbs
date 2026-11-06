@@ -1,0 +1,5 @@
+' adc is not available on TPP2W(G2): error only with --platform TPP2W(G2)
+sub on_sys_init()
+	adc.num = 0
+	adc.enabled = YES
+end sub

@@ -2,7 +2,7 @@
 
 **English** · [Русский](README.ru.md) · [← All skills](../../README.md)
 
-A Claude skill for **Tibbo firmware and hardware configuration**: TiOS applications in Tibbo BASIC and Tibbo C,
+An agent skill (Claude, Codex, Gemini CLI, Kimi Code, Deep Code and others) for **Tibbo firmware and hardware configuration**: TiOS applications in Tibbo BASIC and Tibbo C,
 Tibbo libraries, Tibbit selection, TPS socket layout and power supply checks.
 
 <img src="../../docs/images/tps-board-tpp3.svg" alt="TPS board check" width="720" />
@@ -26,7 +26,7 @@ so they survive the next generation.
 
 | Path | What is inside |
 |---|---|
-| `SKILL.md` | Instructions Claude follows: context questions, Tibbo BASIC facts, TiOS execution model, library rules, workflow, review checklist, debugging, visualisation. |
+| `SKILL.md` | Instructions the agent follows: context questions, Tibbo BASIC facts, TiOS execution model, library rules, workflow, review checklist, debugging, visualisation. |
 | `references/tios-api.md` | Every property, method, event and enum of TiOS objects: `sys io net sock ser romfile stor fd wln bt tls i2c ssi adc pwm kp lcd beep pat button rtc ppp pppoe`, with G3/WM2000/WS110x differences. |
 | `references/platforms.md` | 46 platforms: available objects, ROM/RAM, TiOS version, exact `PL_IO_NUM_*` and line-to-socket mapping, `PLATFORM_ID` symbols. |
 | `references/libraries.md` | Tibbo libraries (STG, sock, DHCP, DNS, Wi-Fi, MQTT, HTTP, Modbus, SNTP, cellular, `tbtNN` Tibbit drivers…): `#define` options, API, required `callback_*`. |
@@ -40,6 +40,8 @@ so they survive the next generation.
 | `scripts/tps_check.py` | TPS configuration checker and catalog tool (see below). |
 | `scripts/tps_render.py` | Board renderer used by `tps_check.py --svg`. |
 | `scripts/state_diagram.py` | State diagram from a short JSON description. |
+| `scripts/tibbo_lint.py` | Checks API names in Tibbo BASIC / C code against the TiOS reference (see below). |
+| `data/tios_api.json`, `scripts/build_lint_data.py` | Objects, members, `PL_*` constants and platforms for the linter, and the script that rebuilds them. |
 | `scripts/build_data.py` | Rebuilds `data/tibbits.json` from `data/tibbits.src.json`. |
 | `tests/` | Sample configurations (good and deliberately broken) and `run.sh`. |
 
@@ -106,6 +108,25 @@ python3 scripts/state_diagram.py fsm.json fsm.svg
 
 `kind`: `init` (blue), `normal` (green, default), `active` (orange), `fault` (red). `"from": "*"` means "from any state".
 
+### `tibbo_lint.py`
+
+```bash
+python3 scripts/tibbo_lint.py my_project/ --platform "TPP3W(G2)"   # .tbs .tbh .tc .th, folders recursively
+python3 scripts/tibbo_lint.py main.tbs --json
+```
+
+Catches invented or misspelled API names before TIDE does - the most common mistake of AI models:
+
+- unknown property, method or event of a TiOS object (`sock.conect` → "did you mean `sock.connect`");
+- unknown `PL_*` constant (`PL_SSTS_CONECTED`, `PL_IO_NUM_99`);
+- with `--platform`: an object or constant the platform does not have (`adc` on TPP2W(G2)); branches
+  `#if PLATFORM_ID=…` for other platforms are skipped;
+- `elseif` (Tibbo BASIC only has `else if`).
+
+Internal members (declared with `!` in the `.tph` files) give a warning. Exit codes: `0` - no errors, `1` - errors,
+`2` - bad input. Checked on 1382 files of Tibbo's own libraries and examples without a single false error.
+Library procedures (`dhcp_start`, `mqtt_publish`…) are not checked - compare them with `references/libraries.md`.
+
 ## Example prompts
 
 ```text
@@ -124,9 +145,9 @@ The device stops answering on the network after a few hours. Here is main.tbs. W
 ## Limits
 
 - **TiOS only.** Linux devices (LTPP3, LTPP3G2, NTIOS) use Linux, C/Node.js and different objects; the skill points this out instead of mixing the two.
-- **No compiler.** TIDE is not available to Claude; code is checked statically. The skill never claims that code "compiles".
+- **No compiler.** TIDE is not available to the AI; code is checked statically. The skill never claims that code "compiles".
 - **TPS boards only for `tps_check.py`.** DS/EM/WM modules are checked by hand against `power.md` and the module datasheet, and the answer says so.
-- **Snapshot of October 2026.** For anything missing, Claude reads the page on docs.tibbo.com or the source on github.com/tibbotech.
+- **Snapshot of October 2026.** For anything missing, the agent reads the page on docs.tibbo.com or the source on github.com/tibbotech.
 
 ## Tests
 
@@ -134,4 +155,5 @@ The device stops answering on the network after a few hours. Here is main.tbs. W
 sh tests/run.sh
 ```
 
-8 configurations with expected exit codes, plus the state diagram, board SVG and `board`/`find`/`tibbit` commands.
+Configurations with expected exit codes, AppBlocks editor rules, the state diagram, board SVG, `board`/`find`/`tibbit`
+commands, and `tibbo_lint.py` on clean code and on code with seeded mistakes (`tests/lint/`).

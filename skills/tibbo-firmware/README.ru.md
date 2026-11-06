@@ -2,7 +2,7 @@
 
 [English](README.md) · **Русский** · [← Все скиллы](../../README.ru.md)
 
-Скилл Claude для **прошивок и аппаратной конфигурации Tibbo**: приложения TiOS на Tibbo BASIC и Tibbo C,
+Скилл для ИИ-агентов (Claude, Codex, Gemini CLI, Kimi Code, Deep Code и других) - **прошивки и аппаратной конфигурации Tibbo**: приложения TiOS на Tibbo BASIC и Tibbo C,
 библиотеки Tibbo, подбор Tibbit, раскладка по сокетам TPS и проверка питания.
 
 <img src="../../docs/images/tps-board-tpp3.svg" alt="Проверка платы TPS" width="720" />
@@ -26,7 +26,7 @@
 
 | Путь | Что внутри |
 |---|---|
-| `SKILL.md` | Инструкции для Claude: вопросы о контексте, факты Tibbo BASIC, модель исполнения TiOS, правила библиотек, порядок работы, чек-лист, отладка, визуализация. |
+| `SKILL.md` | Инструкции для агента: вопросы о контексте, факты Tibbo BASIC, модель исполнения TiOS, правила библиотек, порядок работы, чек-лист, отладка, визуализация. |
 | `references/tios-api.md` | Все свойства, методы, события и перечисления объектов TiOS: `sys io net sock ser romfile stor fd wln bt tls i2c ssi adc pwm kp lcd beep pat button rtc ppp pppoe`, различия для G3/WM2000/WS110x. |
 | `references/platforms.md` | 46 платформ: доступные объекты, ROM/RAM, версия TiOS, точные `PL_IO_NUM_*` и привязка линий к сокетам, символы `PLATFORM_ID`. |
 | `references/libraries.md` | Библиотеки Tibbo (STG, sock, DHCP, DNS, Wi-Fi, MQTT, HTTP, Modbus, SNTP, сотовая связь, драйверы Tibbit `tbtNN`…): опции `#define`, API, обязательные `callback_*`. |
@@ -40,6 +40,8 @@
 | `scripts/tps_check.py` | Проверка конфигурации TPS и работа с каталогом (см. ниже). |
 | `scripts/tps_render.py` | Отрисовка платы для `tps_check.py --svg`. |
 | `scripts/state_diagram.py` | Диаграмма состояний из короткого JSON. |
+| `scripts/tibbo_lint.py` | Проверка имён API в коде Tibbo BASIC / C по справочнику TiOS (см. ниже). |
+| `data/tios_api.json`, `scripts/build_lint_data.py` | Объекты, члены, константы `PL_*` и платформы для линтера и скрипт их пересборки. |
 | `scripts/build_data.py` | Пересборка `data/tibbits.json` из `data/tibbits.src.json`. |
 | `tests/` | Примеры конфигураций (правильные и намеренно ошибочные) и `run.sh`. |
 
@@ -106,6 +108,25 @@ python3 scripts/state_diagram.py fsm.json fsm.svg
 
 `kind`: `init` (синий), `normal` (зелёный, по умолчанию), `active` (оранжевый), `fault` (красный). `"from": "*"` - «из любого состояния».
 
+### `tibbo_lint.py`
+
+```bash
+python3 scripts/tibbo_lint.py my_project/ --platform "TPP3W(G2)"   # .tbs .tbh .tc .th, папки целиком
+python3 scripts/tibbo_lint.py main.tbs --json
+```
+
+Ловит выдуманные и опечатанные имена API раньше TIDE - это самая частая ошибка нейросетей:
+
+- неизвестное свойство, метод или событие объекта TiOS (`sock.conect` → «похоже: `sock.connect`»);
+- несуществующая константа `PL_*` (`PL_SSTS_CONECTED`, `PL_IO_NUM_99`);
+- с `--platform`: объект или константа, которых нет на платформе (`adc` на TPP2W(G2)); ветки
+  `#if PLATFORM_ID=…` для других платформ пропускаются;
+- `elseif` (в Tibbo BASIC только `else if`).
+
+Внутренние члены (в `.tph` со знаком `!`) дают предупреждение. Коды выхода: `0` - ошибок нет, `1` - есть ошибки,
+`2` - неверные входные данные. Проверен на 1382 файлах библиотек и примеров самой Tibbo - ни одной ложной ошибки.
+Процедуры библиотек (`dhcp_start`, `mqtt_publish`…) не проверяются - сверяйте их с `references/libraries.md`.
+
 ## Примеры запросов
 
 ```text
@@ -124,9 +145,9 @@ TPP2W(G3), Tibbit: #05 в S1, #03 в S3, #09 в S9. Питание 24 В. Всё
 ## Ограничения
 
 - **Только TiOS.** Linux-устройства (LTPP3, LTPP3G2, NTIOS) работают на Linux с C/Node.js и другими объектами; скилл это отмечает и не смешивает два мира.
-- **Нет компилятора.** TIDE Claude недоступна, код проверяется статически. Скилл никогда не утверждает, что код «скомпилируется».
+- **Нет компилятора.** TIDE нейросети недоступна, код проверяется статически. Скилл никогда не утверждает, что код «скомпилируется».
 - **`tps_check.py` - только для плат TPS.** Модули DS/EM/WM проверяются вручную по `power.md` и даташиту модуля, и в ответе это указывается.
-- **Снимок данных на октябрь 2026.** Если чего-то нет, Claude читает страницу на docs.tibbo.com или исходник на github.com/tibbotech.
+- **Снимок данных на октябрь 2026.** Если чего-то нет, агент читает страницу на docs.tibbo.com или исходник на github.com/tibbotech.
 
 ## Тесты
 
@@ -134,4 +155,5 @@ TPP2W(G3), Tibbit: #05 в S1, #03 в S3, #09 в S9. Питание 24 В. Всё
 sh tests/run.sh
 ```
 
-8 конфигураций с ожидаемыми кодами выхода, а также диаграмма состояний, SVG платы и команды `board`/`find`/`tibbit`.
+Конфигурации с ожидаемыми кодами выхода, правила редактора AppBlocks, диаграмма состояний, SVG платы, команды
+`board`/`find`/`tibbit` и `tibbo_lint.py` на чистом коде и на коде с подложенными ошибками (`tests/lint/`).

@@ -1,6 +1,12 @@
 ---
 name: appblocks
 description: Use when working with Tibbo AppBlocks (app.appblocks.io, AppBlocks Cloud) - reading, explaining, reviewing, changing or generating an AppBlocks project (exported JSON), visualising its logic and Tibbit hardware, using the AppBlocks Cloud API (projects, devices, OTA, workflows), or working in the AppBlocks editor in the browser.
+license: MIT (Tibbo examples and reference data - see NOTICE)
+compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
+metadata:
+  author: Scancode (SCANCODE-IOT)
+  version: "2.0.0"
+  repository: https://github.com/SCANCODE-IOT/tibbo-claude-skills
 ---
 
 # Tibbo AppBlocks: проекты, логика, железо, облако
@@ -31,8 +37,18 @@ OTA, переменные/таблицы/команды, облачные workfl
 
 **Windows:** скрипты запускай через `python` (или `python3`), вывод всегда UTF-8; при `CERTIFICATE_VERIFY_FAILED` в `ab_api.py` проверку не отключай - `pip install truststore` (или `certifi`, или `SSL_CERT_FILE` с бандлом Git), диагностика `ab_api.py tls`.
 
-Железо проверяет `tps_check.py` из скилла tibbo-firmware (найди Glob `**/tibbo-firmware/scripts/tps_check.py`): он же
+Железо проверяет `tps_check.py` из скилла tibbo-firmware (обычно `../tibbo-firmware/scripts/tps_check.py` рядом с папкой этого скилла; если нет - найди файл поиском): он же
 рисует плату в стиле редактора AppBlocks (сокеты с номерами линий, SERn(k)/INTn(k), Tibbit, PoE, +5V, бюджет питания).
+
+## Порядок для любого агента (коротко)
+
+1. Проект правь только скриптом Python по копии экспорта, не руками. Перед выдачей: `python3 scripts/ab_tool.py check p.json` - 0 ошибок.
+2. Порты, поля и значения блоков бери из `references/blocks.md` или `ab_tool.py lookup <блок>`. Не выдумывай блоки и поля.
+3. Железо (Tibbit, сокеты, питание) - через `ab_tool.py tps` и `tps_check.py` из скилла tibbo-firmware.
+4. Любая запись в облако AppBlocks (create, update, OTA, команды устройствам) - только после явного «да» пользователя на конкретный вызов.
+5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.
+6. **Скрипты запустить нельзя** (веб-чат): скажи «скриптами не проверено», дай файл и команды проверки, чтобы пользователь запустил их у себя, и попроси прислать вкладку Problems из редактора.
+7. Скрипты лежат в папке скилла: запускай их с путём от неё или перейди в неё. На Windows - `python` вместо `python3`.
 
 ## 1. Откуда взять проект
 1. **API** (лучший путь): `ab_api.py projects` → `ab_api.py project <id> --out p.json`. Ключ `abk_…` из Settings →
@@ -43,10 +59,11 @@ OTA, переменные/таблицы/команды, облачные workfl
    `appblocks.io/tutorials/*` и `appblocks.io/examples/*` (78 проектов: sprinkler1–6, accesscontrol1–6, modbusgateway,
    modbusmqtt, tbt22, hydroponics, http-server-tls…). `GET /api/projects/examples` в октябре 2026 отвечал 500.
 
-**Сеть.** В облачной песочнице хосты AppBlocks доступны только после того, как пользователь добавит `api.appblocks.io`
-и `appblocks.io` в разрешённые (claude.ai → Settings → Capabilities; в Team/Enterprise — администратор); до этого прокси
-отвечает 403. Проверка: `ab_api.py me`. Если сеть закрыта: скрипт на подключённом компьютере пользователя, браузер или
-файл экспорта. Документацию appblocks.io читай WebFetch (карта: `https://appblocks.io/sitemap.xml`).
+**Сеть.** Если агент работает в облачной песочнице со списком разрешённых сайтов, хосты AppBlocks доступны только после
+того, как пользователь добавит `api.appblocks.io` и `appblocks.io` в разрешённые (в Claude: claude.ai → Settings →
+Capabilities, в Team/Enterprise - администратор; в других сервисах - их настройка доступа к сети); до этого прокси
+отвечает 403. Проверка: `ab_api.py me`. Если сеть закрыта: скрипт на компьютере пользователя, браузер или файл экспорта.
+Документацию appblocks.io читай веб-инструментом агента, если он есть (карта: `https://appblocks.io/sitemap.xml`).
 
 **Ключ.** Только из окружения (`APPBLOCKS_API_KEY` или файл `APPBLOCKS_API_KEY_FILE` с правами 600, удалить после).
 Не печатать, не сохранять в файлы, память, артефакты. У устройства поле `key` (MQTT) тоже не показывать.
@@ -124,7 +141,7 @@ workflow (создаются выключенными; включение — о
 (тогда 403 на запись - попроси ключ с write). После `update` открытого в редакторе проекта попроси перезагрузить вкладку без сохранения.
 
 ## 5. Редактор в браузере
-Браузер, выбранный пользователем (встроенный в приложение Claude или Chrome), под его входом. Сначала читай.
+Только если у агента есть управление браузером (например, встроенный браузер Claude или расширение Chrome) - под входом пользователя. Сначала читай.
 Run/Deploy Release, OTA, сохранение, удаление — только после подтверждения. Пароли и ключи в поля не вводи.
 Устройство в Debug-режиме останавливается без связи с редактором — не оставляй его в Debug на объекте.
 Карта экранов — editor.md §1–2; если интерфейс отличается, сообщи пользователю и предложи обновить скилл.
@@ -136,4 +153,4 @@ Run/Deploy Release, OTA, сохранение, удаление — только
 - **Плата**: `tps_check.py --svg` — вид как в AppBlocks. **Логика**: `ab_tool.py flow` — группы панелями, узлы
   по позициям редактора, цвет по роли (события синие, логика фиолетовые, данные зелёные, связь красные, индикация
   оранжевые), подписи портов, при наведении — аргументы. **Текстом**: цепочки из `summary`.
-- Показывай SVG инлайн, если можно, иначе файлом (PNG через cairosvg). Не перерисовывай вручную в другом стиле.
+- Показывай SVG встроенным просмотром агента, если он есть, иначе файлом (PNG через cairosvg). Не перерисовывай вручную в другом стиле.
