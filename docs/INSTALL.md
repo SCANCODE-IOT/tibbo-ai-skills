@@ -28,7 +28,7 @@ The skills work in two ways:
 1. **Python 3.9 or newer.** The checking scripts need it. Check: `python --version` (Windows) or `python3 --version`
    (macOS, Linux). No Python on Windows: install it from [python.org](https://www.python.org/downloads/) and tick
    *Add python.exe to PATH*. Nothing else is needed: the scripts use only the standard library.
-2. **Download the files** from the [latest release](https://github.com/SCANCODE-IOT/tibbo-claude-skills/releases/latest):
+2. **Download the files** from the [latest release](https://github.com/SCANCODE-IOT/tibbo-ai-skills/releases/latest):
    - `tibbo-firmware.zip` and `appblocks.zip` - the two skills (always install both: `appblocks` uses the board
      checker of `tibbo-firmware`);
    - `tibbo-chat-pack.zip` - only for web chats;
@@ -66,7 +66,7 @@ If the menu looks different, see [Use skills in Claude](https://support.claude.c
 ## Claude Code
 
 ```text
-/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills
+/plugin marketplace add SCANCODE-IOT/tibbo-ai-skills
 /plugin install tibbo-skills@scancode
 ```
 
@@ -87,8 +87,8 @@ Gemini CLI reads `~/.gemini/skills/` and `~/.agents/skills/`, so the [installer]
 Alternatively, Gemini CLI can install from GitHub itself:
 
 ```bash
-gemini skills install https://github.com/SCANCODE-IOT/tibbo-claude-skills.git --path skills/tibbo-firmware
-gemini skills install https://github.com/SCANCODE-IOT/tibbo-claude-skills.git --path skills/appblocks
+gemini skills install https://github.com/SCANCODE-IOT/tibbo-ai-skills.git --path skills/tibbo-firmware
+gemini skills install https://github.com/SCANCODE-IOT/tibbo-ai-skills.git --path skills/appblocks
 ```
 
 Check in a session: `/skills list`.
@@ -124,7 +124,7 @@ Codex or Cline - the default `~/.agents/skills/`.
 
 Most agents that support Agent Skills read `.agents/skills/` in the project folder (`--project <folder>`).
 The [Vercel skills CLI](https://github.com/vercel-labs/skills) installs into 80+ agents (Node.js 22.20+):
-`npx skills add SCANCODE-IOT/tibbo-claude-skills -g`.
+`npx skills add SCANCODE-IOT/tibbo-ai-skills -g`.
 
 ## Web chats
 

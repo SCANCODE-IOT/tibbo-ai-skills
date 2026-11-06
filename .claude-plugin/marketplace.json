@@ -17,8 +17,8 @@
         "name": "Scancode",
         "url": "https://github.com/scancode-iot"
       },
-      "homepage": "https://github.com/scancode-iot/tibbo-claude-skills",
-      "repository": "https://github.com/scancode-iot/tibbo-claude-skills",
+      "homepage": "https://github.com/scancode-iot/tibbo-ai-skills",
+      "repository": "https://github.com/scancode-iot/tibbo-ai-skills",
       "license": "MIT",
       "keywords": [
         "tibbo",

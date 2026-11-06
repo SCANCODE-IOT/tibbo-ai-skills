@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 
 ## [Unreleased]
 
+### Repository
+- **Renamed to `tibbo-ai-skills`** (was `tibbo-claude-skills`): the skills work with many AI models, not only Claude.
+  GitHub redirects the old links, clones and the Claude Code marketplace; all links in the repository use the new name.
+
 ### Docs
 - Kimi: Word guide `docs/kimi/tibbo-skills-kimi-guide.ru.docx` (Kimi Code, the Kimi app with K3 or K3.1 Pro, kimi.com chat) and
   `docs/kimi/tibbo-skills-kimi-app.zip` - both skills as Word documents with descriptions, for "Convert Office Documents
@@ -249,14 +253,14 @@ First public release.
 - 6 example projects; AppBlocks Cloud device credentials removed from the published examples.
 
 ### Repository
-- Claude Code plugin catalog (`/plugin marketplace add scancode-iot/tibbo-claude-skills`).
+- Claude Code plugin catalog (`/plugin marketplace add scancode-iot/tibbo-ai-skills`).
 - Upload-ready packages for Claude apps and the API (`tools/package.sh`, attached to releases).
 - Offline tests on every push.
 
-[1.4.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.4.0
-[1.3.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.3.0
-[1.2.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.2.0
-[1.1.2]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.1.2
-[1.1.1]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.1.1
-[1.1.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.1.0
-[1.0.0]: https://github.com/scancode-iot/tibbo-claude-skills/releases/tag/v1.0.0
+[1.4.0]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.4.0
+[1.3.0]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.3.0
+[1.2.0]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.2.0
+[1.1.2]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.1.2
+[1.1.1]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.1.1
+[1.1.0]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.1.0
+[1.0.0]: https://github.com/scancode-iot/tibbo-ai-skills/releases/tag/v1.0.0

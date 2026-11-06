@@ -6,7 +6,7 @@ compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Co
 metadata:
   author: Scancode (SCANCODE-IOT)
   version: "2.0.0"
-  repository: https://github.com/SCANCODE-IOT/tibbo-claude-skills
+  repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
 # Прошивки и конфигурации контроллеров Tibbo: написание, подбор Tibbit, проверка

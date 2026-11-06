@@ -9,7 +9,7 @@ read, fix and generate AppBlocks projects - with real Tibbo API data instead of 
 
 Claude · ChatGPT / Codex · Gemini · Kimi · DeepSeek · GLM
 
-[![Tests](https://github.com/scancode-iot/tibbo-claude-skills/actions/workflows/tests.yml/badge.svg)](https://github.com/scancode-iot/tibbo-claude-skills/actions/workflows/tests.yml)
+[![Tests](https://github.com/scancode-iot/tibbo-ai-skills/actions/workflows/tests.yml/badge.svg)](https://github.com/scancode-iot/tibbo-ai-skills/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-2-6f42c1)](#the-skills)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20·%20stdlib%20only-3776ab)](#requirements)
@@ -116,14 +116,14 @@ The quality still depends on the model: smaller models skip steps more often, so
 
 ## Installation
 
-Download from the [latest release](https://github.com/SCANCODE-IOT/tibbo-claude-skills/releases/latest).
+Download from the [latest release](https://github.com/SCANCODE-IOT/tibbo-ai-skills/releases/latest).
 Install **both** skills - `appblocks` uses the board checker from `tibbo-firmware`.
 **Step-by-step guide for every AI: [docs/INSTALL.md](docs/INSTALL.md).**
 
 | You use | Quick start |
 |---|---|
 | Claude apps | Customize → Skills → + → Upload a skill: `tibbo-firmware.zip`, then `appblocks.zip` |
-| Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills`, then `/plugin install tibbo-skills@scancode` |
+| Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-ai-skills`, then `/plugin install tibbo-skills@scancode` |
 | Codex, Gemini CLI, Kimi Code, Deep Code and other agents | unpack *Source code (zip)* and run `python tools/install.py` |
 | Kimi app (K3, K3.1 Pro) | [tibbo-skills-kimi-app.zip](docs/kimi/tibbo-skills-kimi-app.zip): Agent mode → Skills → "Convert Office Documents into a Skill" ([guide](docs/kimi/tibbo-skills-kimi-guide.ru.docx), Word, RU) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM in the browser | `tibbo-chat-pack.zip`: instructions + knowledge files + scripts |
@@ -168,7 +168,7 @@ them with Tibbo's build service) and says what was and was not verified. Always 
 ## Repository layout
 
 ```text
-tibbo-claude-skills/
+tibbo-ai-skills/
 ├── skills/
 │   ├── tibbo-firmware/        # SKILL.md, references/, data/, scripts/, tests/
 │   └── appblocks/             # SKILL.md, references/, scripts/, examples/, tests/
@@ -206,7 +206,7 @@ sh skills/appblocks/tests/run.sh
 ```
 
 Both suites run offline and on every push, together with the installer, the Agent Skills validator and the chat pack
-limits (see [Actions](https://github.com/scancode-iot/tibbo-claude-skills/actions)).
+limits (see [Actions](https://github.com/scancode-iot/tibbo-ai-skills/actions)).
 
 ## Data sources
 
@@ -217,7 +217,7 @@ The reference files were compiled in October 2026 from:
 - [appblocks.io](https://appblocks.io) - example projects and the editor's node catalog.
 
 Tibbo releases new libraries and Tibbits from time to time. If something is out of date,
-please [open an issue](https://github.com/scancode-iot/tibbo-claude-skills/issues).
+please [open an issue](https://github.com/scancode-iot/tibbo-ai-skills/issues).
 
 ## Contributing
 

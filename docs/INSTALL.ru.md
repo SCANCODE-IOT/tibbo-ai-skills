@@ -28,7 +28,7 @@
 1. **Python 3.9 или новее.** Он нужен скриптам проверки. Проверьте: `python --version` (Windows) или
    `python3 --version` (macOS, Linux). Если на Windows его нет, установите с [python.org](https://www.python.org/downloads/)
    и отметьте *Add python.exe to PATH*. Больше ничего не нужно: скрипты используют только стандартную библиотеку.
-2. **Скачайте файлы** из [последнего релиза](https://github.com/SCANCODE-IOT/tibbo-claude-skills/releases/latest):
+2. **Скачайте файлы** из [последнего релиза](https://github.com/SCANCODE-IOT/tibbo-ai-skills/releases/latest):
    - `tibbo-firmware.zip` и `appblocks.zip` - два скилла (ставьте всегда оба: `appblocks` проверяет плату
      скриптом из `tibbo-firmware`);
    - `tibbo-chat-pack.zip` - только для веб-чатов;
@@ -66,7 +66,7 @@ Deep Code, Cline и Zed, - и в `~/.claude/skills/`, если стоит Claude
 ## Claude Code
 
 ```text
-/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills
+/plugin marketplace add SCANCODE-IOT/tibbo-ai-skills
 /plugin install tibbo-skills@scancode
 ```
 
@@ -87,8 +87,8 @@ Gemini CLI читает `~/.gemini/skills/` и `~/.agents/skills/`, поэтом
 Можно и так - Gemini CLI сам скачает скиллы с GitHub:
 
 ```bash
-gemini skills install https://github.com/SCANCODE-IOT/tibbo-claude-skills.git --path skills/tibbo-firmware
-gemini skills install https://github.com/SCANCODE-IOT/tibbo-claude-skills.git --path skills/appblocks
+gemini skills install https://github.com/SCANCODE-IOT/tibbo-ai-skills.git --path skills/tibbo-firmware
+gemini skills install https://github.com/SCANCODE-IOT/tibbo-ai-skills.git --path skills/appblocks
 ```
 
 Проверка в сессии: `/skills list`.
@@ -123,7 +123,7 @@ into a Skill» → загрузите три .docx из папки → вста�
 
 Большинство агентов с поддержкой Agent Skills читают `.agents/skills/` в папке проекта (`--project <папка>`).
 [Vercel skills CLI](https://github.com/vercel-labs/skills) ставит скиллы в 80+ агентов (нужен Node.js 22.20+):
-`npx skills add SCANCODE-IOT/tibbo-claude-skills -g`.
+`npx skills add SCANCODE-IOT/tibbo-ai-skills -g`.
 
 ## Веб-чаты
 
