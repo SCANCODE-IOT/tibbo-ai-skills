@@ -18,7 +18,7 @@
 | Codex: CLI, расширение для IDE | папка скиллов | [Codex](#codex) |
 | Gemini CLI | папка скиллов | [Gemini CLI](#gemini-cli) |
 | Kimi Code | папка скиллов | [Kimi Code](#kimi-code) |
-| Приложение Kimi (K3.1 Pro), режим Agent | скилл из документов Word | [Kimi Code](#kimi-code) |
+| Приложение Kimi (K3, K3.1 Pro), режим Agent | скилл из документов Word | [Kimi Code](#kimi-code) |
 | DeepSeek в Deep Code, OpenCode или Claude Code | папка скиллов | [DeepSeek](#deepseek) |
 | GLM (Z.ai) в Z Code, Claude Code, OpenCode или Codex | папка скиллов этого агента | [GLM](#glm-zai) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM в браузере | чат-пакет | [Веб-чаты](#веб-чаты) |
@@ -99,7 +99,7 @@ Kimi Code читает `~/.agents/skills/` (и `~/.kimi-code/skills/`). Запу
 перезапустите Kimi Code (в приложении Kimi Code для компьютера - команда `/reload`) и задайте вопрос или наберите `/`
 и выберите скилл. Если скиллы уже стоят в Claude Code или Codex, их переносит команда `/import-from-cc-codex`.
 
-**Приложение Kimi (K3.1 Pro), веб и компьютер, режим Agent.** Папку скилла туда загрузить нельзя - Kimi создаёт
+**Приложение Kimi (K3, K3.1 Pro), веб и компьютер, режим Agent.** Папку скилла туда загрузить нельзя - Kimi создаёт
 скилл из офисных документов. Готовый комплект: [tibbo-skills-kimi-app.zip](kimi/tibbo-skills-kimi-app.zip) - две
 папки, в каждой три документа Word и текст описания. В Kimi: режим Agent → панель Skills → «Convert Office Documents
 into a Skill» → загрузите три .docx из папки → вставьте описание → «Create Skill». Скрипты проверки там не

@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 ## [Unreleased]
 
 ### Docs
-- Kimi: Word guide `docs/kimi/tibbo-skills-kimi-guide.ru.docx` (Kimi Code, the Kimi app with K3.1 Pro, kimi.com chat) and
+- Kimi: Word guide `docs/kimi/tibbo-skills-kimi-guide.ru.docx` (Kimi Code, the Kimi app with K3 or K3.1 Pro, kimi.com chat) and
   `docs/kimi/tibbo-skills-kimi-app.zip` - both skills as Word documents with descriptions, for "Convert Office Documents
   into a Skill" in the Kimi app (Agent mode), which cannot take a skill folder.
 
