@@ -11,7 +11,8 @@ Two ways, chosen automatically:
 Usage:
   python3 scripts/tibbo_build.py <project folder or .tpr> [--local | --cloud] [--release | --debug]
                                  [--out app.tpc] [--json] [--cloud-ok]
-  python3 scripts/tibbo_build.py --doctor [--json]   # what is available here and what the USER must do
+  python3 scripts/tibbo_build.py --doctor [<project>] [--json]   # what is available here, what the USER must do
+                                                     # and, with a project, TIDE advice for THIS project
                                                      # (relay "Что сделать пользователю" to the user as is)
   python3 scripts/tibbo_build.py --upload app.tpc --target <MAC or COM port> [--serial] --yes
                                  # Windows + TIDE: upload to a device with TIDE's tupload.exe (asks first)
@@ -80,6 +81,22 @@ def find_tpr(arg):
         if len(tprs) > 1:
             raise ValueError("в папке несколько .tpr - укажите нужный файл: " + ", ".join(t.name for t in tprs))
     raise ValueError("не найден проект .tpr: %s" % arg)
+
+
+def tpr_addresses(text):
+    """[addressN] sections: devices TIDE remembers for this project (platform, transport, address)."""
+    out, cur = [], None
+    for line in text.splitlines():
+        line = line.strip()
+        m = re.match(r"\[(.+)\]$", line)
+        if m:
+            cur = {} if m.group(1).lower().startswith("address") else None
+            if cur is not None:
+                out.append(cur)
+        elif cur is not None and "=" in line:
+            k, v = [x.strip() for x in line.split("=", 1)]
+            cur[k.lower()] = v
+    return out
 
 
 def parse_tpr(text):
@@ -200,6 +217,101 @@ def tide_dir():
     return None
 
 
+def platforms_dir(tpr, tide, platform):
+    """TIDE 5.04.32+ uses per-project platforms by default: <project>/Platforms/<platform> wins over TIDE's own."""
+    own = tpr.parent / "Platforms"
+    if platform and (own / platform).is_dir():
+        return own, True
+    return (tide / "Platforms") if tide else None, False
+
+
+def tide_info(tide):
+    """Version, installed platforms (with bundled TiOS), library versions, WinPcap/Npcap."""
+    info = {"version": None, "platforms": {}, "lib_versions": [], "pcap": None, "winpcap_installers": []}
+    if not tide:
+        return info
+    try:
+        m = re.search(r"\b(5\.\d+\.\d+)\b", (tide / "whatsnew.html").read_text("utf-8", "replace"))
+        info["version"] = m.group(1) if m else None
+    except OSError:
+        pass
+    plat = tide / "Platforms"
+    if plat.is_dir():
+        for d in sorted(plat.iterdir()):
+            if d.is_dir() and (d / (d.name + ".tph")).is_file():
+                fw = sorted(x.name for x in (d / "firmware").glob("*.bin")) if (d / "firmware").is_dir() else []
+                info["platforms"][d.name] = fw
+        if (plat / "src").is_dir():
+            info["lib_versions"] = sorted(x.name for x in (plat / "src").iterdir() if x.is_dir())
+    info["winpcap_installers"] = sorted(x.name for x in (tide / "Bin").glob("WinPcap*.exe"))
+    sysroot = os.environ.get("SystemRoot") or ("/mnt/c/Windows" if environment()[0] == "wsl" else r"C:\Windows")
+    for cand in (Path(sysroot, "System32", "Npcap", "wpcap.dll"), Path(sysroot, "System32", "wpcap.dll")):
+        if cand.is_file():
+            info["pcap"] = "Npcap" if "Npcap" in str(cand) else "WinPcap"
+            break
+    return info
+
+
+def tios_version(fw_name):
+    m = re.search(r"(\d+_\d+_\d+)", fw_name or "")
+    return m.group(1).replace("_", ".") if m else None
+
+
+def project_advice(tpr, tide, info):
+    """Facts about THIS project on THIS TIDE and concrete steps for the user."""
+    text = read_text(tpr)
+    project, _ = parse_tpr(text)
+    plat, libv = project.get("platform"), project.get("src_lib_ver")
+    debug = project.get("debug", "on").lower() == "on"
+    transport = project.get("transport", "udp_broadcast").lower()
+    devices = [a for a in tpr_addresses(text) if a.get("platform", "").lower() == (plat or "").lower() and a.get("address")]
+    pdir, own = platforms_dir(tpr, tide, plat)
+    facts, steps = [], []
+    facts.append("Проект: %s, платформа %s, библиотеки %s, сборка %s, связь %s"
+                 % (tpr.name, plat or "?", libv or "-", "debug" if debug else "release", transport))
+    if own:
+        facts.append("У проекта свои платформы: %s (TIDE берёт их, а не системные)" % pdir)
+    if tide:
+        known = {k.lower(): k for k in info["platforms"]}
+        if plat and plat.lower() not in known and not own:
+            steps.append("Платформы %s нет в вашем TIDE%s. Обновите TIDE с tibbo.com (Downloads → TIDE) "
+                         "или выберите платформу своего устройства: File > Project Settings → Platform."
+                         % (plat, (" " + info["version"]) if info["version"] else ""))
+        elif plat and plat.lower() in known:
+            fw = info["platforms"][known[plat.lower()]]
+            if fw:
+                facts.append("TiOS для %s в этом TIDE: %s (%s)" % (plat, tios_version(fw[-1]), fw[-1]))
+                steps.append("На устройстве должна стоять TiOS, подходящая к платформе TIDE (.tpc её не содержит). "
+                             "Если TIDE при загрузке пишет о несовпадении версий: Device Explorer → устройство → "
+                             "Upload... → Load Firmware Through the Network → файл %s из TIDE\\Platforms\\%s\\firmware."
+                             % (fw[-1], known[plat.lower()]))
+        plain = [v for v in info["lib_versions"] if re.fullmatch(r"\d+(_\d+)+", v)] or info["lib_versions"]
+        if libv and plain and libv not in info["lib_versions"]:
+            steps.append("Библиотек версии %s в TIDE нет (есть: %s). File > Project Settings → Source library set: "
+                         "выберите установленную, например %s, и пересоберите; при ошибках - сверить вызовы библиотек."
+                         % (libv, ", ".join(plain[-4:]), plain[-1]))
+        if transport == "udp_winpcap" and not info["pcap"]:
+            steps.append("Проект связывается с устройством через WinPcap (так советует Tibbo), а он не установлен. "
+                         "Установите %s из TIDE\\Bin (или Npcap с режимом совместимости WinPcap) и перезапустите TIDE; "
+                         "либо File > Project Settings → Transport → UDP broadcast." % (info["winpcap_installers"][-1] if info["winpcap_installers"] else "WinPcap"))
+    if not devices:
+        steps.append("Устройство для этого проекта не выбрано: Debug > Select/Manage Target → щёлкнуть устройство → "
+                     "Select. Не видно - Refresh; устройство должно быть в том же сегменте сети (через роутер TIDE его "
+                     "не найдёт, через коммутатор - найдёт), проверить питание, кабель и брандмауэр Windows для "
+                     "tide.exe и tdevexplore.exe.")
+    else:
+        facts.append("Устройство в проекте: %s (%s)" % (devices[0]["address"], devices[0].get("transport", transport)))
+    if debug:
+        steps.append("Сборка debug: после загрузки программа ждёт команды из TIDE - Debug > Run (F5). "
+                     "Для работы без компьютера: Build mode = Release (панель Debug или File > Project Settings), "
+                     "затем Build > Rebuild All and Upload.")
+    else:
+        steps.append("Сборка release: программа запустится сама после загрузки и при каждом включении; "
+                     "sys.debugprint и точки останова не работают. Для отладки - Build mode = Debug.")
+    return {"project": tpr.name, "platform": plat, "src_lib_ver": libv, "debug": debug, "transport": transport,
+            "device": devices[0]["address"] if devices else None, "own_platforms": own, "facts": facts, "steps": steps}
+
+
 def winpath(p):
     """Path as the Windows tools of TIDE see it (WSL: /mnt/c/... -> C:\\...)."""
     if environment()[0] != "wsl":
@@ -277,7 +389,8 @@ def build_local(tpr, debug, tide):
         raw = re.sub(rb"(?mi)^([ \t]*debug[ \t]*=[ \t]*)\w+", rb"\g<1>" + want.encode(), tpr_used.read_bytes())
         tpr_used.write_bytes(raw)  # bytes: keep the project's own encoding
         workdir = tpr_used.parent
-    cmd = [str(tide / "Bin" / "tmake.exe"), winpath(tpr_used), "-p" + winpath(tide / "Platforms"), "-r"]
+    pdir, _ = platforms_dir(tpr_used, tide, project.get("platform"))
+    cmd = [str(tide / "Bin" / "tmake.exe"), winpath(tpr_used), "-p" + winpath(pdir), "-r"]
     r = subprocess.run(cmd, cwd=str(workdir), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out = decode_output(r.stdout)
     msgs = parse_messages(out, workdir)
@@ -291,7 +404,7 @@ def build_local(tpr, debug, tide):
             "debug": (want or project.get("debug", "on")) == "on", "raw_tail": out.strip().splitlines()[-5:]}
 
 
-def doctor_report():
+def doctor_report(tpr=None):
     """What can build here and, if something is missing, what exactly the USER has to do."""
     kind, hints = environment()
     tide = tide_dir()
@@ -340,23 +453,29 @@ def doctor_report():
             actions.append("Для облачной сборки нужно согласие пользователя: файлы проекта уйдут на сервер Tibbo "
                            "(api.appblocks.io). Спросить один раз; на все проекты - переменная TIBBO_CLOUD_BUILD=yes.")
     mode = "local" if tide else ("cloud" if not net and consent else "cloud-after-consent" if not net else "none")
-    return {"python": sys.version.split()[0], "os": kind, "hints": hints, "tide": str(tide) if tide else None,
+    info = tide_info(tide)
+    advice = project_advice(tpr, tide, info) if tpr else None
+    return {"tide_version": info["version"], "tide_platforms": len(info["platforms"]),
+            "tide_lib_versions": info["lib_versions"], "pcap": info["pcap"], "project_advice": advice,
+            "python": sys.version.split()[0], "os": kind, "hints": hints, "tide": str(tide) if tide else None,
             "cloud_reachable": net is None, "cloud_error": net, "cloud_consent": consent,
             "upload_possible": bool(tide and (tide / "Bin" / "tupload.exe").is_file()), "mode": mode,
             "user_actions": actions}
 
 
-def doctor(as_json=False):
-    r = doctor_report()
+def doctor(as_json=False, tpr=None):
+    r = doctor_report(tpr)
     if as_json:
         print(json.dumps(r, ensure_ascii=False, indent=1))
         return 0
     print("Python %s, %s%s" % (r["python"], r["os"], (" (" + ", ".join(r["hints"]) + ")") if r["hints"] else ""))
-    print("TIDE на этом компьютере: %s" % (r["tide"] or "не найден (локальная сборка недоступна)"))
+    print("TIDE на этом компьютере: %s%s" % (r["tide"] or "не найден (локальная сборка недоступна)",
+                                           (", версия " + r["tide_version"]) if r["tide_version"] else ""))
     if r["tide"]:
         for exe in ("tmake.exe", "tupload.exe"):
             print("  %-12s %s" % (exe, "есть" if Path(r["tide"], "Bin", exe).is_file() else "НЕТ"))
-        print("  Платформы и библиотеки: %s" % Path(r["tide"], "Platforms"))
+        print("  Платформы: %d, версии библиотек: %s" % (r["tide_platforms"], ", ".join([v for v in r["tide_lib_versions"] if re.fullmatch(r"\d+(_\d+)+", v)][-4:]) or "-"))
+        print("  WinPcap/Npcap: %s" % (r["pcap"] or "не установлен (нужен только для связи udp_winpcap)"))
     print("Согласие на облачную сборку (TIBBO_CLOUD_BUILD=yes): %s" % ("дано" if r["cloud_consent"] else "нет"))
     print("Облачный компилятор %s: %s" % (BASE, "доступен" if r["cloud_reachable"] else "НЕДОСТУПЕН: " + r["cloud_error"]))
     print("Сборка будет: %s" % {"local": "локально (TIDE)", "cloud": "в облаке",
@@ -367,6 +486,14 @@ def doctor(as_json=False):
         print("Что сделать пользователю:")
         for a in r["user_actions"]:
             print("  - " + a)
+    a = r["project_advice"]
+    if a:
+        print("Ваш проект:")
+        for f in a["facts"]:
+            print("  " + f)
+        print("Рекомендации по TIDE для этого проекта:")
+        for i, st in enumerate(a["steps"], 1):
+            print("  %d. %s" % (i, st))
     return 0
 
 
@@ -392,7 +519,13 @@ def main(argv):
         return 0 if argv else 2
     opt = lambda k: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else None
     if "--doctor" in argv:
-        return doctor("--json" in argv)
+        pos = [a for a in argv if not a.startswith("--")]
+        try:
+            tpr = find_tpr(pos[0]) if pos else None
+        except ValueError as e:
+            print(e)
+            return 2
+        return doctor("--json" in argv, tpr)
     if "--upload" in argv:
         if not opt("--upload") or not opt("--target"):
             print("нужно: --upload <файл.tpc> --target <адрес>")
