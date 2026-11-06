@@ -95,7 +95,16 @@ gemini skills install https://github.com/SCANCODE-IOT/tibbo-claude-skills.git --
 ## Kimi Code
 
 Kimi Code читает `~/.agents/skills/` (и `~/.kimi-code/skills/`). Запустите [установщик](#установщик-для-всех-агентов),
-перезапустите Kimi Code и задайте вопрос или вызовите скилл командой `/skill:tibbo-firmware`.
+перезапустите Kimi Code (в приложении Kimi Code для компьютера - команда `/reload`) и задайте вопрос или наберите `/`
+и выберите скилл. Если скиллы уже стоят в Claude Code или Codex, их переносит команда `/import-from-cc-codex`.
+
+**Приложение Kimi (K3.1 Pro), веб и компьютер, режим Agent.** Папку скилла туда загрузить нельзя - Kimi создаёт
+скилл из офисных документов. Готовый комплект: [tibbo-skills-kimi-app.zip](kimi/tibbo-skills-kimi-app.zip) - две
+папки, в каждой три документа Word и текст описания. В Kimi: режим Agent → панель Skills → «Convert Office Documents
+into a Skill» → загрузите три .docx из папки → вставьте описание → «Create Skill». Скрипты проверки там не
+запускаются: Kimi даст команды для проверки у себя.
+
+Подробная инструкция для Kimi в Word: [tibbo-skills-kimi-guide.ru.docx](kimi/tibbo-skills-kimi-guide.ru.docx).
 
 ## DeepSeek
 
