@@ -73,7 +73,7 @@ src_lib_ver=2_01_05       ; версия библиотек Tibbo: TIDE\Platform
 output=app.tpc            ; имя результата
 debug=on                  ; on - отладочный .tpc (ждёт TIDE), off - рабочий
 defines= /dOBJECT_FD=FD_ENABLED   ; дополнительные #define проекта
-transport=udp_broadcast   ; как TIDE ищет устройство: udp_broadcast | udp_winpcap
+transport=udp_broadcast   ; связь с устройством: udp_winpcap | udp_broadcast | serial (список - в Platforms\<платформа>\<платформа>.tp)
 [address1]
 address=0.36.119.87.32.2  ; адрес выбранного устройства (MAC в виде десятичных байт через точку)
 [file1]

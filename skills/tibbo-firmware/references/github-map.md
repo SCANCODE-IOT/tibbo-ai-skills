@@ -9,9 +9,11 @@ Clone works with `git clone --depth 1 https://github.com/tibbotech/<repo>`.
 | `platforms` | TIDE platform files: `Platforms/<PLATFORM>/<PLATFORM>.tph` (I/O, enums, feature defines), `Platforms/*.tph` (object declarations: sock, ser, sys, io, net, wln, bt, fd, stor, romfile, tls, i2c, ssi, adc, pwm, kp, lcd, beep, pat, button, rtc, ppp, pppoe, dhcp), `Platforms/src/<ver>/<lib>/trunk/` library sets per `src_lib_ver`, `Platforms/<P>/firmware/tios-*.bin` TiOS firmware, `Platforms/<P>/templates/` empty projects. → tios-api.md, platforms.md |
 | `libraries` | Latest Tibbo BASIC libraries: aggregate, azure, cell/cellular, cgg, dhcp, dns, dsman, filenum, gprs, http, http_server, lcd, luis, modbus, mqtt, pic, pppoe, scap, settings (STG), smtp, snmp, sntp, sock, ssi, stgcmd, super_i2c, super_spi, tables, tibbits/tbtNN, time, ui, upgrade, utils, wln. → libraries.md |
 | `TibbitDefinitions` | tibbits.json — catalog of Tibbit modules, lines, mates, power. → tibbits.md |
-| `tibbo-basic` | Tibbo BASIC language server: ANTLR grammar (`server/language/TibboBasic/*.g4`), TextMate syntax. Ground truth for syntax. |
+| `tibbo-basic` | Tibbo BASIC language server: ANTLR grammar (`server/language/TibboBasic/*.g4`), TextMate syntax. Ground truth for syntax. Branch `feature/compiler`: Tibbo's `tmake`/`tbc`/`tlink` ported to Node.js (`server/out/compiler/compile-project.js <folder> -o x.tpc`), byte-identical `.tpc`, Tibbo BASIC only, platforms from the `platforms` submodule - used by `tibbo_build.py` (`--setup-node`). |
 | `tibbo-basic-vscode`, `tibbo-development-vscode` | VS Code extension for Tibbo BASIC projects. |
-| `tide-proxy` | Node proxy between IDE and devices (UDP broadcast port 65535, Socket.IO `/tide` on 3535): discovery, upload, debug. |
+| `tide-proxy` | Node proxy between IDE and devices (UDP broadcast port 65535, Socket.IO `/tide` on 3535): discovery (`_?`), `.tpc` upload (`Q`/`QF` → 128-byte `D` blocks → `T`, TiOS prepended if needed), run/pause/step/breakpoints, memory and properties, `debug_print`, buzz, reboot, serial bridge, GDB server for Zephyr boards. README documents the device protocol. `sim/` - Renode simulator of TPP2/TPP3 G2/G3 boards (LCD, LEDs, buttons, Tibbits, Modbus/Wiegand field devices, web UI and HTTP API, Docker with NET_ADMIN); runs Zephyr firmware, classic TiOS + `.tpc` not confirmed. |
+| `tide-desktop-extension-publish` | Releases of "Tibbo Desktop Extension" for Windows/macOS/Linux (exe/dmg/AppImage), purpose not documented - likely the local bridge (tide-proxy) for Tibbo web tools. |
+| `web-serial-library` | JS API for web apps to reach USB devices through Tibbo Web232/Web485 boards. |
 
 ## Sample applications (Tibbo BASIC, "CA-" = code application)
 | Task | Repos |

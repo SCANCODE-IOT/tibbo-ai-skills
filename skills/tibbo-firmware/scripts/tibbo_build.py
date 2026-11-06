@@ -258,6 +258,22 @@ def tide_info(tide):
     return info
 
 
+def known_platforms():
+    """Latest platforms and TiOS files from github.com/tibbotech/platforms, as listed in references/platforms.md."""
+    out = {}
+    try:
+        text = (Path(__file__).resolve().parent.parent / "references" / "platforms.md").read_text("utf-8")
+    except OSError:
+        return out
+    for m in re.finditer(r"(?m)^\| ([A-Za-z0-9_]+(?:\([A-Za-z0-9]+\))?) \| [^|]+ \| \d+ \| \d+ \| \d+ \| [^|]* \| ([^|]*?) \|$", text):
+        out[m.group(1).lower()] = (m.group(1), sorted(re.findall(r"tios-[^\s,;]+?\.bin", m.group(2))))
+    return out
+
+
+def vtuple(v):
+    return tuple(int(x) for x in re.findall(r"\d+", v or ""))
+
+
 def tios_version(fw_name):
     m = re.search(r"(\d+_\d+_\d+)", fw_name or "")
     return m.group(1).replace("_", ".") if m else None
@@ -279,14 +295,23 @@ def project_advice(tpr, tide, info):
         facts.append("У проекта свои платформы: %s (TIDE берёт их, а не системные)" % pdir)
     if tide:
         known = {k.lower(): k for k in info["platforms"]}
+        fresh = known_platforms().get((plat or "").lower())
         if plat and plat.lower() not in known and not own:
-            steps.append("Платформы %s нет в вашем TIDE%s. Обновите TIDE с tibbo.com (Downloads → TIDE) "
+            steps.append("Платформы %s нет в вашем TIDE%s. %sОбновите TIDE с tibbo.com (Downloads → TIDE) "
                          "или выберите платформу своего устройства: File > Project Settings → Platform."
-                         % (plat, (" " + info["version"]) if info["version"] else ""))
+                         % (plat, (" " + info["version"]) if info["version"] else "",
+                            "Она есть в свежих платформах Tibbo (github.com/tibbotech/platforms): можно положить папку "
+                            "Platforms оттуда в проект - TIDE 5.04.32+ берёт платформы проекта. " if fresh else ""))
         elif plat and plat.lower() in known:
             fw = info["platforms"][known[plat.lower()]]
             if fw:
                 facts.append("TiOS для %s в этом TIDE: %s (%s)" % (plat, tios_version(fw[-1]), fw[-1]))
+                newest = max((f for f in (fresh[1] if fresh else [])), key=lambda f: vtuple(tios_version(f)), default=None)
+                if newest and vtuple(tios_version(newest)) > vtuple(tios_version(fw[-1])):
+                    steps.append("У Tibbo есть TiOS новее, чем в вашем TIDE: %s (в TIDE %s). Обновите TIDE с tibbo.com "
+                                 "или возьмите файл из github.com/tibbotech/platforms (Platforms\\%s\\firmware); "
+                                 "обновлять TiOS устройства стоит, если нужны исправления новой версии."
+                                 % (tios_version(newest), tios_version(fw[-1]), known[plat.lower()]))
                 steps.append("На устройстве должна стоять TiOS, подходящая к платформе TIDE (.tpc её не содержит). "
                              "Если TIDE при загрузке пишет о несовпадении версий: Device Explorer → устройство → "
                              "Upload... → Load Firmware Through the Network → файл %s из TIDE\\Platforms\\%s\\firmware."
