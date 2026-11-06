@@ -38,7 +38,7 @@ TIDE работает только под Windows и только на комп�
 |---|---|---|
 | Проверить код компилятором Tibbo | Локально: TIDE на Windows-компьютере, где работает агент. Или компилятор Tibbo на Node.js на любой ОС (Tibbo BASIC; Node.js 18+ и git, установка `--setup-node --yes` с согласия). Облако: интернет до `api.appblocks.io` и **согласие пользователя**. | `tibbo_build.py --doctor` |
 | Получить готовый `.tpc` | То же, что выше. `--release` - для работы без TIDE. | `tibbo_build.py <проект> --release` |
-| Загрузить `.tpc` в устройство | Только локально: Windows + TIDE (`tupload.exe`), устройство в той же сети (или по COM-порту), **явное «да» пользователя** на каждую загрузку. В облаке загрузки нет. | `tibbo_build.py --upload app.tpc --target <адрес> --yes` |
+| Найти устройство, загрузить `.tpc`, запустить | Компьютер в той же сети, что устройство: TIDE на Windows (`tupload`, ещё и COM-порт) или tide-proxy Tibbo на любой ОС (Node.js, `tibbo_device.py --setup --yes`, экспериментально). **Явное «да» пользователя** на каждую загрузку. Из облачной песочницы - нельзя. | `tibbo_device.py list`, `tibbo_build.py --upload app.tpc --target <адрес> --yes` |
 | Отлаживать по шагам, смотреть переменные | Только в окне TIDE (Debug). Агент с управлением компьютером может работать в окне TIDE, остальные объясняют шаги. | - |
 
 Настройки:
@@ -136,19 +136,40 @@ Release-`.tpc` запускается сразу после загрузки и 
 **Предупреждения.** `C1006 preprocessor redefinition of 'OBJECT_FD'` и подобные из `Platforms\<платформа>\*.tph`
 появляются, когда `defines=` проекта повторяет то, что уже задано платформой: безвредны. Остальные предупреждения читай.
 
-## 4. Загрузка в устройство (Windows + TIDE)
+## 4. Устройства: поиск, загрузка, запуск
+
+Два инструмента:
+- **TIDE на Windows** (`tupload.exe`) - через `tibbo_build.py --upload`. По сети и по COM-порту.
+- **tide-proxy Tibbo на любой ОС** (github.com/tibbotech/tide-proxy, Node.js) - `scripts/tibbo_device.py`. Только по сети.
+  Ставится один раз с согласия пользователя: `python3 scripts/tibbo_device.py --setup --yes` (около 100 МБ).
+  **Экспериментально:** сделан по коду и описанию протокола tide-proxy, проверен на имитаторе протокола, на
+  устройстве ещё нет. `tibbo_build.py --upload` без TIDE сам загружает через него.
 
 ```text
-python3 scripts/tibbo_build.py --upload app.tpc --target 0.36.119.87.32.2 --yes          # по сети (UDP)
-python3 scripts/tibbo_build.py --upload app.tpc --target COM3 --serial --yes             # по COM-порту
+python3 scripts/tibbo_device.py list                                   # какие устройства Tibbo есть в сети
+python3 scripts/tibbo_device.py buzz --mac 0.36.119.87.32.2            # пискнуть: «это какое устройство?»
+python3 scripts/tibbo_device.py state --mac 0.36.119.87.32.2           # TiOS, программа, работает/остановлена
+python3 scripts/tibbo_device.py upload app.tpc --mac <MAC> --yes [--run]
+python3 scripts/tibbo_device.py run|stop|reboot --mac <MAC> --yes
+python3 scripts/tibbo_build.py --upload app.tpc --target <MAC> --yes        # TIDE (tupload) или tide-proxy
+python3 scripts/tibbo_build.py --upload app.tpc --target COM3 --serial --yes # по COM-порту, только TIDE
 ```
-Под капотом: `tupload.exe --loader taiko.udpdevice|taiko.serialdevice --target <адрес> --app <файл>`; ещё есть
-`--no-build-id-check` (загрузить, даже если такая сборка уже стоит) и `--no-platform-version-check`.
-- Адрес по сети - MAC устройства десятичными байтами через точку, как в `address=` проекта и в Device Explorer TIDE.
-- **Перед загрузкой** спроси пользователя: какое устройство, что на нём сейчас работает (загрузка останавливает
-  программу и меняет поведение выходов - реле, двигатели). Без `--yes` скрипт не загружает.
-- Загрузка по сети и по COM-порту через `tupload` из скилла **пока не проверена на устройстве**: при первой загрузке
-  попроси пользователя убедиться в результате (Device Explorer, поведение устройства) и сообщи разработчикам скилла.
+- Адрес - MAC устройства десятичными байтами через точку, как в `list`, в `address=` проекта и в Device Explorer.
+- **Перед загрузкой, запуском, остановкой и перезагрузкой** спроси пользователя: какое устройство и что к нему
+  подключено (программа останавливается, выходы - реле, двигатели - меняют состояние). Без `--yes` скрипты этого не
+  делают. `list`, `state` и `buzz` безопасны.
+- **Debug-сборка** после загрузки ждёт команды: `run` (или `upload ... --run`). Release запускается сама.
+- **TiOS tide-proxy без разрешения не перепрошивает:** если устройство не входит в режим загрузки (в Loader или TiOS не
+  подходит), скрипт останавливается. Перепрошить TiOS вместе с программой - `--allow-tios <tios-*.bin>`, только после
+  «да» пользователя (файл - из `Platforms\<платформа>\firmware`).
+- Нужно: компьютер в том же сегменте сети, что устройство (UDP broadcast, порт 65535; через роутер не найдёт),
+  брандмауэр пропускает `node` по UDP. Облачная песочница агента сеть пользователя не видит - только агент на
+  компьютере в этой сети. Проверка: `tibbo_device.py --doctor`.
+- Вывод `sys.debugprint` пока только в TIDE: tide-proxy читает его по адресу из `.pdb`, а как этот адрес получить для
+  TiOS, Tibbo не описала (вопрос отправлен).
+- `tupload`: `--loader taiko.udpdevice|taiko.serialdevice --target <адрес> --app <файл>`, ещё `--no-build-id-check` и
+  `--no-platform-version-check`. Загрузка через `tupload` из скилла **тоже пока не проверена на устройстве**: при первой
+  загрузке попроси пользователя убедиться в результате (Device Explorer, поведение устройства).
 
 ## 5. Сообщения компилятора: причина и что делать
 

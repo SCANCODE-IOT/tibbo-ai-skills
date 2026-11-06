@@ -96,6 +96,21 @@ $BOTH "$PY" scripts/tibbo_build.py "$B/ok" --release --json >"$B/out" 2>&1
 grep -q '"mode": "local"' "$B/out" && echo "ok   firmware for a device prefers the user's TIDE" || { echo "FAIL firmware mode"; cat "$B/out"; fail=1; }
 else echo "skip node compiler tests (no Node.js)"; fi
 "$PY" scripts/tibbo_build.py --setup-node >"$B/out" 2>&1; [ $? = 3 ] && echo "ok   setup-node needs --yes" || { echo "FAIL setup-node guard"; cat "$B/out"; fail=1; }
+# tibbo_device.py: guards (no tide-proxy needed); end-to-end with tide-proxy + a protocol stand-in if installed
+D="env TIDE_PROXY_HOME=/nonexistent"
+$D "$PY" scripts/tibbo_device.py upload "$B/n.tpc" --mac 0.36.119.87.32.2 >"$B/out" 2>&1; [ $? = 3 ] && grep -q -- "--yes" "$B/out" && echo "ok   device upload needs --yes" || { echo "FAIL device upload guard"; cat "$B/out"; fail=1; }
+$D "$PY" scripts/tibbo_device.py state --mac 00:24:77 >"$B/out" 2>&1; [ $? = 2 ] && echo "ok   device checks the MAC format" || { echo "FAIL device mac"; fail=1; }
+printf 'x' > "$B/bad.tpc"; $D "$PY" scripts/tibbo_device.py upload "$B/bad.tpc" --mac 0.36.119.87.32.2 --yes >"$B/out" 2>&1; [ $? = 2 ] && echo "ok   device refuses a non-.tpc" || { echo "FAIL device non-tpc"; cat "$B/out"; fail=1; }
+$D "$PY" scripts/tibbo_device.py list >"$B/out" 2>&1; [ $? = 3 ] && grep -q -- "--setup --yes" "$B/out" && echo "ok   device without tide-proxy says how to set it up" || { echo "FAIL device setup hint"; cat "$B/out"; fail=1; }
+TPH="${TIDE_PROXY_HOME:-$HOME/.tibbo/tide-proxy}"
+if [ -f "$TPH/lib/tide-proxy.js" ] && command -v node >/dev/null 2>&1; then
+  (cd "$B" && "$PY" "$OLDPWD/tests/build/fake_device.py" --seconds 40 &) ; sleep 1
+  "$PY" scripts/tibbo_device.py list --timeout 3 >"$B/out" 2>&1
+  grep -q "0.36.119.87.32.2" "$B/out" && echo "ok   device list finds the stand-in" || { echo "FAIL device list"; cat "$B/out"; fail=1; }
+  printf 'TBIN\0\0\0\0guid 3e308cda-de34-49d5-8f3c-86e789061779 payload TBIN' > "$B/up.tpc"
+  "$PY" scripts/tibbo_device.py upload "$B/up.tpc" --mac 0.36.119.87.32.2 --yes --run >"$B/out" 2>&1; rc=$?
+  [ "$rc" = 0 ] && grep -q "Запуск: OK" "$B/out" && "$PY" -c "import sys; a=open(sys.argv[1],'rb').read(); b=open(sys.argv[2],'rb').read(); sys.exit(0 if b[:len(a)] == a else 1)" "$B/up.tpc" "$B/fake_device.tpc" && echo "ok   device upload + run (stand-in got the same bytes)" || { echo "FAIL device upload (rc=$rc)"; cat "$B/out"; fail=1; }
+else echo "skip device end-to-end (tide-proxy not installed)"; fi
 printf "' resolution +0.25\242C\n" > "$B/proj/legacy.tbs"   # legacy code page byte, even length: must go as raw bytes
 "$PY" -c "import sys; sys.path.insert(0,'scripts'); import tibbo_build as t; from pathlib import Path
 f={x['name']: x['contents'] for x in t.collect(Path(sys.argv[1]))[1]}

@@ -14,6 +14,9 @@ Not released yet: waiting for Tibbo's permission.
   compiler as a fallback (Tibbo C without TIDE), only with the user's consent. Errors as
   `file(line) code text` or JSON, `--release`/`--debug` without touching the project, `--upload` through `tupload`
   (only with `--yes`), `--doctor [<project>]` - what works here, what the user must do, TIDE advice for the project.
+- **New `tibbo-firmware/scripts/tibbo_device.py`** (experimental) - Tibbo devices on the LAN without TIDE, on any OS,
+  through Tibbo's tide-proxy: `list`, `buzz`, `state`, `upload --yes [--run]`, `run`/`stop`/`reboot --yes`; never
+  reflashes TiOS without `--allow-tios`. `tibbo_build.py --upload` uses it when TIDE is not installed.
 - **New `tibbo-firmware/references/tide.md`** - what the user needs per agent environment, `.tpr` format, `tmake` and
   `tupload` switches, debug vs release, compiler message catalog with causes and fixes, TIDE menu steps, how to write
   instructions for the user's own case.

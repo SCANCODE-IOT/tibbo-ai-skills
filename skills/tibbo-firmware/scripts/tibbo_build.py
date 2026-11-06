@@ -630,7 +630,7 @@ def doctor_report(tpr=None):
             "tide_lib_versions": info["lib_versions"], "pcap": info["pcap"], "project_advice": advice,
             "python": sys.version.split()[0], "os": kind, "hints": hints, "tide": str(tide) if tide else None,
             "cloud_reachable": net is None, "cloud_error": net, "cloud_consent": consent,
-            "upload_possible": bool(tide and (tide / "Bin" / "tupload.exe").is_file()), "mode": mode,
+            "upload_possible": bool(tide and (tide / "Bin" / "tupload.exe").is_file()) or tide_proxy_ready(), "mode": mode,
             "firmware_mode": firmware_mode,
             "node": nver, "node_compiler": str(js) if js else None,
             "user_actions": actions}
@@ -660,7 +660,9 @@ def doctor(as_json=False, tpr=None):
         "; Tibbo C - %s" % names["local" if r["tide"] else ("cloud" if r["cloud_consent"] and r["cloud_reachable"]
                                                               else "cloud-after-consent" if r["cloud_reachable"] else "none")]
         if r["node_compiler"] else ""))
-    print("Загрузка в устройство: %s" % ("возможна (tupload)" if r["upload_possible"] else "отсюда невозможна"))
+    print("Загрузка в устройство: %s" % (("возможна (tupload)" if r["tide"] else "возможна (tide-proxy, экспериментально)")
+                                          if r["upload_possible"] else "отсюда невозможна (TIDE или tide-proxy: "
+                                          "python3 scripts/tibbo_device.py --setup --yes)"))
     if r["user_actions"]:
         print("Что сделать пользователю:")
         for a in r["user_actions"]:
@@ -676,10 +678,24 @@ def doctor(as_json=False, tpr=None):
     return 0
 
 
+def tide_proxy_ready():
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import tibbo_device
+        return tibbo_device.installed() is not None and bool(shutil.which("node"))
+    except Exception:
+        return False
+
+
 def upload(tpc, target, serial, yes):
     tide = tide_dir()
     if not tide or not (tide / "Bin" / "tupload.exe").is_file():
-        print("Загрузка в устройство возможна только на Windows с установленным TIDE (tupload.exe).")
+        if not serial and tide_proxy_ready():  # any OS: Tibbo's tide-proxy (experimental)
+            import tibbo_device
+            print("TIDE не найден: загрузка через tide-proxy Tibbo (экспериментально).")
+            return tibbo_device.main(["upload", str(tpc), "--mac", target] + (["--yes"] if yes else []))
+        print("Загрузка в устройство: нужен TIDE на Windows (tupload.exe) или tide-proxy Tibbo на любой ОС\n"
+              "(с согласия пользователя: python3 scripts/tibbo_device.py --setup --yes).")
         return 3
     if not yes:
         print("Загрузка меняет прошивку устройства %s. Спросите пользователя и повторите с --yes." % target)
