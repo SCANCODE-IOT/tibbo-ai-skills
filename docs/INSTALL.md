@@ -18,6 +18,7 @@ The skills work in two ways:
 | Codex: CLI, IDE extension | skills folder | [Codex](#codex) |
 | Gemini CLI | skills folder | [Gemini CLI](#gemini-cli) |
 | Kimi Code | skills folder | [Kimi Code](#kimi-code) |
+| Kimi app (K3.1 Pro), Agent mode | skill from Word documents | [Kimi Code](#kimi-code) |
 | DeepSeek in Deep Code, OpenCode or Claude Code | skills folder | [DeepSeek](#deepseek) |
 | GLM (Z.ai) in Z Code, Claude Code, OpenCode or Codex | skills folder of that agent | [GLM](#glm-zai) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM in the browser | chat pack | [Web chats](#web-chats) |
@@ -95,7 +96,16 @@ Check in a session: `/skills list`.
 ## Kimi Code
 
 Kimi Code reads `~/.agents/skills/` (and `~/.kimi-code/skills/`). Run the [installer](#installer-for-all-agents),
-restart Kimi Code and ask your question, or call a skill with `/skill:tibbo-firmware`.
+restart Kimi Code (in the Kimi Code desktop app, `/reload`) and ask your question, or type `/` and pick the skill.
+If the skills are already in Claude Code or Codex, `/import-from-cc-codex` brings them over.
+
+**Kimi app (K3.1 Pro), web and desktop, Agent mode.** It cannot take a skill folder: Kimi builds a skill from
+Office documents. Ready set: [tibbo-skills-kimi-app.zip](kimi/tibbo-skills-kimi-app.zip) - two folders, each with three
+Word documents and a description text. In Kimi: Agent mode → Skills panel → "Convert Office Documents into a Skill" →
+upload the three .docx from a folder → paste the description → "Create Skill". The checking scripts do not run there:
+Kimi gives you the commands to run on your computer.
+
+Step-by-step guide for Kimi (Word, Russian): [tibbo-skills-kimi-guide.ru.docx](kimi/tibbo-skills-kimi-guide.ru.docx).
 
 ## DeepSeek
 
