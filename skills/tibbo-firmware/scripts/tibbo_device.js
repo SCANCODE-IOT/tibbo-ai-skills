@@ -25,6 +25,18 @@ const realLog = console.log;
 console.log = console.info = console.warn = console.debug = () => {};
 console.error = (...a) => process.stderr.write(a.join(' ') + '\n');
 
+// tide-proxy also lists serial ports on every refresh; on Linux without udev (containers, WSL, minimal
+// distros) that spawn fails with an uncaught error. Serial ports are not used here: ignore those.
+process.on('uncaughtException', (e) => {
+    const s = String(e && (e.path || e.message) || e);
+    if (/udevadm|serialport|ENOENT.*(udev|tty)/i.test(s) || (e && e.syscall && /spawn/.test(e.syscall))) {
+        process.stderr.write('ignored: ' + s + '\n');
+        return;
+    }
+    out('RESULT', { ok: false, error: String(e && e.stack || e) });
+    process.exit(4);
+});
+
 const { TIDEProxy } = require(path.join(home, 'lib', 'tide-proxy.js'));
 const ioc = require(path.join(home, 'node_modules', 'socket.io-client'));
 

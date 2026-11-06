@@ -57,7 +57,7 @@ def setup(yes):
         return 3
     h = home()
     if not yes:
-        print("Будет скачан tide-proxy с GitHub Tibbo (%s) и его пакеты npm в %s (около 100 МБ).\n"
+        print("Будет скачан tide-proxy с GitHub Tibbo (%s) и его пакеты npm в %s (около 30 МБ, несколько секунд).\n"
               "Спросите пользователя и повторите с --yes." % (REPO, h))
         return 3
     steps = []
@@ -107,7 +107,7 @@ def doctor():
     if not node:
         acts.append("Поставить Node.js LTS с nodejs.org.")
     if not h:
-        acts.append("Разрешить установку tide-proxy (около 100 МБ с GitHub Tibbo).")
+        acts.append("Разрешить установку tide-proxy (около 30 МБ с GitHub Tibbo).")
     acts.append("Компьютер и устройство - в одном сегменте сети (через коммутатор, не через роутер).")
     acts.append("Брандмауэр: разрешить node обмен по UDP (порт 65535). Windows спросит при первом запуске - "
                 "разрешить для частной сети; Linux (ufw): sudo ufw allow proto udp from any to any port 65535.")
@@ -220,9 +220,12 @@ def main(argv):
         if "--run" in argv:
             rc2, res2 = call({"action": "run", "mac": mac, "timeout": 8}, quiet=True)
             print("Запуск: %s" % ("OK" if res2 and res2.get("ok") else "не удалось"))
+            if res2 and res2.get("device"):
+                print(show(res2["device"]))
+        elif len(data) > 28 and data[28] & 1:  # TBIN header flags: bit 0 = debug build
+            print("Это debug-сборка: она ждёт команды run - python3 scripts/tibbo_device.py run --mac %s --yes" % mac)
         else:
-            print("Debug-сборка ждёт команды run: python3 scripts/tibbo_device.py run --mac %s --yes "
-                  "(release запускается сама)." % mac)
+            print("Release-сборка: программа запускается сама.")
     return 0
 
 

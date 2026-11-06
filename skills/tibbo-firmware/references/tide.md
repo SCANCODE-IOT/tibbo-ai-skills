@@ -141,9 +141,9 @@ Release-`.tpc` запускается сразу после загрузки и 
 Два инструмента:
 - **TIDE на Windows** (`tupload.exe`) - через `tibbo_build.py --upload`. По сети и по COM-порту.
 - **tide-proxy Tibbo на любой ОС** (github.com/tibbotech/tide-proxy, Node.js) - `scripts/tibbo_device.py`. Только по сети.
-  Ставится один раз с согласия пользователя: `python3 scripts/tibbo_device.py --setup --yes` (около 100 МБ).
-  **Экспериментально:** сделан по коду и описанию протокола tide-proxy, проверен на имитаторе протокола, на
-  устройстве ещё нет. `tibbo_build.py --upload` без TIDE сам загружает через него.
+  Ставится один раз с согласия пользователя: `python3 scripts/tibbo_device.py --setup --yes` (около 30 МБ, несколько секунд).
+  **Экспериментально:** проверен с настоящим tide-proxy на имитаторе устройства (поиск, состояние, загрузка 561 КБ
+  байт в байт за 5 с, запуск, пауза, перезагрузка, отказ входа в загрузку без перепрошивки TiOS); на устройстве ещё нет. `tibbo_build.py --upload` без TIDE сам загружает через него.
 
 ```text
 python3 scripts/tibbo_device.py list                                   # какие устройства Tibbo есть в сети
