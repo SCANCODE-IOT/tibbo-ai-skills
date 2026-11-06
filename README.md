@@ -132,6 +132,16 @@ The installer puts both skills into `~/.agents/skills/` (read by Codex, Gemini C
 and into `~/.claude/skills/` if Claude Code is installed, then runs a self-test. `--agent opencode|cursor|copilot|all`,
 `--project <folder>` and `--uninstall` are also available.
 
+### Updating
+
+Tell your agent **"Update the Tibbo skills"** - it runs the updater that ships with the skill
+(`skills/tibbo-firmware/scripts/skills_update.py`, `--check` shows the installed and the latest version).
+Or run `python tools/install.py --update` from the unpacked repository: it updates every agent where the skills are
+installed. Claude Code plugin: `/plugin marketplace update scancode`, then `/plugin update tibbo-skills@scancode`.
+Claude apps, the Kimi app and web chats: replace the files with the new ones.
+**Every platform step by step: [docs/INSTALL.md → Updating](docs/INSTALL.md#updating).**
+To get notified about new versions: **Watch → Custom → Releases** on this page.
+
 ## Usage examples
 
 Just describe the task - the agent picks the skill by itself.

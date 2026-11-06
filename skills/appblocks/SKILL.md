@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.0.0"
+  version: "2.1.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -49,6 +49,7 @@ OTA, переменные/таблицы/команды, облачные workfl
 5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.
 6. **Скрипты запустить нельзя** (веб-чат): скажи «скриптами не проверено», дай файл и команды проверки, чтобы пользователь запустил их у себя, и попроси прислать вкладку Problems из редактора.
 7. Скрипты лежат в папке скилла: запускай их с путём от неё или перейди в неё. На Windows - `python` вместо `python3`.
+8. Обновление скиллов (оба сразу) - `../tibbo-firmware/scripts/skills_update.py` (`--check` - узнать версии).
 
 ## 1. Откуда взять проект
 1. **API** (лучший путь): `ab_api.py projects` → `ab_api.py project <id> --out p.json`. Ключ `abk_…` из Settings →

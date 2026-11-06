@@ -23,6 +23,8 @@
 | GLM (Z.ai) в Z Code, Claude Code, OpenCode или Codex | папка скиллов этого агента | [GLM](#glm-zai) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM в браузере | чат-пакет | [Веб-чаты](#веб-чаты) |
 
+Скиллы уже стоят? Как обновить их на любой платформе - в разделе [Как обновить](#как-обновить).
+
 ## Перед началом
 
 1. **Python 3.9 или новее.** Он нужен скриптам проверки. Проверьте: `python --version` (Windows) или
@@ -70,7 +72,7 @@ Deep Code, Cline и Zed, - и в `~/.claude/skills/`, если стоит Claude
 /plugin install tibbo-skills@scancode
 ```
 
-Обновление: `/plugin marketplace update scancode`. Или установка в папку: `python tools/install.py --agent claude`.
+Обновление: `/plugin marketplace update scancode`, затем `/plugin update tibbo-skills@scancode`. Или установка в папку: `python tools/install.py --agent claude`.
 **Claude API:** загрузите каждую папку скилла через [Skills API](https://platform.claude.com/docs/en/build-with-claude/skills-guide).
 
 ## Codex
@@ -155,6 +157,31 @@ python appblocks/scripts/ab_tool.py check project.json
 
 `[ОШИБКА]` в выводе - это ошибка. Отправьте вывод обратно в чат.
 
+## Как обновить
+
+**Как узнать о новой версии.** На странице репозитория нажмите **Watch → Custom → Releases** - GitHub пришлёт письмо
+о каждом релизе. Или спросите агента «какая версия скиллов Tibbo и есть ли новее?». Номер установленной версии
+записан в начале файла `SKILL.md` (строка `version:`).
+
+Обновляются всегда **оба** скилла сразу.
+
+| Где стоят скиллы | Как обновить |
+|---|---|
+| **Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode, Cursor, Copilot, Cline** (папка скиллов) | Скажите агенту: **«Обнови скиллы Tibbo»**. Он запустит скрипт обновления из самого скилла. Или сами: `python tools/install.py --update` из распакованного репозитория - обновит скиллы во всех агентах, где они стоят. Затем перезапустите агента. |
+| **Claude Code, плагин** | `/plugin marketplace update scancode`, затем `/plugin update tibbo-skills@scancode`, перезапустите Claude Code. |
+| **Claude Code, папка** `~/.claude/skills` | Как для других агентов: «Обнови скиллы Tibbo» или `python tools/install.py --update`. |
+| **Приложения Claude** (claude.ai, компьютер, телефон) | Скачайте новые `tibbo-firmware.zip` и `appblocks.zip` из релиза. **Customize → Skills**: удалите старые версии скиллов и загрузите новые zip. |
+| **Gemini CLI**, если ставили через `gemini skills install` | Повторите обе команды `gemini skills install …` из раздела [Gemini CLI](#gemini-cli), затем `/skills reload`. |
+| **Kimi Code**, если переносили через `/import-from-cc-codex` | Обновите скиллы в Claude Code или Codex и снова выполните `/import-from-cc-codex`. |
+| **Приложение Kimi** (K3, K3.1 Pro) | Скачайте новый [комплект для Kimi](kimi/tibbo-skills-kimi-app.zip). Skills → вкладка **Custom Skills**: у каждого скилла замените документы на новые (или удалите скилл и создайте заново по инструкции). |
+| **ChatGPT, свой GPT или Проект** | Скачайте новый `tibbo-chat-pack.zip`. В настройках GPT (или проекта) замените текст инструкций на новый `PROMPT.md`, удалите старые файлы знаний и загрузите новые `01`-`07` и `tibbo-tools.zip`. |
+| **Gemini, Gem** | То же: новый `PROMPT.md` в «Инструкции», новые файлы `01`-`07` вместо старых в «Знаниях». |
+| **Чаты Kimi, DeepSeek, GLM** | Просто прикладывайте файлы из нового `tibbo-chat-pack.zip` - в каждом новом чате они и так прикладываются заново. |
+
+**Нет доступа к GitHub из терминала?** Скачайте `tibbo-firmware.zip` и `appblocks.zip` из релиза в браузере, положите
+в одну папку и запустите `python <папка скиллов>/tibbo-firmware/scripts/skills_update.py --from <эта папка>`.
+Скрипт обновления сам откатывает изменения, если архив повреждён, и проверяет новую версию после установки.
+
 ## Проверьте, что работает
 
 Спросите: *«TPP3W(G2): источник питания #10 в S1 с разъёмом #18 в S2, в шкафу 24 В. Всё правильно?»*
@@ -176,4 +203,4 @@ python appblocks/scripts/ab_tool.py check project.json
 - **Кракозябры вместо русского** в старой консоли Windows: `chcp 65001` или Windows Terminal.
 - **`CERTIFICATE_VERIFY_FAILED` в `ab_api.py`** на Windows: `pip install truststore`; `python scripts/ab_api.py tls`
   покажет, какое хранилище сертификатов используется. Проверку сертификатов не отключаем.
-- **Обновление:** скачайте новый релиз и снова запустите установщик (в приложениях Claude - загрузите новые zip).
+- **Обновление:** см. раздел [Как обновить](#как-обновить) - таблица для каждой платформы.

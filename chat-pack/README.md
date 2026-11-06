@@ -37,6 +37,10 @@ python appblocks/scripts/ab_tool.py check project.json
 ```
 `[ОШИБКА]` in the output means an error. Smaller models make more mistakes: always run the checks and build in TIDE.
 
+**Updating:** download the new `tibbo-chat-pack.zip` from the latest release. Custom GPT or Project - replace the
+instructions with the new `PROMPT.md` and the knowledge files with the new ones; Gem - the same; Kimi, DeepSeek, GLM
+chats - just attach the new files. The pack version is in the first lines of `01-firmware-rules-tibbits-power.md`.
+
 ---
 
 ## Русский
@@ -75,3 +79,7 @@ python tibbo-firmware/scripts/tibbo_lint.py my_project --platform "TPP3W(G2)"
 python appblocks/scripts/ab_tool.py check project.json
 ```
 `[ОШИБКА]` в выводе - ошибка. Чем слабее модель, тем больше ошибок: всегда запускайте проверки и собирайте проект в TIDE.
+
+**Обновление:** скачайте новый `tibbo-chat-pack.zip` из последнего релиза. Свой GPT или Проект - замените инструкции
+на новый `PROMPT.md`, а файлы знаний - на новые; Gem - так же; чаты Kimi, DeepSeek, GLM - просто прикладывайте новые
+файлы. Версия пакета указана в первых строках файла `01-firmware-rules-tibbits-power.md`.

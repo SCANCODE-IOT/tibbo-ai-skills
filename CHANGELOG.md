@@ -3,7 +3,25 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.1.0] - 2026-11-06
+
+**Clear updates on every platform.** Tell your agent "Update the Tibbo skills" - or run one command - and both skills
+are replaced by the latest release.
+
+### Updating
+- **New `tibbo-firmware/scripts/skills_update.py`** - updates both skills in place, in the folder where they are
+  installed (Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode, Cursor, Claude Code folder installs): `--check` compares
+  the installed and the latest version, without options it downloads the latest release from GitHub, swaps the folders
+  with rollback on error and runs a self-test; `--from <folder>` uses zips downloaded in a browser. For the Claude Code
+  plugin and the read-only skills of the Claude apps it explains what to do instead.
+- **`tools/install.py --check` and `--update`** - find every agent where the skills are installed and update them all.
+- Both `SKILL.md` files tell the agent to use the updater when asked to update the skills or about their version.
+- **Docs:** "Updating" / "Как обновить" in `docs/INSTALL.md` and `docs/INSTALL.ru.md` - a table for every platform
+  (agents, Claude Code plugin, Claude apps, Gemini CLI, Kimi Code and the Kimi app, ChatGPT GPT and Project, Gem, chats),
+  how to get notified about releases (Watch → Custom → Releases), offline update; short sections in both READMEs,
+  the chat pack README, the Kimi guide and the release notes.
+- Tests for the updater (local zips, broken archive keeps the install, refusal for plugin installs).
+
 
 ### Repository
 - **Renamed to `tibbo-ai-skills`** (was `tibbo-claude-skills`): the skills work with many AI models, not only Claude.
