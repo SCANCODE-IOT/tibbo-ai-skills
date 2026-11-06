@@ -5,6 +5,8 @@ CA-Test-WLN-lib, HTTPS_GET, CA-Test-Tibbits-13-14) and from the library sources.
 
 ## 1. TIDE project files
 
+Build, upload and compiler errors: see `tide.md` (`scripts/tibbo_build.py`).
+
 | File | Role |
 |---|---|
 | `<name>.tpr` | Project file (INI). Platform, library version, defines, file list. |

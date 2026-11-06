@@ -1,6 +1,6 @@
 ---
 name: tibbo-firmware
-description: Use when writing, reviewing, debugging or explaining firmware for Tibbo controllers and modules (Tibbo BASIC/C, TIDE, TiOS, TPS/TPP boards, Tibbits, DS/EM/WM/WS devices, Tibbo libraries), and when choosing Tibbits for a task, laying them out in TPS sockets or checking TPS power supply and power budget.
+description: Use when writing, reviewing, debugging or explaining firmware for Tibbo controllers and modules (Tibbo BASIC/C, TIDE projects, compiling and uploading, compiler errors, TiOS, TPS/TPP boards, Tibbits, DS/EM/WM/WS devices, Tibbo libraries), and when choosing Tibbits for a task, laying them out in TPS sockets or checking TPS power supply and power budget.
 license: MIT (Tibbo reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Scripts need Python 3.9+ (standard library only). Network is optional.
 metadata:
@@ -23,12 +23,14 @@ metadata:
 | `references/libraries.md` | Библиотеки (STG, sock, dhcp, dns, wln, mqtt, http, modbus, agg, sntp, tibbits/tbtNN…): конфигурационные `#define`, API и обязательные `callback_*`. |
 | `references/project-and-libs.md` | Формат `.tpr`, скелет проекта, таблица хуков «библиотека → событие», settings.txt (STG), паттерны Wi-Fi, TLS/HTTPS, привязка Tibbit к слотам; §9 - факты из docs для кода и ревью (16-битная арифметика, `doevents`, исключения VM в release, износ EEPROM/flash, M/L и MD, DCB и два приложения WM2000/WS1102, DS110x, LTPP3(G2)). |
 | `references/tibbits.md` | Каталог из 84 Tibbit (сверен с docs.tibbo.com в октябре 2026): назначение, линии, требования (serial/interrupt), питание, совместимые разъёмы; расхождения каталога и docs - в конце. |
+| `references/tide.md` | **Сборка и загрузка без окна TIDE**: что нужно от пользователя (TIDE, согласие на облако, сеть), ключи `tmake`/`tupload`, формат `.tpr`, debug и release, **каталог сообщений компилятора с причинами и исправлениями**, порядок работы в окне TIDE. |
 | `references/docs-map.md` | Тема → страница docs.tibbo.com и её русский перевод на tibbo.ru/kb (объекты, syscalls, библиотеки, платформы, TPS, все Tibbit, M/L, Linux). Открывай, когда нужен полный текст или пример. |
 | `references/github-map.md` | Какой репозиторий tibbotech смотреть под задачу (примеры CA-*, Modbus, MQTT, TLS, Linux LTPP3). |
 | `references/power.md` | **Любой вопрос о питании**: источники #09/#10/#25/#33/#23/#12, входные напряжения, ±15 В, PoE, потребление плат, типичные ошибки. |
 | `references/tibbit-selection.md` | Подбор Tibbit под задачу, тайлы и формы M/C/H, UART/INT/ADC/PoE-сокеты, порядок раскладки. |
 | `scripts/tps_check.py` | Проверка конфигурации TPS (сокеты, линии, UART/INT, разъёмы, PoE, бюджет питания) + SVG платы (рисует `scripts/tps_render.py`); `find` — поиск Tibbit; `board` — сокеты и `PL_IO_NUM_*` платы; `tibbit NN` — всё о модуле. Данные: `data/tibbits.json`, `data/boards.json` (пересборка: `scripts/build_data.py`). Тесты: `sh tests/run.sh`. |
 | `scripts/tibbo_lint.py` | **Проверка имён API в коде** (.tbs/.tbh/.tc/.th): неизвестные свойства и методы объектов TiOS, выдуманные константы `PL_*`, объект или константа, которых нет на платформе (`--platform "TPP3W(G2)"`, ветки `#if PLATFORM_ID=…` для других платформ пропускает), `elseif`. Данные: `data/tios_api.json` (пересборка: `scripts/build_lint_data.py`). |
+| `scripts/tibbo_build.py` | **Компиляция проекта компилятором Tibbo**: локально через `tmake` установленного TIDE (Windows) или облачным компилятором AppBlocks (с согласия пользователя). Ошибки - списком `файл:строка код текст`, `--json` для разбора, `--release` для рабочей прошивки, `--doctor` - что доступно на этом компьютере, `--upload` - загрузка `.tpc` в устройство через `tupload` (только с `--yes`). |
 | `scripts/skills_update.py` | **Обновление обоих скиллов** до последнего релиза прямо в папке, где они стоят: `--check` - сравнить версии, без ключей - скачать с GitHub и заменить (с откатом при ошибке и самопроверкой), `--from <папка>` - из скачанных zip. Для плагина Claude Code и приложений Claude не подходит - скрипт сам скажет, что делать. |
 | `scripts/ab_pairs.py` | Жёлтые треугольники редактора AppBlocks на сокетах (Incorrect pair / Connector required / Tibbit required): правила и таблица разъёмов сняты из редактора (`data/appblocks_pairs.json`); `tps_check.py` вызывает его сам. В Problems AppBlocks эти предупреждения не показывает. |
 | `scripts/state_diagram.py` | Диаграмма состояний прошивки-автомата (SVG) из короткого JSON: состояния, выходы, переходы, аварийные пути. |
@@ -48,7 +50,7 @@ metadata:
 2. Код проверяй скриптом: `python3 scripts/tibbo_lint.py <файлы или папка> --platform "<платформа>"`. Пока есть `[ОШИБКА]`, код не выдавай.
 3. Tibbit, сокеты и питание - только через `python3 scripts/tps_check.py check cfg.json`. Пока есть `[ОШИБКА]`, конфигурацию не выдавай. Числа бюджета питания бери из вывода скрипта.
 4. Первой строкой ответа - допущения: платформа, Tibbit по сокетам, питание, язык.
-5. Не пиши, что код «скомпилируется»: компиляции не было, пока ты сам не собрал проект.
+5. Не пиши, что код «скомпилируется»: компиляции не было, пока ты сам не собрал проект. Собирай `python3 scripts/tibbo_build.py <папка проекта>` и исправляй, пока не будет «ошибок 0» (каталог ошибок - references/tide.md §5). **Облачная сборка отправляет файлы проекта на сервер Tibbo:** перед первой спроси пользователя и добавь `--cloud-ok` только после «да». Загрузку в устройство (`--upload`) - только после явного «да» на каждую загрузку.
 6. **Скрипты запустить нельзя** (веб-чат, нет Python): прямо скажи «скриптами не проверено», дай пользователю файлы (`cfg.json`, код) и команды проверки, чтобы он запустил их у себя.
 7. Скрипты лежат в папке скилла: запускай их с путём от неё (`<папка скилла>/scripts/…`) или перейди в неё. На Windows - `python` вместо `python3`.
 8. Пользователь просит обновить скиллы Tibbo или спрашивает версию: `python3 scripts/skills_update.py --check`, затем (с его согласия) без `--check`. Обновляются оба скилла сразу; после обновления попроси перезапустить агента.
@@ -127,8 +129,9 @@ metadata:
 2. Сверь каждое имя объекта, константы и библиотечной процедуры с references поиском по файлам. Если имени нет в справочниках, не выдумывай: пиши `' TODO: проверить <имя> для <платформа> в docs.tibbo.com`. Готовый код прогони `tibbo_lint.py <папка проекта> --platform "<платформа>"` и исправь все `[ОШИБКА]` (процедуры библиотек он не проверяет - их сверяй с libraries.md сам).
 3. Проект создавай файлами: `global.tbh`, `main.tbs`, `device.tbs` (колбэки), при необходимости `settings.txt` и `.tpr` по образцу из project-and-libs.md. Код длиннее пары десятков строк отдавай файлами, не в чат.
 4. Приложи таблицу ресурсов: сокеты (подписи), порты, UART, линии I/O со слотами, страницы буферов против доступных, хранение настроек.
-5. Пройди чек-лист §5 и честно отметь, что проверено статически, а что нет. **Не утверждай, что код «скомпилируется», пока не прогнал его через компилятор.** Компилятор TIDE доступен через сборщик Tibbo: для проектов AppBlocks - `ab_api.py build` (скилл appblocks), без ключа; для ручного TIDE-проекта тот же `POST https://api.appblocks.io/api/projects/build` с файлами проекта (`{command:"build", files:[{name, contents}], project:{runtime:"tios", device:<платформа>}, debug:true}`), если сеть до api.appblocks.io открыта.
-6. Объясни, как проверить на железе: сборка в TIDE (debug), загрузка, что смотреть в выводе `sys.debugprint`, какие события должны прийти.
+5. Собери проект: `python3 scripts/tibbo_build.py <папка проекта>`. Скрипт сам выберет TIDE на этом компьютере (`tmake`) или облачный компилятор Tibbo (нужно согласие пользователя - см. правило 5 выше). Исправляй с первой ошибки и собирай снова, пока не будет «ошибок 0»; причины и исправления ошибок - references/tide.md §5. Не удалось собрать (нет TIDE, нет согласия, нет сети) - так и напиши: «компилятором не проверено». Проекты AppBlocks собирает `ab_api.py build` (скилл appblocks).
+6. Пройди чек-лист §5 и честно отметь, что проверено компилятором, что статически, а что нет.
+7. Объясни, как проверить на железе: сборка в TIDE (debug), загрузка, что смотреть в выводе `sys.debugprint`, какие события должны прийти. Debug-прошивка после загрузки ждёт команды Run из TIDE; для работы без TIDE - `--release` (tide.md §3).
 
 **Проверка чужого кода:** сначала `tibbo_lint.py` по всему проекту с его платформой (из `.tpr`, строка `platform=`), затем §5 целиком. Отчёт по уровням «критично / важно / замечание», для каждого пункта укажи файл и процедуру, суть и исправленный фрагмент. Каждое использованное имя API сверь со справочниками: неверные имена и сигнатуры — критичная ошибка.
 
@@ -136,6 +139,7 @@ metadata:
 
 **Язык и память**
 - [ ] `tibbo_lint.py --platform <платформа>` по проекту - 0 ошибок (имена объектов, свойств, констант `PL_*`, `elseif`).
+- [ ] `tibbo_build.py` - «ошибок 0» (или явно сказано, почему компиляции не было); предупреждения прочитаны.
 - [ ] Нет рекурсии и повторного входа (в том числе косвенного через `doevents`).
 - [ ] У строк задана ёмкость; нет молчаливого обрезания при `getdata`, конкатенации, `mid`; большие строки передаются `byref`.
 - [ ] Индексы массивов в пределах 0..N-1; нет переполнения `byte`/`word` в счётчиках; нет смешения знаковых и беззнаковых типов в сравнениях.

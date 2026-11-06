@@ -1,0 +1,13 @@
+[project]
+platform = TPP3W(G2)
+src_lib_ver = 2_01_05
+output = test.tpc
+debug = on
+
+[file1]
+path = main.tbs
+type = basic
+
+[file2]
+path = sock\trunk\sock.tbs
+type = basic

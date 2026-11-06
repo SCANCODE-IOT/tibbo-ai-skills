@@ -61,5 +61,25 @@ P="$U/.claude/plugins/cache/x/skills"; mkdir -p "$P"; cp -r "$U/skills/tibbo-fir
 "$PY" "$P/tibbo-firmware/scripts/skills_update.py" >"$U/out" 2>&1; rc=$?
 [ "$rc" = 2 ] && grep -q "/plugin update" "$U/out" && echo "ok   skills_update refuses plugin installs" || { echo "FAIL skills_update plugin path (rc=$rc)"; cat "$U/out"; fail=1; }
 rm -rf "$U"
+# tibbo_build.py: offline - consent for the cloud, local build through tmake (test stand-in), errors, release copy
+B=$(mktemp -d); cp -r tests/build/proj "$B/proj"
+env -u TIBBO_CLOUD_BUILD TIDE_DIR=/nonexistent "$PY" scripts/tibbo_build.py "$B/proj" --cloud >"$B/out" 2>&1; rc=$?
+[ "$rc" = 3 ] && grep -q "согласие" "$B/out" && echo "ok   build asks consent before cloud" || { echo "FAIL build consent (rc=$rc)"; cat "$B/out"; fail=1; }
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) echo "skip build local (tmake stand-in is a script, Windows runs only real .exe)";; *)
+TIDE_DIR="$PWD/tests/build/fake_tide" "$PY" scripts/tibbo_build.py "$B/proj" >"$B/out" 2>&1; rc=$?
+[ "$rc" = 0 ] && grep -q "TIDE на этом компьютере" "$B/out" && [ -f "$B/proj/test.tpc" ] && echo "ok   build local (tmake)" || { echo "FAIL build local (rc=$rc)"; cat "$B/out"; fail=1; }
+TIDE_DIR="$PWD/tests/build/fake_tide" "$PY" scripts/tibbo_build.py "$B/proj/test.tpr" --release >"$B/out" 2>&1
+grep -q "release" "$B/out" && grep -q "debug = on" "$B/proj/test.tpr" && echo "ok   build release keeps the project unchanged" || { echo "FAIL build release"; cat "$B/out"; fail=1; }
+sed -i.bak 's/sock.num/sock.nmu/' "$B/proj/main.tbs"
+TIDE_DIR="$PWD/tests/build/fake_tide" "$PY" scripts/tibbo_build.py "$B/proj" --json >"$B/out" 2>&1; rc=$?
+[ "$rc" = 1 ] && grep -q '"line": 2' "$B/out" && grep -q '"code": "C1013"' "$B/out" && echo "ok   build reports compiler errors" || { echo "FAIL build errors (rc=$rc)"; cat "$B/out"; fail=1; }
+;; esac
+printf "' resolution +0.25\242C\n" > "$B/proj/legacy.tbs"   # legacy code page byte, even length: must go as raw bytes
+"$PY" -c "import sys; sys.path.insert(0,'scripts'); import tibbo_build as t; from pathlib import Path
+f={x['name']: x['contents'] for x in t.collect(Path(sys.argv[1]))[1]}
+assert isinstance(f['/legacy.tbs'], dict) and 0xa2 in f['/legacy.tbs']['data'], f['/legacy.tbs']
+assert isinstance(f['/main.tbs'], str)" "$B/proj/test.tpr" && echo "ok   build sends legacy-encoded sources byte for byte" || { echo "FAIL build legacy encoding"; fail=1; }
+"$PY" scripts/tibbo_build.py --upload x.tpc --target 0.1.2.3.4.5 >"$B/out" 2>&1; [ $? = 3 ] && echo "ok   upload needs TIDE and --yes" || { echo "FAIL upload guard"; fail=1; }
+rm -rf "$B"
 rm -rf "$T"
 exit $fail

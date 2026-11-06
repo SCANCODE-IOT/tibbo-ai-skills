@@ -1,0 +1,3 @@
+sub on_sys_init()
+	sock.num = 0
+end sub
