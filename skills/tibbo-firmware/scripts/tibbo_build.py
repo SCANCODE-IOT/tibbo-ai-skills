@@ -390,7 +390,8 @@ def build_local(tpr, debug, tide):
         tpr_used.write_bytes(raw)  # bytes: keep the project's own encoding
         workdir = tpr_used.parent
     pdir, _ = platforms_dir(tpr_used, tide, project.get("platform"))
-    cmd = [str(tide / "Bin" / "tmake.exe"), winpath(tpr_used), "-p" + winpath(pdir), "-r"]
+    # -b: folder with tbc.exe/tlink.exe (tmake looks in the current dir otherwise) - per tibbotech/tibbo-basic AGENTS.md
+    cmd = [str(tide / "Bin" / "tmake.exe"), winpath(tpr_used), "-p" + winpath(pdir), "-b" + winpath(tide / "Bin"), "-r"]
     r = subprocess.run(cmd, cwd=str(workdir), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out = decode_output(r.stdout)
     msgs = parse_messages(out, workdir)
