@@ -3,6 +3,26 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+Not released yet: waiting for Tibbo's permission.
+
+### Building with Tibbo's compiler
+- **New `tibbo-firmware/scripts/tibbo_build.py`** - compiles a TIDE project with Tibbo's real compiler, three ways in
+  this order: TIDE on this Windows computer (`tmake`), Tibbo's compiler ported to Node.js (any OS, Tibbo BASIC,
+  `--setup-node --yes` once), the AppBlocks cloud compiler (only with the user's consent). Errors as
+  `file(line) code text` or JSON, `--release`/`--debug` without touching the project, `--upload` through `tupload`
+  (only with `--yes`), `--doctor [<project>]` - what works here, what the user must do, TIDE advice for the project.
+- **New `tibbo-firmware/references/tide.md`** - what the user needs per agent environment, `.tpr` format, `tmake` and
+  `tupload` switches, debug vs release, compiler message catalog with causes and fixes, TIDE menu steps, how to write
+  instructions for the user's own case.
+- Node.js compiler checked against the cloud compiler on 15 tibbotech projects in debug and release: identical `.tpc`
+  and identical errors.
+
+### Fixed
+- `appblocks/scripts/ab_api.py build --release` produced a debug `.tpc`: the build service wants `"debug": "off"`,
+  a JSON `false` still gives a debug build.
+
 ## [2.1.0] - 2026-11-06
 
 **Clear updates on every platform.** Tell your agent "Update the Tibbo skills" - or run one command - and both skills

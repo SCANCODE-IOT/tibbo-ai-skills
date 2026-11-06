@@ -2,22 +2,25 @@
 """Build a TIDE project (Tibbo BASIC / Tibbo C) with Tibbo's real compiler and show its errors.
 Сборка проекта TIDE настоящим компилятором Tibbo: ошибки компилятора и готовый .tpc.
 
-Two ways, chosen automatically:
+Three ways, chosen automatically in this order:
   local  - TIDE is installed on this Windows computer: runs TIDE's command-line builder tmake.exe.
            The code stays on the computer. Also from WSL (TIDE on /mnt/c, experimental).
+  node   - any OS with Node.js, no TIDE: Tibbo's compiler ported to Node.js (github.com/tibbotech/tibbo-basic,
+           branch feature/compiler), byte-identical .tpc; Tibbo BASIC only. Set up once: --setup-node --yes.
   cloud  - any OS, no TIDE: Tibbo's compiler behind AppBlocks (api.appblocks.io). The project files are sent to
            Tibbo's server, so it needs the user's consent: --cloud-ok or TIBBO_CLOUD_BUILD=yes.
 
 Usage:
   python3 scripts/tibbo_build.py <project folder or .tpr> [--local | --cloud] [--release | --debug]
-                                 [--out app.tpc] [--json] [--cloud-ok]
+                                 [--out app.tpc] [--json] [--cloud-ok]          (or --node)
+  python3 scripts/tibbo_build.py --setup-node [--yes]   # download and build Tibbo's Node.js compiler (asks first)
   python3 scripts/tibbo_build.py --doctor [<project>] [--json]   # what is available here, what the USER must do
                                                      # and, with a project, TIDE advice for THIS project
                                                      # (relay "Что сделать пользователю" to the user as is)
   python3 scripts/tibbo_build.py --upload app.tpc --target <MAC or COM port> [--serial] --yes
                                  # Windows + TIDE: upload to a device with TIDE's tupload.exe (asks first)
 
-Environment: TIDE_DIR (TIDE folder, default C:\\Program Files (x86)\\Tibbo\\TIDE), TIBBO_CLOUD_BUILD=yes (consent for
+Environment: TIBBO_BASIC_HOME (Node.js compiler folder, default ~/.tibbo/tibbo-basic), TIBBO_BASIC_COMPILER, TIDE_DIR (TIDE folder, default C:\\Program Files (x86)\\Tibbo\\TIDE), TIBBO_CLOUD_BUILD=yes (consent for
 cloud builds), APPBLOCKS_BASE (default https://api.appblocks.io), APPBLOCKS_API_KEY (optional), SSL_CERT_FILE.
 Exit codes: 0 - built, 1 - compiler errors, 2 - bad input, 3 - no way to build here or no consent, 4 - network/tool error.
 Python 3.9+, standard library only.
@@ -361,7 +364,8 @@ def build_cloud(tpr, debug):
         raise ValueError("в .tpr нет строки platform=")
     if debug is None:
         debug = project.get("debug", "on").lower() == "on"
-    st, b = post("/api/projects/build", {"command": "build", "files": files, "debug": debug,
+    # the build service wants "on"/"off": a JSON boolean (even false) gives a DEBUG build
+    st, b = post("/api/projects/build", {"command": "build", "files": files, "debug": "on" if debug else "off",
                                          "project": {"runtime": "tios", "device": platform}})
     try:
         r = json.loads(b)
@@ -375,20 +379,140 @@ def build_cloud(tpr, debug):
             "files_sent": len(files)}
 
 
+def prepared(tpr, project, want, near=False):
+    """The .tpr to build: the user's own, or a temporary copy with debug=on/off changed (the project is not touched)."""
+    if not want or project.get("debug", "on").lower() == want:
+        return tpr, None
+    cleanup = Path(tempfile.mkdtemp(prefix=".tibbo_build_", dir=str(tpr.parent) if near else None))
+    shutil.copytree(str(tpr.parent), str(cleanup / "p"), ignore=shutil.ignore_patterns(".tibbo_build_*"))
+    tpr_used = cleanup / "p" / tpr.name
+    raw = re.sub(rb"(?mi)^([ \t]*debug[ \t]*=[ \t]*)\w+", rb"\g<1>" + want.encode(), tpr_used.read_bytes())
+    tpr_used.write_bytes(raw)  # bytes: keep the project's own encoding
+    return tpr_used, cleanup
+
+
+# --- Tibbo's own compiler ported to Node.js (github.com/tibbotech/tibbo-basic, branch feature/compiler) ---
+NODE_REPO = "https://github.com/tibbotech/tibbo-basic.git"
+NODE_BRANCH = os.environ.get("TIBBO_BASIC_BRANCH", "feature/compiler")
+NODE_CLI = Path("server", "out", "compiler", "compile-project.js")
+
+
+def node_home():
+    return Path(os.environ.get("TIBBO_BASIC_HOME") or Path.home() / ".tibbo" / "tibbo-basic")
+
+
+def node_compiler():
+    """compile-project.js of tibbo-basic if it is set up and Node.js is installed, else None."""
+    if not shutil.which("node"):
+        return None
+    c = os.environ.get("TIBBO_BASIC_COMPILER")
+    for p in ([Path(c), Path(c) / NODE_CLI] if c else []) + [node_home() / NODE_CLI]:
+        if p.is_file():
+            return p
+    return None
+
+
+def node_version():
+    exe = shutil.which("node")
+    if not exe:
+        return None
+    r = subprocess.run([exe, "--version"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    return r.stdout.decode("utf-8", "replace").strip() or None
+
+
+def has_c_sources(entries):
+    return any(e.get("type", "").lower() in ("c", "htmlc") or e.get("path", "").lower().endswith(".tc") for e in entries)
+
+
+def setup_node(yes, update=False):
+    """Download Tibbo's Node.js compiler from GitHub and build it (git, Node.js 18+ and npm needed)."""
+    home = node_home()
+    missing = [x for x in ("git", "node", "npm") if not shutil.which(x)]
+    if missing:
+        print("Для компилятора Tibbo на Node.js нужны: %s (не найдено). Node.js: nodejs.org (LTS), git: git-scm.com."
+              % ", ".join(missing))
+        return 3
+    if not yes:
+        print("Будет скачан компилятор Tibbo BASIC с GitHub (%s, ветка %s) с платформами Tibbo\n"
+              "и его зависимости из npm, в папку %s (около 200 МБ), затем он будет собран.\n"
+              "Спросите пользователя и повторите с --yes." % (NODE_REPO, NODE_BRANCH, home))
+        return 3
+    npm = shutil.which("npm")
+    steps = []
+    if (home / ".git").is_dir():
+        steps.append((["git", "-C", str(home), "pull", "--ff-only"], None))
+    else:
+        home.parent.mkdir(parents=True, exist_ok=True)
+        steps.append((["git", "clone", "--depth", "1", "-b", NODE_BRANCH, NODE_REPO, str(home)], None))
+    steps.append((["git", "-C", str(home), "submodule", "update", "--init", "--depth", "1", "platforms"], None))
+    steps.append(([npm, "install", "--no-audit", "--no-fund", "--ignore-scripts"], home / "server"))
+    steps.append(([npm, "run", "build"], home / "server"))
+    for cmd, cwd in steps:
+        print("> " + " ".join(cmd[:1] + [str(c) for c in cmd[1:]]))
+        r = subprocess.run(cmd, cwd=str(cwd) if cwd else None)
+        if r.returncode != 0:
+            print("Не получилось (код %d). Проверьте интернет до github.com и registry.npmjs.org." % r.returncode)
+            return 4
+    if not (home / NODE_CLI).is_file():
+        print("Сборка компилятора не дала %s" % (home / NODE_CLI))
+        return 4
+    print("Готово: компилятор Tibbo на Node.js в %s" % home)
+    return 0
+
+
+NODE_MSG = re.compile(r"^(?P<file>.+?):(?P<line>\d+):(?P<col>\d+): (?P<level>error|warning): (?P<text>.*)$")
+
+
+def build_node(tpr, debug, js):
+    project, entries = parse_tpr(read_text(tpr))
+    if has_c_sources(entries):
+        raise ValueError("в проекте есть файлы Tibbo C: компилятор на Node.js собирает только Tibbo BASIC "
+                         "(соберите через TIDE или облако: --local / --cloud)")
+    want = None if debug is None else ("on" if debug else "off")
+    tpr_used, cleanup = prepared(tpr, project, want)
+    root = tpr_used.parent
+    fd, out = tempfile.mkstemp(suffix=".tpc")
+    os.close(fd)
+    try:
+        r = subprocess.run([shutil.which("node"), str(js), str(root), "-o", out],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        text = decode_output(r.stdout)
+        msgs = []
+        for line in text.splitlines():
+            m = NODE_MSG.match(line.strip())
+            if not m:
+                continue
+            f = m.group("file")
+            try:
+                f = os.path.relpath(f, str(root))
+            except ValueError:
+                pass
+            parts = Path(f).parts
+            if parts and parts[0] == "..":  # outside the project: platform or library file
+                f = "\\".join(parts[parts.index("Platforms"):]) if "Platforms" in parts else parts[-1]
+            inner = re.match(r"^.*?\((\d+)\):\s*(error|warning)\s+(C\d+):\s*(.*)$", m.group("text"))
+            code, msg = (inner.group(3), inner.group(4)) if inner else (None, m.group("text"))
+            msgs.append({"file": f.replace("/", "\\"), "line": int(m.group("line")),
+                         "level": m.group("level"), "code": code, "message": msg})
+        if r.returncode != 0 and not any(x["level"] == "error" for x in msgs):
+            msgs.append({"file": None, "line": 0, "level": "error", "code": None,
+                         "message": (text.strip().splitlines() or ["компилятор завершился с кодом %d" % r.returncode])[-1]})
+        data = Path(out).read_bytes() if r.returncode == 0 and os.path.getsize(out) else None
+    finally:
+        os.unlink(out)
+        if cleanup:
+            shutil.rmtree(str(cleanup), ignore_errors=True)
+    ok = data is not None and not any(m["level"] == "error" for m in msgs)
+    return {"ok": ok, "messages": msgs, "tpc": data, "platform": project.get("platform"),
+            "debug": (want or project.get("debug", "on")) == "on", "raw_tail": text.strip().splitlines()[-5:]}
+
+
 def build_local(tpr, debug, tide):
     project, entries = parse_tpr(read_text(tpr))
-    workdir, cleanup = tpr.parent, None
     want = None if debug is None else ("on" if debug else "off")
-    tpr_used = tpr
-    if want and project.get("debug", "on").lower() != want:
-        # WSL: keep the copy on the Windows disk next to the project, so tmake.exe can open it
-        base = tpr.parent if environment()[0] == "wsl" else None
-        cleanup = Path(tempfile.mkdtemp(prefix=".tibbo_build_", dir=str(base) if base else None))
-        shutil.copytree(str(tpr.parent), str(cleanup / "p"), ignore=shutil.ignore_patterns(".tibbo_build_*"))
-        tpr_used = cleanup / "p" / tpr.name
-        raw = re.sub(rb"(?mi)^([ \t]*debug[ \t]*=[ \t]*)\w+", rb"\g<1>" + want.encode(), tpr_used.read_bytes())
-        tpr_used.write_bytes(raw)  # bytes: keep the project's own encoding
-        workdir = tpr_used.parent
+    # WSL: keep the copy on the Windows disk next to the project, so tmake.exe can open it
+    tpr_used, cleanup = prepared(tpr, project, want, near=environment()[0] == "wsl")
+    workdir = tpr_used.parent
     pdir, _ = platforms_dir(tpr_used, tide, project.get("platform"))
     # -b: folder with tbc.exe/tlink.exe (tmake looks in the current dir otherwise) - per tibbotech/tibbo-basic AGENTS.md
     cmd = [str(tide / "Bin" / "tmake.exe"), winpath(tpr_used), "-p" + winpath(pdir), "-b" + winpath(tide / "Bin"), "-r"]
@@ -415,6 +539,7 @@ def doctor_report(tpr=None):
     except Exception as e:
         net = str(getattr(e, "reason", e))
     consent = cloud_consent()
+    js, nver = node_compiler(), node_version()
     actions = []
     if tide:
         missing = [x for x in ("tmake.exe", "tupload.exe") if not (tide / "Bin" / x).is_file()]
@@ -431,16 +556,25 @@ def doctor_report(tpr=None):
                        "и перезапустите агента.")
     elif kind == "wsl":
         actions.append("TIDE не найден на диске C:. Задайте TIDE_DIR=/mnt/<диск>/<путь к TIDE> и перезапустите агента.")
-    else:
+    elif not js:
         where = "в контейнере или облачной песочнице" if "container" in hints else "не на Windows"
         actions.append("Агент работает %s: TIDE этого пользователя отсюда недоступен. Варианты: "
-                       "(1) запустить агента прямо на Windows-компьютере с TIDE (Claude Code, Codex, Gemini CLI, "
-                       "Kimi Code в терминале или VS Code); (2) облачный компилятор Tibbo - с согласия; "
-                       "(3) пользователь сам запускает tibbo_build.py или Build в TIDE и присылает вывод." % where)
+                       "(1) компилятор Tibbo на Node.js прямо здесь (Tibbo BASIC, код никуда не уходит); "
+                       "(2) облачный компилятор Tibbo - с согласия; (3) запустить агента на Windows-компьютере "
+                       "с TIDE; (4) пользователь сам собирает в TIDE и присылает вывод Output." % where)
     if "gemini-sandbox" in hints:
         actions.append("Gemini CLI запущен в песочнице (--sandbox): папки Windows и TIDE ему не видны. "
                        "Для локальной сборки запустите gemini без --sandbox.")
-    if not tide:
+    if not tide and not js:
+        if nver and shutil.which("git"):
+            actions.append("Быстрая сборка без TIDE и без отправки кода: компилятор Tibbo на Node.js (только Tibbo "
+                           "BASIC). Установить с согласия пользователя: python3 scripts/tibbo_build.py --setup-node "
+                           "--yes (скачает с GitHub около 200 МБ, около минуты).")
+        else:
+            actions.append("Для сборки без TIDE и без отправки кода можно поставить компилятор Tibbo на Node.js "
+                           "(только Tibbo BASIC): нужны Node.js 18+ (nodejs.org, LTS) и git (git-scm.com), затем "
+                           "python3 scripts/tibbo_build.py --setup-node --yes.")
+    if not tide and not js:
         if net:
             if "codex-no-network" in hints:
                 actions.append("Песочница Codex без сети: для облачной сборки разрешите сеть "
@@ -453,7 +587,8 @@ def doctor_report(tpr=None):
         elif not consent:
             actions.append("Для облачной сборки нужно согласие пользователя: файлы проекта уйдут на сервер Tibbo "
                            "(api.appblocks.io). Спросить один раз; на все проекты - переменная TIBBO_CLOUD_BUILD=yes.")
-    mode = "local" if tide else ("cloud" if not net and consent else "cloud-after-consent" if not net else "none")
+    mode = ("local" if tide else "node" if js else
+            "cloud" if not net and consent else "cloud-after-consent" if not net else "none")
     info = tide_info(tide)
     advice = project_advice(tpr, tide, info) if tpr else None
     return {"tide_version": info["version"], "tide_platforms": len(info["platforms"]),
@@ -461,6 +596,7 @@ def doctor_report(tpr=None):
             "python": sys.version.split()[0], "os": kind, "hints": hints, "tide": str(tide) if tide else None,
             "cloud_reachable": net is None, "cloud_error": net, "cloud_consent": consent,
             "upload_possible": bool(tide and (tide / "Bin" / "tupload.exe").is_file()), "mode": mode,
+            "node": nver, "node_compiler": str(js) if js else None,
             "user_actions": actions}
 
 
@@ -477,9 +613,12 @@ def doctor(as_json=False, tpr=None):
             print("  %-12s %s" % (exe, "есть" if Path(r["tide"], "Bin", exe).is_file() else "НЕТ"))
         print("  Платформы: %d, версии библиотек: %s" % (r["tide_platforms"], ", ".join([v for v in r["tide_lib_versions"] if re.fullmatch(r"\d+(_\d+)+", v)][-4:]) or "-"))
         print("  WinPcap/Npcap: %s" % (r["pcap"] or "не установлен (нужен только для связи udp_winpcap)"))
+    print("Компилятор Tibbo на Node.js: %s" % (r["node_compiler"] or ("не установлен (Node.js %s есть)" % r["node"]
+                                                                     if r["node"] else "не установлен, Node.js нет")))
     print("Согласие на облачную сборку (TIBBO_CLOUD_BUILD=yes): %s" % ("дано" if r["cloud_consent"] else "нет"))
     print("Облачный компилятор %s: %s" % (BASE, "доступен" if r["cloud_reachable"] else "НЕДОСТУПЕН: " + r["cloud_error"]))
-    print("Сборка будет: %s" % {"local": "локально (TIDE)", "cloud": "в облаке",
+    print("Сборка будет: %s" % {"local": "локально (TIDE)", "node": "компилятором Tibbo на Node.js (Tibbo BASIC; "
+                                "проекты на Tibbo C - в облаке)", "cloud": "в облаке",
                                 "cloud-after-consent": "в облаке - после согласия пользователя",
                                 "none": "НЕВОЗМОЖНА отсюда"}[r["mode"]])
     print("Загрузка в устройство: %s" % ("возможна (tupload)" if r["upload_possible"] else "отсюда невозможна"))
@@ -533,7 +672,9 @@ def main(argv):
             return 2
         return upload(opt("--upload"), opt("--target"), "--serial" in argv, "--yes" in argv)
 
-    flags = {"--local", "--cloud", "--release", "--debug", "--json", "--cloud-ok", "--out"}
+    if "--setup-node" in argv:
+        return setup_node("--yes" in argv)
+    flags = {"--local", "--node", "--cloud", "--release", "--debug", "--json", "--cloud-ok", "--out"}
     pos = [a for i, a in enumerate(argv) if not a.startswith("--") and (i == 0 or argv[i - 1] != "--out")]
     try:
         tpr = find_tpr(pos[0] if pos else ".")
@@ -542,7 +683,21 @@ def main(argv):
         return 2
     debug = False if "--release" in argv else (True if "--debug" in argv else None)
     tide = tide_dir()
-    mode = "local" if "--local" in argv else "cloud" if "--cloud" in argv else ("local" if tide else "cloud")
+    js = node_compiler()
+    if "--local" in argv:
+        mode = "local"
+    elif "--node" in argv:
+        mode = "node"
+    elif "--cloud" in argv:
+        mode = "cloud"
+    else:
+        c_proj = has_c_sources(parse_tpr(read_text(tpr))[1])
+        mode = "local" if tide else ("node" if js and not c_proj else "cloud")
+    if mode == "node" and not js:
+        print("Компилятор Tibbo на Node.js не установлен. Установка (с согласия пользователя):\n"
+              "  python3 scripts/tibbo_build.py --setup-node --yes\n"
+              "Нужны Node.js 18+ и git. Подробнее: python3 scripts/tibbo_build.py --doctor")
+        return 3
     if mode == "local" and not tide:
         print("TIDE не найден. Установите TIDE (Windows) или задайте TIDE_DIR; иначе - облачная сборка (--cloud).\n"
               "Что именно сделать пользователю: python3 scripts/tibbo_build.py --doctor")
@@ -552,7 +707,8 @@ def main(argv):
               "Спросите согласие пользователя, затем повторите с --cloud-ok (или TIBBO_CLOUD_BUILD=yes)." % BASE)
         return 3
     try:
-        res = build_local(tpr, debug, tide) if mode == "local" else build_cloud(tpr, debug)
+        res = (build_local(tpr, debug, tide) if mode == "local" else build_node(tpr, debug, js) if mode == "node"
+               else build_cloud(tpr, debug))
     except ValueError as e:
         print(e)
         return 2
@@ -560,8 +716,9 @@ def main(argv):
         print("Сборка не выполнена: %s\nПодсказка: python3 scripts/tibbo_build.py --doctor" % getattr(e, "reason", e))
         return 4
 
-    out = opt("--out") or str(tpr.with_suffix(".tpc") if mode == "cloud" else "")
-    if res["ok"] and res["tpc"] and mode == "cloud" and out:
+    name = parse_tpr(read_text(tpr))[0].get("output") or tpr.stem + ".tpc"
+    out = opt("--out") or str(tpr.parent / name)
+    if res["ok"] and res["tpc"]:
         Path(out).write_bytes(res["tpc"])
     errors = [m for m in res["messages"] if m["level"] == "error"]
     warnings = [m for m in res["messages"] if m["level"] == "warning"]
@@ -571,18 +728,19 @@ def main(argv):
                           "tpc_bytes": len(res["tpc"] or b""), "library_files": res.get("library_files", [])},
                          ensure_ascii=False, indent=1))
     else:
-        print("Сборка: %s, %s, %s" % ("TIDE на этом компьютере" if mode == "local" else "облачный компилятор Tibbo",
+        print("Сборка: %s, %s, %s" % ({"local": "TIDE на этом компьютере", "node": "компилятор Tibbo на Node.js (без TIDE, "
+                                       "код не покидает компьютер)", "cloud": "облачный компилятор Tibbo"}[mode],
                                       res["platform"], "debug" if res["debug"] else "release"))
         for m in res["messages"]:
             tag = "[ОШИБКА]" if m["level"] == "error" else "[ВНИМАНИЕ]"
             where = "%s(%d): " % (m["file"], m["line"]) if m["file"] else ""
-            print("%s%s %s %s" % (where, tag, m["code"], m["message"]))
+            print("%s%s %s%s" % (where, tag, (m["code"] + " ") if m.get("code") else "", m["message"]))
         if res.get("library_files"):
             print("Библиотеки TIDE (берёт компилятор): " + ", ".join(res["library_files"][:6]) +
                   (" ..." if len(res["library_files"]) > 6 else ""))
         if res["ok"]:
             print("Компиляция: OK, ошибок 0, предупреждений %d, .tpc %d байт%s" % (
-                len(warnings), len(res["tpc"] or b""), (" -> " + out) if out and mode == "cloud" else ""))
+                len(warnings), len(res["tpc"] or b""), " -> " + out))
             if res["debug"]:
                 print("Это debug-сборка: в устройстве она ждёт команд TIDE. Для работы без TIDE - --release.")
         else:

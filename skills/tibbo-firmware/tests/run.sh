@@ -75,12 +75,22 @@ TIDE_DIR="$PWD/tests/build/fake_tide" "$PY" scripts/tibbo_build.py "$B/proj" --j
 [ "$rc" = 1 ] && grep -q '"line": 2' "$B/out" && grep -q '"code": "C1013"' "$B/out" && echo "ok   build reports compiler errors" || { echo "FAIL build errors (rc=$rc)"; cat "$B/out"; fail=1; }
 ;; esac
 # --doctor: says what the USER must do; offline cloud (closed port) must not hang
-env -u TIBBO_CLOUD_BUILD TIDE_DIR=/nonexistent APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor --json >"$B/doc" 2>&1
+env -u TIBBO_CLOUD_BUILD -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR=/nonexistent APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor --json >"$B/doc" 2>&1
 "$PY" -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); assert d['mode']=='none' and not d['tide'] and d['user_actions'] and any('api.appblocks.io' in a or 'связи' in a for a in d['user_actions']), d" "$B/doc" && echo "ok   doctor tells the user what to do (no TIDE, no network)" || { echo "FAIL doctor no TIDE"; cat "$B/doc"; fail=1; }
 TIDE_DIR="$PWD/tests/build/fake_tide" APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor >"$B/doc" 2>&1
 grep -q "Сборка будет: локально" "$B/doc" && grep -q "возможна (tupload)" "$B/doc" && echo "ok   doctor finds TIDE" || { echo "FAIL doctor TIDE"; cat "$B/doc"; fail=1; }
 TIDE_DIR="$PWD/tests/build/fake_tide" APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor "$B/proj" --json >"$B/doc" 2>&1
 "$PY" -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); a=d['project_advice']; assert d['tide_version']=='5.04.50' and a['platform']=='TPP3W(G2)' and any('4.02.00' in f for f in a['facts']) and any('Select/Manage Target' in x for x in a['steps']) and any('Debug > Run' in x for x in a['steps']), d" "$B/doc" && echo "ok   doctor gives TIDE advice for the project" || { echo "FAIL doctor project advice"; cat "$B/doc"; fail=1; }
+# Node.js compiler (tibbotech/tibbo-basic) through a stand-in with the same CLI: errors, release flag, no TIDE needed
+if command -v node >/dev/null 2>&1; then
+NB="env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=$PWD/tests/build/fake_node TIDE_DIR=/nonexistent"
+$NB "$PY" scripts/tibbo_build.py "$B/proj" --json >"$B/out" 2>&1; rc=$?
+[ "$rc" = 1 ] && grep -q '"mode": "node"' "$B/out" && grep -q '"line": 2' "$B/out" && echo "ok   build with the Node.js compiler reports errors" || { echo "FAIL node errors (rc=$rc)"; cat "$B/out"; fail=1; }
+cp -r "$B/proj" "$B/ok"; sed 's/sock\.nmu/sock.num/' "$B/proj/main.tbs" > "$B/ok/main.tbs"
+$NB "$PY" scripts/tibbo_build.py "$B/ok" --release --out "$B/n.tpc" >"$B/out" 2>&1; rc=$?
+[ "$rc" = 0 ] && "$PY" -c "import sys; d=open(sys.argv[1],'rb').read(); assert d[28]==0xe" "$B/n.tpc" && grep -q "debug = on" "$B/ok/test.tpr" && echo "ok   Node.js build --release (project unchanged)" || { echo "FAIL node release (rc=$rc)"; cat "$B/out"; fail=1; }
+else echo "skip node compiler tests (no Node.js)"; fi
+"$PY" scripts/tibbo_build.py --setup-node >"$B/out" 2>&1; [ $? = 3 ] && echo "ok   setup-node needs --yes" || { echo "FAIL setup-node guard"; cat "$B/out"; fail=1; }
 printf "' resolution +0.25\242C\n" > "$B/proj/legacy.tbs"   # legacy code page byte, even length: must go as raw bytes
 "$PY" -c "import sys; sys.path.insert(0,'scripts'); import tibbo_build as t; from pathlib import Path
 f={x['name']: x['contents'] for x in t.collect(Path(sys.argv[1]))[1]}
