@@ -74,6 +74,11 @@ sed -i.bak 's/sock.num/sock.nmu/' "$B/proj/main.tbs"
 TIDE_DIR="$PWD/tests/build/fake_tide" "$PY" scripts/tibbo_build.py "$B/proj" --json >"$B/out" 2>&1; rc=$?
 [ "$rc" = 1 ] && grep -q '"line": 2' "$B/out" && grep -q '"code": "C1013"' "$B/out" && echo "ok   build reports compiler errors" || { echo "FAIL build errors (rc=$rc)"; cat "$B/out"; fail=1; }
 ;; esac
+# --doctor: says what the USER must do; offline cloud (closed port) must not hang
+env -u TIBBO_CLOUD_BUILD TIDE_DIR=/nonexistent APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor --json >"$B/doc" 2>&1
+"$PY" -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); assert d['mode']=='none' and not d['tide'] and d['user_actions'] and any('api.appblocks.io' in a or 'связи' in a for a in d['user_actions']), d" "$B/doc" && echo "ok   doctor tells the user what to do (no TIDE, no network)" || { echo "FAIL doctor no TIDE"; cat "$B/doc"; fail=1; }
+TIDE_DIR="$PWD/tests/build/fake_tide" APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor >"$B/doc" 2>&1
+grep -q "Сборка будет: локально" "$B/doc" && grep -q "возможна (tupload)" "$B/doc" && echo "ok   doctor finds TIDE" || { echo "FAIL doctor TIDE"; cat "$B/doc"; fail=1; }
 printf "' resolution +0.25\242C\n" > "$B/proj/legacy.tbs"   # legacy code page byte, even length: must go as raw bytes
 "$PY" -c "import sys; sys.path.insert(0,'scripts'); import tibbo_build as t; from pathlib import Path
 f={x['name']: x['contents'] for x in t.collect(Path(sys.argv[1]))[1]}

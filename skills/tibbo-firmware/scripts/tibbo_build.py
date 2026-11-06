@@ -4,14 +4,15 @@
 
 Two ways, chosen automatically:
   local  - TIDE is installed on this Windows computer: runs TIDE's command-line builder tmake.exe.
-           The code stays on the computer.
+           The code stays on the computer. Also from WSL (TIDE on /mnt/c, experimental).
   cloud  - any OS, no TIDE: Tibbo's compiler behind AppBlocks (api.appblocks.io). The project files are sent to
            Tibbo's server, so it needs the user's consent: --cloud-ok or TIBBO_CLOUD_BUILD=yes.
 
 Usage:
   python3 scripts/tibbo_build.py <project folder or .tpr> [--local | --cloud] [--release | --debug]
                                  [--out app.tpc] [--json] [--cloud-ok]
-  python3 scripts/tibbo_build.py --doctor            # what is available here and what the user must set up
+  python3 scripts/tibbo_build.py --doctor [--json]   # what is available here and what the USER must do
+                                                     # (relay "Что сделать пользователю" to the user as is)
   python3 scripts/tibbo_build.py --upload app.tpc --target <MAC or COM port> [--serial] --yes
                                  # Windows + TIDE: upload to a device with TIDE's tupload.exe (asks first)
 
@@ -166,16 +167,45 @@ def parse_messages(output, root_hint=None):
 
 # ---------- environment ----------
 
+def environment():
+    """Where this script (= the agent's shell) runs: windows | wsl | mac | linux, plus sandbox hints."""
+    kind = "windows" if os.name == "nt" else "mac" if sys.platform == "darwin" else "linux"
+    if kind == "linux":
+        try:
+            if "microsoft" in open("/proc/sys/kernel/osrelease").read().lower():
+                kind = "wsl"
+        except OSError:
+            pass
+    hints = []
+    if os.environ.get("SANDBOX"):
+        hints.append("gemini-sandbox")          # Gemini CLI started with --sandbox
+    if os.environ.get("CODEX_SANDBOX_NETWORK_DISABLED") == "1":
+        hints.append("codex-no-network")        # Codex sandbox without network
+    if kind in ("linux", "mac") and (Path("/.dockerenv").exists() or os.environ.get("container")):
+        hints.append("container")
+    return kind, hints
+
+
 def tide_dir():
     cands = [os.environ.get("TIDE_DIR")]
     for var in ("ProgramFiles(x86)", "ProgramFiles"):
         if os.environ.get(var):
             cands.append(os.path.join(os.environ[var], "Tibbo", "TIDE"))
     cands.append(r"C:\Program Files (x86)\Tibbo\TIDE")
+    if environment()[0] == "wsl":
+        cands += ["/mnt/c/Program Files (x86)/Tibbo/TIDE", "/mnt/c/Program Files/Tibbo/TIDE"]
     for c in cands:
         if c and Path(c, "Bin", "tmake.exe").is_file():
             return Path(c)
     return None
+
+
+def winpath(p):
+    """Path as the Windows tools of TIDE see it (WSL: /mnt/c/... -> C:\\...)."""
+    if environment()[0] != "wsl":
+        return str(p)
+    r = subprocess.run(["wslpath", "-w", str(p)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    return r.stdout.decode("utf-8", "replace").strip() or str(p)
 
 
 def cloud_consent():
@@ -239,13 +269,15 @@ def build_local(tpr, debug, tide):
     want = None if debug is None else ("on" if debug else "off")
     tpr_used = tpr
     if want and project.get("debug", "on").lower() != want:
-        cleanup = Path(tempfile.mkdtemp(prefix="tibbo_build_"))
-        shutil.copytree(str(tpr.parent), str(cleanup / "p"))
+        # WSL: keep the copy on the Windows disk next to the project, so tmake.exe can open it
+        base = tpr.parent if environment()[0] == "wsl" else None
+        cleanup = Path(tempfile.mkdtemp(prefix=".tibbo_build_", dir=str(base) if base else None))
+        shutil.copytree(str(tpr.parent), str(cleanup / "p"), ignore=shutil.ignore_patterns(".tibbo_build_*"))
         tpr_used = cleanup / "p" / tpr.name
         raw = re.sub(rb"(?mi)^([ \t]*debug[ \t]*=[ \t]*)\w+", rb"\g<1>" + want.encode(), tpr_used.read_bytes())
         tpr_used.write_bytes(raw)  # bytes: keep the project's own encoding
         workdir = tpr_used.parent
-    cmd = [str(tide / "Bin" / "tmake.exe"), str(tpr_used), "-p" + str(tide / "Platforms"), "-r"]
+    cmd = [str(tide / "Bin" / "tmake.exe"), winpath(tpr_used), "-p" + winpath(tide / "Platforms"), "-r"]
     r = subprocess.run(cmd, cwd=str(workdir), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out = decode_output(r.stdout)
     msgs = parse_messages(out, workdir)
@@ -259,23 +291,82 @@ def build_local(tpr, debug, tide):
             "debug": (want or project.get("debug", "on")) == "on", "raw_tail": out.strip().splitlines()[-5:]}
 
 
-def doctor():
-    print("Python %s, %s" % (sys.version.split()[0], sys.platform))
+def doctor_report():
+    """What can build here and, if something is missing, what exactly the USER has to do."""
+    kind, hints = environment()
     tide = tide_dir()
-    print("TIDE на этом компьютере: %s" % (tide or "не найден (локальная сборка недоступна)"))
-    if tide:
-        for exe in ("tmake.exe", "tupload.exe"):
-            print("  %-12s %s" % (exe, "есть" if (tide / "Bin" / exe).is_file() else "НЕТ"))
-        print("  Платформы и библиотеки: %s" % (tide / "Platforms"))
-    print("Согласие на облачную сборку (TIBBO_CLOUD_BUILD=yes): %s" % ("дано" if cloud_consent() else "нет"))
     try:
-        st, _ = post("/api/projects/build", {"command": "ping"}, timeout=20)
-        net = "доступен"
+        post("/api/projects/build", {"command": "ping"}, timeout=20)
+        net = None
     except Exception as e:
-        net = "НЕДОСТУПЕН: %s" % getattr(e, "reason", e)
-    print("Облачный компилятор %s: %s" % (BASE, net))
-    mode = "локально (TIDE)" if tide else ("в облаке" if cloud_consent() else "в облаке - после согласия пользователя")
-    print("Сборка будет: %s" % mode)
+        net = str(getattr(e, "reason", e))
+    consent = cloud_consent()
+    actions = []
+    if tide:
+        missing = [x for x in ("tmake.exe", "tupload.exe") if not (tide / "Bin" / x).is_file()]
+        if missing:
+            actions.append("В TIDE нет %s: переустановите TIDE с tibbo.com." % ", ".join(missing))
+        actions.append("Агент попросит разрешение запустить python (а он - tmake.exe из TIDE): разрешите. "
+                       "Чтобы не спрашивал каждый раз - добавьте эту команду в разрешённые в настройках агента.")
+        if kind == "wsl":
+            actions.append("Агент работает в WSL: TIDE вызывается через Windows (экспериментально). "
+                           "Проект держите на диске Windows (/mnt/c/...), не в домашней папке Linux.")
+    elif kind == "windows":
+        actions.append("TIDE не найден. Установите TIDE (tibbo.com → Downloads) или, если он стоит не в "
+                       "C:\\Program Files (x86)\\Tibbo\\TIDE, задайте переменную TIDE_DIR с путём к нему "
+                       "и перезапустите агента.")
+    elif kind == "wsl":
+        actions.append("TIDE не найден на диске C:. Задайте TIDE_DIR=/mnt/<диск>/<путь к TIDE> и перезапустите агента.")
+    else:
+        where = "в контейнере или облачной песочнице" if "container" in hints else "не на Windows"
+        actions.append("Агент работает %s: TIDE этого пользователя отсюда недоступен. Варианты: "
+                       "(1) запустить агента прямо на Windows-компьютере с TIDE (Claude Code, Codex, Gemini CLI, "
+                       "Kimi Code в терминале или VS Code); (2) облачный компилятор Tibbo - с согласия; "
+                       "(3) пользователь сам запускает tibbo_build.py или Build в TIDE и присылает вывод." % where)
+    if "gemini-sandbox" in hints:
+        actions.append("Gemini CLI запущен в песочнице (--sandbox): папки Windows и TIDE ему не видны. "
+                       "Для локальной сборки запустите gemini без --sandbox.")
+    if not tide:
+        if net:
+            if "codex-no-network" in hints:
+                actions.append("Песочница Codex без сети: для облачной сборки разрешите сеть "
+                               "(config.toml: [sandbox_workspace_write] network_access = true) или одобрите команду вне песочницы.")
+            else:
+                actions.append("Нет связи с %s (%s). Для облачной сборки нужен доступ к этому адресу: "
+                               "в облачной песочнице агента - добавить домен api.appblocks.io в разрешённые "
+                               "(в организации это делает администратор), на компьютере - проверить прокси и сертификаты "
+                               "(pip install truststore)." % (BASE, net))
+        elif not consent:
+            actions.append("Для облачной сборки нужно согласие пользователя: файлы проекта уйдут на сервер Tibbo "
+                           "(api.appblocks.io). Спросить один раз; на все проекты - переменная TIBBO_CLOUD_BUILD=yes.")
+    mode = "local" if tide else ("cloud" if not net and consent else "cloud-after-consent" if not net else "none")
+    return {"python": sys.version.split()[0], "os": kind, "hints": hints, "tide": str(tide) if tide else None,
+            "cloud_reachable": net is None, "cloud_error": net, "cloud_consent": consent,
+            "upload_possible": bool(tide and (tide / "Bin" / "tupload.exe").is_file()), "mode": mode,
+            "user_actions": actions}
+
+
+def doctor(as_json=False):
+    r = doctor_report()
+    if as_json:
+        print(json.dumps(r, ensure_ascii=False, indent=1))
+        return 0
+    print("Python %s, %s%s" % (r["python"], r["os"], (" (" + ", ".join(r["hints"]) + ")") if r["hints"] else ""))
+    print("TIDE на этом компьютере: %s" % (r["tide"] or "не найден (локальная сборка недоступна)"))
+    if r["tide"]:
+        for exe in ("tmake.exe", "tupload.exe"):
+            print("  %-12s %s" % (exe, "есть" if Path(r["tide"], "Bin", exe).is_file() else "НЕТ"))
+        print("  Платформы и библиотеки: %s" % Path(r["tide"], "Platforms"))
+    print("Согласие на облачную сборку (TIBBO_CLOUD_BUILD=yes): %s" % ("дано" if r["cloud_consent"] else "нет"))
+    print("Облачный компилятор %s: %s" % (BASE, "доступен" if r["cloud_reachable"] else "НЕДОСТУПЕН: " + r["cloud_error"]))
+    print("Сборка будет: %s" % {"local": "локально (TIDE)", "cloud": "в облаке",
+                                "cloud-after-consent": "в облаке - после согласия пользователя",
+                                "none": "НЕВОЗМОЖНА отсюда"}[r["mode"]])
+    print("Загрузка в устройство: %s" % ("возможна (tupload)" if r["upload_possible"] else "отсюда невозможна"))
+    if r["user_actions"]:
+        print("Что сделать пользователю:")
+        for a in r["user_actions"]:
+            print("  - " + a)
     return 0
 
 
@@ -288,7 +379,7 @@ def upload(tpc, target, serial, yes):
         print("Загрузка меняет прошивку устройства %s. Спросите пользователя и повторите с --yes." % target)
         return 3
     loader = "taiko.serialdevice" if serial else "taiko.udpdevice"
-    cmd = [str(tide / "Bin" / "tupload.exe"), "--loader", loader, "--target", target, "--app", str(tpc)]
+    cmd = [str(tide / "Bin" / "tupload.exe"), "--loader", loader, "--target", target, "--app", winpath(tpc)]
     print("Команда: " + " ".join('"%s"' % c if " " in c else c for c in cmd))
     r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     print(decode_output(r.stdout).strip())
@@ -301,7 +392,7 @@ def main(argv):
         return 0 if argv else 2
     opt = lambda k: argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else None
     if "--doctor" in argv:
-        return doctor()
+        return doctor("--json" in argv)
     if "--upload" in argv:
         if not opt("--upload") or not opt("--target"):
             print("нужно: --upload <файл.tpc> --target <адрес>")
@@ -319,7 +410,8 @@ def main(argv):
     tide = tide_dir()
     mode = "local" if "--local" in argv else "cloud" if "--cloud" in argv else ("local" if tide else "cloud")
     if mode == "local" and not tide:
-        print("TIDE не найден. Установите TIDE (Windows) или задайте TIDE_DIR; иначе - облачная сборка (--cloud).")
+        print("TIDE не найден. Установите TIDE (Windows) или задайте TIDE_DIR; иначе - облачная сборка (--cloud).\n"
+              "Что именно сделать пользователю: python3 scripts/tibbo_build.py --doctor")
         return 3
     if mode == "cloud" and not ("--cloud-ok" in argv or cloud_consent()):
         print("Облачная сборка отправит файлы проекта на сервер Tibbo (%s).\n"
