@@ -8,9 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 Not released yet: waiting for Tibbo's permission.
 
 ### Building with Tibbo's compiler
-- **New `tibbo-firmware/scripts/tibbo_build.py`** - compiles a TIDE project with Tibbo's real compiler, three ways in
-  this order: TIDE on this Windows computer (`tmake`), Tibbo's compiler ported to Node.js (any OS, Tibbo BASIC,
-  `--setup-node --yes` once), the AppBlocks cloud compiler (only with the user's consent). Errors as
+- **New `tibbo-firmware/scripts/tibbo_build.py`** - compiles a TIDE project with Tibbo's real compiler: checking code
+  with Tibbo's compiler ported to Node.js (any OS, Tibbo BASIC, `--setup-node --yes` once); firmware for a device
+  (`--release`, `--out`, `--firmware`) with the user's own TIDE (`tmake`) when it is installed; the AppBlocks cloud
+  compiler as a fallback (Tibbo C without TIDE), only with the user's consent. Errors as
   `file(line) code text` or JSON, `--release`/`--debug` without touching the project, `--upload` through `tupload`
   (only with `--yes`), `--doctor [<project>]` - what works here, what the user must do, TIDE advice for the project.
 - **New `tibbo-firmware/references/tide.md`** - what the user needs per agent environment, `.tpr` format, `tmake` and
