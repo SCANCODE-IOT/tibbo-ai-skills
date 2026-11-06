@@ -9,7 +9,7 @@
 
 Claude · ChatGPT / Codex · Gemini · Kimi · DeepSeek · GLM
 
-[![Tests](https://github.com/scancode-iot/tibbo-claude-skills/actions/workflows/tests.yml/badge.svg)](https://github.com/scancode-iot/tibbo-claude-skills/actions/workflows/tests.yml)
+[![Tests](https://github.com/scancode-iot/tibbo-ai-skills/actions/workflows/tests.yml/badge.svg)](https://github.com/scancode-iot/tibbo-ai-skills/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-2-6f42c1)](#скиллы)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20·%20stdlib%20only-3776ab)](#требования)
@@ -115,14 +115,14 @@ flowchart LR
 
 ## Установка
 
-Скачайте файлы из [последнего релиза](https://github.com/SCANCODE-IOT/tibbo-claude-skills/releases/latest).
+Скачайте файлы из [последнего релиза](https://github.com/SCANCODE-IOT/tibbo-ai-skills/releases/latest).
 Ставьте **оба** скилла: `appblocks` проверяет плату скриптом из `tibbo-firmware`.
 **Пошаговая инструкция для каждой нейросети: [docs/INSTALL.ru.md](docs/INSTALL.ru.md).**
 
 | Чем пользуетесь | Быстрый старт |
 |---|---|
 | Приложения Claude | Customize → Skills → + → Upload a skill: `tibbo-firmware.zip`, затем `appblocks.zip` |
-| Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-claude-skills`, затем `/plugin install tibbo-skills@scancode` |
+| Claude Code | `/plugin marketplace add SCANCODE-IOT/tibbo-ai-skills`, затем `/plugin install tibbo-skills@scancode` |
 | Codex, Gemini CLI, Kimi Code, Deep Code и другие агенты | распакуйте *Source code (zip)* и запустите `python tools/install.py` |
 | Приложение Kimi (K3, K3.1 Pro) | [tibbo-skills-kimi-app.zip](docs/kimi/tibbo-skills-kimi-app.zip): режим Agent → Skills → «Convert Office Documents into a Skill» ([инструкция в Word](docs/kimi/tibbo-skills-kimi-guide.ru.docx)) |
 | ChatGPT, Gemini, Kimi, DeepSeek, GLM в браузере | `tibbo-chat-pack.zip`: инструкция + файлы знаний + скрипты |
@@ -166,7 +166,7 @@ flowchart LR
 ## Структура репозитория
 
 ```text
-tibbo-claude-skills/
+tibbo-ai-skills/
 ├── skills/
 │   ├── tibbo-firmware/        # SKILL.md, references/, data/, scripts/, tests/
 │   └── appblocks/             # SKILL.md, references/, scripts/, examples/, tests/
@@ -204,7 +204,7 @@ sh skills/appblocks/tests/run.sh
 ```
 
 Оба набора работают без сети и запускаются при каждом коммите вместе с проверкой установщика, валидатором
-Agent Skills и лимитами чат-пакета (см. [Actions](https://github.com/scancode-iot/tibbo-claude-skills/actions)).
+Agent Skills и лимитами чат-пакета (см. [Actions](https://github.com/scancode-iot/tibbo-ai-skills/actions)).
 
 ## Источники данных
 
@@ -215,7 +215,7 @@ Agent Skills и лимитами чат-пакета (см. [Actions](https://gi
 - [appblocks.io](https://appblocks.io) - проекты-примеры и каталог узлов редактора.
 
 Tibbo периодически выпускает новые библиотеки и Tibbit. Если что-то устарело,
-[создайте issue](https://github.com/scancode-iot/tibbo-claude-skills/issues).
+[создайте issue](https://github.com/scancode-iot/tibbo-ai-skills/issues).
 
 ## Участие
 
