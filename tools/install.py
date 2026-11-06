@@ -8,10 +8,13 @@ Usage / запуск (from the unpacked repository / из распакованн
   python tools/install.py --list           # supported agents and folders
   python tools/install.py --project .      # into ./.agents/skills of one project only
   python tools/install.py --uninstall      # remove from the same folders
+  python tools/install.py --check          # where the skills are installed, which version, is there a newer one
+  python tools/install.py --update         # download the latest release from GitHub and update every installed copy
 
 On Windows use "python", on macOS/Linux "python3". Python 3.9+, no extra packages.
 """
 import argparse
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -49,6 +52,19 @@ def source_dir():
              "Скиллы не найдены рядом со скриптом. Распакуйте репозиторий целиком и запустите tools/install.py из него.")
 
 
+def updater():
+    """skills_update.py from the tibbo-firmware skill next to this script (version check and download)."""
+    path = source_dir() / "tibbo-firmware" / "scripts" / "skills_update.py"
+    spec = importlib.util.spec_from_file_location("skills_update", str(path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def installed_targets():
+    return [(n, p, w) for n, (p, w) in AGENTS.items() if (p / "tibbo-firmware" / "SKILL.md").is_file()]
+
+
 def install(src, dest):
     dest.mkdir(parents=True, exist_ok=True)
     for s in SKILLS:
@@ -73,7 +89,45 @@ def main():
     ap.add_argument("--project", metavar="DIR", help="install into DIR/.agents/skills (one project) instead of your home folder")
     ap.add_argument("--uninstall", action="store_true", help="remove the skills from the chosen folders")
     ap.add_argument("--list", action="store_true", help="show supported agents and folders")
+    ap.add_argument("--check", action="store_true", help="show installed versions and the latest release")
+    ap.add_argument("--update", action="store_true", help="download the latest release and update installed copies "
+                    "(or the folders given with --agent / --project)")
     a = ap.parse_args()
+
+    if a.check or a.update:
+        up = updater()
+        found = installed_targets()
+        if a.project:
+            p = Path(a.project).resolve() / ".agents" / "skills"
+            found = [("project", p, "this project")] if (p / "tibbo-firmware" / "SKILL.md").is_file() else []
+        elif a.agent:
+            names = [ALIASES.get(n.lower(), n.lower()) for n in a.agent]
+            names = list(AGENTS) if "all" in names else names
+            found = [(n, AGENTS[n][0], AGENTS[n][1]) for n in names if n in AGENTS]
+        for n, p, _ in found:
+            print("%-9s %s - версия %s" % (n, p, up.version_of(p / "tibbo-firmware") or "не установлена"))
+        if not found:
+            print("Скиллы Tibbo в папках агентов не найдены. Установка: python tools/install.py")
+        try:
+            latest, urls = up.latest_release()
+        except Exception as e:
+            print("Не удалось узнать последнюю версию на GitHub: %s" % e)
+            return 1
+        print("Последняя версия на GitHub: %s" % latest)
+        if a.check or not found:
+            return 0
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            for s in SKILLS:
+                print("Скачиваю %s.zip ..." % s)
+                up.unpack(up.fetch(urls[s], accept="application/octet-stream"), tmp)
+            ok_all = True
+            for n, p, who in found:
+                ok = install(Path(tmp), p)
+                ok_all &= ok
+                print("%s -> %s: версия %s, самопроверка %s" % (n, p, latest, "ok" if ok else "ОШИБКА"))
+        print("\nГотово. Перезапустите агентов. / Done. Restart your agents.")
+        return 0 if ok_all else 1
 
     if a.list:
         for k, (path, who) in AGENTS.items():

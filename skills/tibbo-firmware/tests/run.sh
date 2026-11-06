@@ -46,5 +46,20 @@ done
 "$PY" scripts/tibbo_lint.py tests/lint/tpp2_adc.tbs --platform "TPP2W(G2)" | grep -q "объекта adc нет на платформе" && echo "ok   lint platform objects" || { echo "FAIL lint platform objects"; fail=1; }
 "$PY" scripts/tibbo_lint.py tests/lint/tpp2_adc.tbs >/dev/null && echo "ok   lint without platform" || { echo "FAIL lint without platform"; fail=1; }
 env -u PYTHONUTF8 PYTHONIOENCODING=cp1251 "$PY" scripts/tibbo_lint.py tests/lint/bad.tbs >/dev/null 2>"$T/err"; [ $? = 1 ] && echo "ok   lint non-UTF-8 console" || { echo "FAIL lint cp1251"; cat "$T/err"; fail=1; }
+# skills_update.py: in-place update from local zips, refusal for plugin installs, broken archive keeps the install
+U=$(mktemp -d); mkdir -p "$U/skills" "$U/zips" "$U/bad"
+cp -r . "$U/skills/tibbo-firmware"; cp -r ../appblocks "$U/skills/appblocks" 2>/dev/null || mkdir -p "$U/skills/appblocks"
+(cd .. && "$PY" -c "import shutil,sys; [shutil.make_archive(sys.argv[1]+'/'+n, 'zip', '.', n) for n in ('tibbo-firmware','appblocks')]" "$U/zips") 2>/dev/null
+if [ -f "$U/zips/appblocks.zip" ]; then
+  "$PY" "$U/skills/tibbo-firmware/scripts/skills_update.py" --from "$U/zips" >"$U/out" 2>&1 && grep -q "Самопроверка: ok" "$U/out" \
+    && echo "ok   skills_update from local zips" || { echo "FAIL skills_update from local zips"; cat "$U/out"; fail=1; }
+  (cd "$U/bad" && mkdir x && echo hi > x/a.txt && "$PY" -c "import shutil; shutil.make_archive('tibbo-firmware','zip','.','x'); shutil.copy('tibbo-firmware.zip','appblocks.zip')")
+  "$PY" "$U/skills/tibbo-firmware/scripts/skills_update.py" --from "$U/bad" >"$U/out" 2>&1
+  [ $? = 1 ] && [ -f "$U/skills/tibbo-firmware/SKILL.md" ] && echo "ok   skills_update keeps install on a bad archive" || { echo "FAIL skills_update bad archive"; cat "$U/out"; fail=1; }
+fi
+P="$U/.claude/plugins/cache/x/skills"; mkdir -p "$P"; cp -r "$U/skills/tibbo-firmware" "$P/"
+"$PY" "$P/tibbo-firmware/scripts/skills_update.py" >"$U/out" 2>&1; rc=$?
+[ "$rc" = 2 ] && grep -q "/plugin update" "$U/out" && echo "ok   skills_update refuses plugin installs" || { echo "FAIL skills_update plugin path (rc=$rc)"; cat "$U/out"; fail=1; }
+rm -rf "$U"
 rm -rf "$T"
 exit $fail

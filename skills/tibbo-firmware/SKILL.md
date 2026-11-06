@@ -5,7 +5,7 @@ license: MIT (Tibbo reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Scripts need Python 3.9+ (standard library only). Network is optional.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.0.0"
+  version: "2.1.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -29,6 +29,7 @@ metadata:
 | `references/tibbit-selection.md` | Подбор Tibbit под задачу, тайлы и формы M/C/H, UART/INT/ADC/PoE-сокеты, порядок раскладки. |
 | `scripts/tps_check.py` | Проверка конфигурации TPS (сокеты, линии, UART/INT, разъёмы, PoE, бюджет питания) + SVG платы (рисует `scripts/tps_render.py`); `find` — поиск Tibbit; `board` — сокеты и `PL_IO_NUM_*` платы; `tibbit NN` — всё о модуле. Данные: `data/tibbits.json`, `data/boards.json` (пересборка: `scripts/build_data.py`). Тесты: `sh tests/run.sh`. |
 | `scripts/tibbo_lint.py` | **Проверка имён API в коде** (.tbs/.tbh/.tc/.th): неизвестные свойства и методы объектов TiOS, выдуманные константы `PL_*`, объект или константа, которых нет на платформе (`--platform "TPP3W(G2)"`, ветки `#if PLATFORM_ID=…` для других платформ пропускает), `elseif`. Данные: `data/tios_api.json` (пересборка: `scripts/build_lint_data.py`). |
+| `scripts/skills_update.py` | **Обновление обоих скиллов** до последнего релиза прямо в папке, где они стоят: `--check` - сравнить версии, без ключей - скачать с GitHub и заменить (с откатом при ошибке и самопроверкой), `--from <папка>` - из скачанных zip. Для плагина Claude Code и приложений Claude не подходит - скрипт сам скажет, что делать. |
 | `scripts/ab_pairs.py` | Жёлтые треугольники редактора AppBlocks на сокетах (Incorrect pair / Connector required / Tibbit required): правила и таблица разъёмов сняты из редактора (`data/appblocks_pairs.json`); `tps_check.py` вызывает его сам. В Problems AppBlocks эти предупреждения не показывает. |
 | `scripts/state_diagram.py` | Диаграмма состояний прошивки-автомата (SVG) из короткого JSON: состояния, выходы, переходы, аварийные пути. |
 
@@ -50,6 +51,7 @@ metadata:
 5. Не пиши, что код «скомпилируется»: компиляции не было, пока ты сам не собрал проект.
 6. **Скрипты запустить нельзя** (веб-чат, нет Python): прямо скажи «скриптами не проверено», дай пользователю файлы (`cfg.json`, код) и команды проверки, чтобы он запустил их у себя.
 7. Скрипты лежат в папке скилла: запускай их с путём от неё (`<папка скилла>/scripts/…`) или перейди в неё. На Windows - `python` вместо `python3`.
+8. Пользователь просит обновить скиллы Tibbo или спрашивает версию: `python3 scripts/skills_update.py --check`, затем (с его согласия) без `--check`. Обновляются оба скилла сразу; после обновления попроси перезапустить агента.
 
 ## 0. Перед началом уточни контекст
 

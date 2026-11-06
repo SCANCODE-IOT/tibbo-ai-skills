@@ -131,6 +131,16 @@ flowchart LR
 и в `~/.claude/skills/`, если стоит Claude Code, затем запускает самопроверку. Есть ключи
 `--agent opencode|cursor|copilot|all`, `--project <папка>` и `--uninstall`.
 
+### Как обновить
+
+Скажите агенту **«Обнови скиллы Tibbo»** - он запустит скрипт обновления, который входит в скилл
+(`skills/tibbo-firmware/scripts/skills_update.py`, ключ `--check` показывает установленную и последнюю версию).
+Или запустите `python tools/install.py --update` из распакованного репозитория: он обновит скиллы во всех агентах,
+где они стоят. Плагин Claude Code: `/plugin marketplace update scancode`, затем `/plugin update tibbo-skills@scancode`.
+Приложения Claude, приложение Kimi и веб-чаты: замените файлы на новые.
+**Пошагово для каждой платформы: [docs/INSTALL.ru.md → Как обновить](docs/INSTALL.ru.md#как-обновить).**
+Чтобы узнавать о новых версиях: **Watch → Custom → Releases** на этой странице.
+
 ## Примеры запросов
 
 Просто опишите задачу - агент сам выберет скилл.
