@@ -11,3 +11,4 @@ type = basic
 [file2]
 path = sock\trunk\sock.tbs
 type = basic
+location = commonlib

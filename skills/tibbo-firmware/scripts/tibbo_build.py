@@ -188,6 +188,80 @@ def parse_messages(output, root_hint=None):
     return msgs
 
 
+# ---------- what an error means and what to do (shown under every error; full catalog: references/tide.md §5) ----------
+
+HINTS = [
+    (r"unresolved address '\?F:(\w+)'",
+     "процедура {0} объявлена (declare), но не написана. Добавьте её тело. Для callback_* библиотеки - пустая "
+     "заготовка: sub {0}(...) / end sub с аргументами как в .tbh библиотеки (python3 scripts/tibbo_new.py делает их сам)"),
+    (r"undeclared identifier 'wln_check_association'",
+     "на платформах с Wi-Fi библиотека dhcp требует библиотеку wln: добавьте wln\\trunk\\wln.tbs и wln.tbh в проект "
+     "(location = commonlib), include \"wln\\trunk\\wln.tbh\" перед dhcp.tbh и её callback_wln_* (tibbo_new.py --libs dhcp)"),
+    (r"unable to find include file '.*?([\w]+)[\\/]trunk[\\/]",
+     "файл библиотеки {0} не найден: в секции [fileN] проекта у файлов библиотек Tibbo должно быть location = commonlib, "
+     "а src_lib_ver - установленная версия (например 2_01_05)"),
+    (r"unable to find include file '(.*?)'", "нет файла {0}: добавьте его в папку проекта и секцией [fileN] в .tpr"),
+    (r"invalid platform|referes to invalid platform",
+     "в .tpr нет строки platform=<точное имя> или такой платформы нет: имена - в references/platforms.md"),
+    (r"'(\w+)' is not member of '(\w+)' object",
+     "у объекта {1} нет {0} на этой платформе: python3 scripts/tibbo_lint.py --platform подскажет похожее имя; "
+     "список - references/tios-api.md"),
+    (r"undeclared identifier 'elseif'", "в Tibbo BASIC пишут раздельно: else if ... then ... end if end if, либо select case"),
+    (r"undeclared identifier 'return'", "return нет: значение функции присваивают её имени (f = 5), выход - exit function"),
+    (r"undeclared identifier '(print|sleep|delay|wait|cstr|cint|int|integer_|printf)'",
+     "{0} в Tibbo BASIC нет: вывод - sys.debugprint, пауза - таймер on_sys_timer (не цикл), преобразования - str/val/lval/hex"),
+    (r"undeclared identifier '(PL_\w+)'", "константы {0} нет на этой платформе: точные имена - references/platforms.md"),
+    (r"undeclared identifier '(\w+)'",
+     "{0} не объявлен: нет dim/declare, не подключён .tbh библиотеки (include) или её .tbs не добавлен в проект"),
+    (r"string capacity must not exceed 255", "строка не длиннее 255 символов: string(N), N <= 255; длинные данные - по частям"),
+    (r"event handlers cannot be called", "обработчик события нельзя вызывать: вынесите код в свою sub и зовите её из обоих мест"),
+    (r"recursive calls are not supported", "рекурсии нет (в том числе через цепочку вызовов): перепишите циклом"),
+    (r"'(\w+)' already has body", "{0} написан дважды: обработчик события один на проект - объедините код"),
+    (r"property '(\w+)' is read-only", "{0} только для чтения: состояние меняют методом (sock.connect, sock.close ...)"),
+    (r"expects (\d+) arguments \((\d+) passed\)|argument count mismatch for function '(\w+)'",
+     "не то число аргументов: сверить с references/tios-api.md (для on_* событий - точная сигнатура там же)"),
+    (r"unknown base", "возможно, строки склеены через &: в Tibbo BASIC это +, а &h1F и &b1010 - числа"),
+    (r"'Then' expected|'If' expected|invalid expression",
+     "синтаксис: сравнения = <> < >, логика and/or/not (не != && ||), каждый if закрыт end if"),
+    (r"too large to fit", "программа больше памяти платформы: уберите лишние библиотеки и ресурсы или возьмите плату с большей памятью"),
+    (r"requires more variable memory", "не хватает RAM под переменные: уменьшите массивы и строки (string(32) вместо string)"),
+]
+
+
+def hint_for(message):
+    for pat, text in HINTS:
+        m = re.search(pat, message or "", re.I)
+        if m:
+            return text.format(*[g or "" for g in m.groups()])
+    return None
+
+
+def preflight(tpr):
+    """Project mistakes no compiler explains well: checked before any build."""
+    text = read_text(tpr)
+    project, entries = parse_tpr(text)
+    msgs = []
+    err = lambda t: msgs.append({"file": tpr.name, "line": 0, "level": "error", "code": None, "message": t})
+    if not project.get("platform"):
+        err("в [project] нет platform=<имя платформы> (точные имена - references/platforms.md)")
+    for e in entries:
+        path = (e.get("path") or "").strip()
+        if not path:
+            continue
+        local = (tpr.parent / path.replace("\\", "/")).is_file()
+        lib = (e.get("location") or "").strip().lower() in ("commonlib", "library")
+        if local or lib:
+            continue
+        if re.search(r"[\\/]trunk[\\/]", path):
+            err("%s - файл библиотеки Tibbo, но у него нет location = commonlib: добавьте эту строку в его секцию "
+                "[fileN] (и src_lib_ver в [project])" % path)
+        else:
+            err("%s указан в проекте, но такого файла в папке проекта нет" % path)
+    if any((e.get("location") or "").strip().lower() == "commonlib" for e in entries) and not project.get("src_lib_ver"):
+        err("в [project] нет src_lib_ver=<версия библиотек>, например 2_01_05")
+    return msgs
+
+
 # ---------- environment ----------
 
 def environment():
@@ -488,7 +562,7 @@ def setup_node(yes, update=False):
     return 0
 
 
-NODE_MSG = re.compile(r"^(?P<file>.+?):(?P<line>\d+):(?P<col>\d+): (?P<level>error|warning): (?P<text>.*)$")
+NODE_MSG = re.compile(r"^(?P<file>.*?):(?P<line>\d+):(?P<col>\d+): (?P<level>error|warning): (?P<text>.*)$")
 
 
 def build_node(tpr, debug, js):
@@ -515,12 +589,14 @@ def build_node(tpr, debug, js):
                 f = os.path.relpath(f, str(root))
             except ValueError:
                 pass
-            parts = Path(f).parts
-            if parts and parts[0] == "..":  # outside the project: platform or library file
+            parts = Path(f).parts if f else ()
+            if not f:
+                f = None   # linker and project errors come without a file
+            elif parts and parts[0] == "..":  # outside the project: platform or library file
                 f = "\\".join(parts[parts.index("Platforms"):]) if "Platforms" in parts else parts[-1]
             inner = re.match(r"^.*?\((\d+)\):\s*(error|warning)\s+(C\d+):\s*(.*)$", m.group("text"))
             code, msg = (inner.group(3), inner.group(4)) if inner else (None, m.group("text"))
-            msgs.append({"file": f.replace("/", "\\"), "line": int(m.group("line")),
+            msgs.append({"file": f.replace("/", "\\") if f else None, "line": int(m.group("line")),
                          "level": m.group("level"), "code": code, "message": msg})
         if r.returncode != 0 and not any(x["level"] == "error" for x in msgs):
             msgs.append({"file": None, "line": 0, "level": "error", "code": None,
@@ -766,8 +842,15 @@ def main(argv):
         print("Облачная сборка отправит файлы проекта на сервер Tibbo (%s).\n"
               "Спросите согласие пользователя, затем повторите с --cloud-ok (или TIBBO_CLOUD_BUILD=yes)." % BASE)
         return 3
+    pre = preflight(tpr)
     try:
-        res = (build_local(tpr, debug, tide) if mode == "local" else build_node(tpr, debug, js) if mode == "node"
+        if pre:
+            p0 = parse_tpr(read_text(tpr))[0]
+            res = {"ok": False, "messages": pre, "tpc": None, "platform": p0.get("platform"),
+                   "debug": p0.get("debug", "on").lower() == "on"}
+            mode = "preflight"
+        else:
+          res = (build_local(tpr, debug, tide) if mode == "local" else build_node(tpr, debug, js) if mode == "node"
                else build_cloud(tpr, debug))
     except ValueError as e:
         print(e)
@@ -780,6 +863,9 @@ def main(argv):
     out = opt("--out") or str(tpr.parent / name)
     if res["ok"] and res["tpc"]:
         Path(out).write_bytes(res["tpc"])
+    for m in res["messages"]:
+        if m["level"] == "error":
+            m["hint"] = hint_for(m["message"])
     errors = [m for m in res["messages"] if m["level"] == "error"]
     built_for = tpc_platform(res["tpc"]) if res["ok"] else None
     warnings = [m for m in res["messages"] if m["level"] == "warning"]
@@ -791,12 +877,15 @@ def main(argv):
                          ensure_ascii=False, indent=1))
     else:
         print("Сборка: %s, %s, %s" % ({"local": "TIDE на этом компьютере", "node": "компилятор Tibbo на Node.js (без TIDE, "
-                                       "код не покидает компьютер)", "cloud": "облачный компилятор Tibbo"}[mode],
+                                       "код не покидает компьютер)", "cloud": "облачный компилятор Tibbo",
+                                       "preflight": "не начата - ошибки в файле проекта"}[mode],
                                       res["platform"], "debug" if res["debug"] else "release"))
         for m in res["messages"]:
             tag = "[ОШИБКА]" if m["level"] == "error" else "[ВНИМАНИЕ]"
             where = "%s(%d): " % (m["file"], m["line"]) if m["file"] else ""
             print("%s%s %s%s" % (where, tag, (m["code"] + " ") if m.get("code") else "", m["message"]))
+            if m.get("hint"):
+                print("    что делать: " + m["hint"])
         if res.get("library_files"):
             print("Библиотеки TIDE (берёт компилятор): " + ", ".join(res["library_files"][:6]) +
                   (" ..." if len(res["library_files"]) > 6 else ""))
