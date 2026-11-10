@@ -26,6 +26,7 @@ to a device without opening TIDE. Linux boards LTPP3(G2) are covered.
   steps, how to write instructions for the user's own case.
 - The Node.js compiler was compared with the cloud compiler on 15 tibbotech projects in debug and release: identical
   `.tpc` and identical errors.
+- CI installs Tibbo's compiler and builds every recipe on Linux and on Windows on each push.
 
 ### New projects that compile the first time
 - **New `tibbo-firmware/scripts/tibbo_new.py`** - project generator: board + libraries → `.tpr`, `global.tbh`,
