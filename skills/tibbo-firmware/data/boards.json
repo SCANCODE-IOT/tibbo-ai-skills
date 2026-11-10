@@ -1994,5 +1994,207 @@
     ]
    }
   }
+ },
+ "LTPP3(G2)": {
+  "family": "LTPP3",
+  "gen": 2,
+  "board_5v_ma": 960,
+  "buzzer_ma": 0,
+  "wa2000_ma": 0,
+  "onboard_supply": {
+   "ma": 2500,
+   "vin": "8-60 В",
+   "note": "оценка: Tibbo даёт 2,5 А источника и 400 мА при 12 В у платы"
+  },
+  "m_sockets": [
+   1,
+   3,
+   5,
+   7,
+   9,
+   11,
+   13,
+   15
+  ],
+  "c_sockets": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12,
+   14,
+   16
+  ],
+  "rf_socket": null,
+  "tiles": [
+   [
+    1,
+    2,
+    3,
+    4
+   ],
+   [
+    5,
+    6,
+    7,
+    8
+   ],
+   [
+    9,
+    10,
+    11,
+    12
+   ],
+   [
+    13,
+    14,
+    15,
+    16
+   ]
+  ],
+  "poe": null,
+  "enclosures": [
+   "LTPB3"
+  ],
+  "sockets": {
+   "S1": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_9",
+     "B": "PL_IO_NUM_8",
+     "C": "PL_IO_NUM_0",
+     "D": "PL_IO_NUM_16"
+    },
+    "uart": 0,
+    "int": 0,
+    "adc": false,
+    "c_pair": "S2"
+   },
+   "S3": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_32",
+     "B": "PL_IO_NUM_33",
+     "C": "PL_IO_NUM_4",
+     "D": "PL_IO_NUM_20"
+    },
+    "uart": null,
+    "int": 1,
+    "adc": false,
+    "c_pair": "S4"
+   },
+   "S5": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_11",
+     "B": "PL_IO_NUM_10",
+     "C": "PL_IO_NUM_1",
+     "D": "PL_IO_NUM_17"
+    },
+    "uart": 1,
+    "int": 2,
+    "adc": false,
+    "c_pair": "S6"
+   },
+   "S7": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_34",
+     "B": "PL_IO_NUM_35",
+     "C": "PL_IO_NUM_5",
+     "D": "PL_IO_NUM_21"
+    },
+    "uart": null,
+    "int": 3,
+    "adc": false,
+    "c_pair": "S8"
+   },
+   "S9": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_13",
+     "B": "PL_IO_NUM_12",
+     "C": "PL_IO_NUM_2",
+     "D": "PL_IO_NUM_18"
+    },
+    "uart": 2,
+    "int": 4,
+    "adc": false,
+    "c_pair": "S10"
+   },
+   "S11": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_36",
+     "B": "PL_IO_NUM_37",
+     "C": "PL_IO_NUM_6",
+     "D": "PL_IO_NUM_22"
+    },
+    "uart": null,
+    "int": 5,
+    "adc": false,
+    "c_pair": "S12"
+   },
+   "S13": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_15",
+     "B": "PL_IO_NUM_14",
+     "C": "PL_IO_NUM_3",
+     "D": "PL_IO_NUM_19"
+    },
+    "uart": 3,
+    "int": 6,
+    "adc": false,
+    "c_pair": "S14"
+   },
+   "S15": {
+    "type": "M",
+    "lines": {
+     "A": "PL_IO_NUM_38",
+     "B": "PL_IO_NUM_39",
+     "C": "PL_IO_NUM_7",
+     "D": "PL_IO_NUM_23"
+    },
+    "uart": null,
+    "int": 7,
+    "adc": false,
+    "c_pair": "S16"
+   },
+   "S2": {
+    "type": "C",
+    "m_pair": "S1"
+   },
+   "S4": {
+    "type": "C",
+    "m_pair": "S3"
+   },
+   "S6": {
+    "type": "C",
+    "m_pair": "S5"
+   },
+   "S8": {
+    "type": "C",
+    "m_pair": "S7"
+   },
+   "S10": {
+    "type": "C",
+    "m_pair": "S9"
+   },
+   "S12": {
+    "type": "C",
+    "m_pair": "S11"
+   },
+   "S14": {
+    "type": "C",
+    "m_pair": "S13"
+   },
+   "S16": {
+    "type": "C",
+    "m_pair": "S15"
+   }
+  },
+  "os": "linux"
  }
 }

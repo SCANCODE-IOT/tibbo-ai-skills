@@ -104,13 +104,22 @@ BOARD_FAMILY = {
     "TPP3": {"m_sockets": list(range(1, 28, 2)), "c_sockets": list(range(2, 29, 2)), "rf_socket": 29,
              "tiles": [[i, i + 1, i + 2, i + 3] for i in range(1, 28, 4)],
              "poe": {"m1": 27, "m2": [25, 27], "jumpers": "1-2"}, "enclosures": ["TPB3"]},
+    # Linux board. docs.tibbo.com/ltpp3g2, ltpp3g2_tiles_sockets: 4 tiles, UART on S1/S5/S9/S13, no PoE socket, no RF socket
+    "LTPP3": {"m_sockets": list(range(1, 16, 2)), "c_sockets": list(range(2, 17, 2)), "rf_socket": None,
+              "tiles": [[i, i + 1, i + 2, i + 3] for i in range(1, 16, 4)], "poe": None, "enclosures": ["LTPB3"]},
 }
+# LTPP3(G2) lines by socket, docs.tibbo.com/ltpp3g2_platform_pl_io_num (not in the TIDE platform files)
+LTPP3G2_LINES = {1: (9, 8, 0, 16), 3: (32, 33, 4, 20), 5: (11, 10, 1, 17), 7: (34, 35, 5, 21),
+                 9: (13, 12, 2, 18), 11: (36, 37, 6, 22), 13: (15, 14, 3, 19), 15: (38, 39, 7, 23)}
 BOARDS = {
     # name: family, gen, base current at 5V (mA), onboard supply
     "TPP2W": ("TPP2", 1, 300, None), "TPP2N": ("TPP2", 1, 300, None),
     "TPP2W(G2)": ("TPP2", 2, 140, None), "TPP2W(G3)": ("TPP2", 3, 140, None),
     "TPP3W": ("TPP3", 1, 300, None), "TPP3N": ("TPP3", 1, 300, None),
     "TPP3W(G2)": ("TPP3", 2, 140, None), "TPP3W(G3)": ("TPP3", 3, 140, None),
+    # Linux. Own 8-60 V supply rated 2.5 A, so no power Tibbits (docs.tibbo.com/ltpp3g2). The board itself draws
+    # 400 mA at 12 V with both Ethernet ports on = 4.8 W, taken here as 960 mA of the 5 V budget (estimate).
+    "LTPP3(G2)": ("LTPP3", 2, 960, {"ma": 2500, "vin": "8-60 В", "note": "оценка: Tibbo даёт 2,5 А источника и 400 мА при 12 В у платы"}),
 }
 
 
@@ -193,6 +202,14 @@ def build_boards(platform_sockets):
         b = {"family": fam, "gen": gen, "board_5v_ma": base_ma, "buzzer_ma": 50, "wa2000_ma": 300,
              "onboard_supply": onboard, **f, "sockets": {}}
         socks = platform_sockets.get(name, {})
+        if fam == "LTPP3":
+            b.update({"buzzer_ma": 0, "wa2000_ma": 0, "os": "linux"})   # buzzer is part of the board figure
+            socks = {}
+            for n, (s, (la, lb, lc, ld)) in enumerate(LTPP3G2_LINES.items()):
+                socks[s] = {k: {"pl": "PL_IO_NUM_%d" % v} for k, v in zip("ABCD", (la, lb, lc, ld))}
+                socks[s]["D"]["int"] = n            # any M socket can be an interrupt source (PinMux), 8 at most
+                if s in (1, 5, 9, 13):
+                    socks[s]["A"]["uart"] = (1, 5, 9, 13).index(s)
         for s in f["m_sockets"]:
             lines = socks.get(s, {})
             b["sockets"][f"S{s}"] = {
