@@ -78,12 +78,22 @@ transport=udp_broadcast   ; связь с устройством: udp_winpcap | 
 address=0.36.119.87.32.2  ; адрес выбранного устройства (MAC в виде десятичных байт через точку)
 [file1]
 path=main.tbs             ; файл проекта
-type=basic                ; basic | header | c | binary | xtext ...
-location=                 ; пусто/без файла в папке - файл библиотеки из TIDE\Platforms\src\<src_lib_ver>
+type=basic                ; basic | header | c | html | text | binary ...
+location=project          ; файл лежит в папке проекта
+[file2]
+path=sock\trunk\sock.tbs  ; файл библиотеки Tibbo: путь внутри Platforms\src\<src_lib_ver>
+type=basic
+location=commonlib        ; ОБЯЗАТЕЛЬНО для каждого файла библиотеки
 ```
 
-- Файлы библиотек подключаются двумя способами: копией в проекте (`libraries/sock/sock.tbs`, так делает AppBlocks) или
-  путём внутрь TIDE (`sock\trunk\sock.tbs` при `src_lib_ver`). Облачный компилятор и `tmake` находят оба.
+- **Файл библиотеки Tibbo без `location=commonlib` или проект без `src_lib_ver` не собирается** (проверено
+  компилятором Tibbo и облаком: компилятор ищет файл в папке проекта). `tibbo_build.py` проверяет это до сборки и
+  называет строку `.tpr`. Второй способ - копия библиотеки в самом проекте (`libraries/sock/sock.tbs`,
+  `location=project`; так делает AppBlocks).
+- Объекты, выключенные на платформе по умолчанию (`fd`, `kp`, `lcd`, на старых платформах `wln`), включает строка
+  `defines=`: `/dOBJECT_FD=FD_ENABLED`, `/dOBJECT_KP=KP_ENABLED`, `/dOBJECT_LCD=LCD_ENABLED`, `/dOBJECT_WLN=WLN_ENABLED`.
+- **Новый проект не пиши руками: `python3 scripts/tibbo_new.py <папка> --platform "<платформа>" --libs dhcp,...`** -
+  он запишет `.tpr`, подключит библиотеки с их зависимостями, вызовами в обработчиках и обязательными callback-ами.
 - В TIDE этого компьютера лежат версии библиотек 0_00 … 2_01_05; новые проекты - `2_01_05`.
 - Файл, которого нет в `[fileN]`, в сборку не попадёт, даже если лежит в папке (кроме `include` из исходников).
 
@@ -175,7 +185,9 @@ python3 scripts/tibbo_build.py --upload app.tpc --target COM3 --serial --yes # �
 
 Формат: `файл(строка): error C1013: текст`. Номер строки - в файле из начала сообщения; ошибки в
 `Platforms\...` обычно значат неверную платформу или `defines`. Исправляй **первую** ошибку и собирай заново:
-следующие часто её следствие.
+следующие часто её следствие. `tibbo_build.py` под каждой ошибкой печатает строку «что делать:» из этой таблицы.
+**Выдуманное имя события (`sub on_button_press()`) компилятор пропускает молча** - программа соберётся, а
+обработчик не вызовется никогда; это ловит только `tibbo_lint.py`.
 
 | Сообщение | Причина в Tibbo | Что делать |
 |---|---|---|
@@ -210,6 +222,12 @@ python3 scripts/tibbo_build.py --upload app.tpc --target COM3 --serial --yes # �
 | `division or modulo by zero` | Деление на константу 0. | Исправить выражение. |
 | Компоновщик: `Compiled binary file is too large to fit on currently selected target` | Программа больше ROM платформы. | Убрать неиспользуемые библиотеки, ресурсы, вывод отладки; платформа с большей памятью. |
 | Компоновщик: `Your project requires more variable memory (RAM) than available` | Глобальные переменные не влезают в RAM. | Уменьшить массивы и строки (`string(32)` вместо 255), буферы; см. память платформы в platforms.md. |
+| Компоновщик: `unable to relocate - unresolved address '?F:имя'` | Процедура объявлена (`declare`) и вызывается, но тела нет нигде. Чаще всего - обязательный `callback_*` подключённой библиотеки или файл библиотеки не внесён в `.tpr`. | Написать процедуру (для callback - с точной сигнатурой из `.tbh` библиотеки, тело может быть пустым) или добавить файл в `[fileN]`. `tibbo_lint.py` называет недостающие callback-и до сборки; `tibbo_new.py` создаёт их сам. |
+| Компоновщик: `unresolved address '?V:имя'` | Переменная объявлена (`declare x as ...`), но `dim` нет ни в одном `.tbs`. | Добавить `dim` в один `.tbs`. |
+| Компоновщик: `address '?V:имя' is already defined` (или `'?F:имя'`) | Два глобальных имени совпали: своё и библиотечное (например `sntp_sock`), или `dim` в `.tbh`, подключённом в два файла. | Переименовать своё; `dim` - только в `.tbs`. |
+| `unable to find include file 'sock\trunk\sock.tbh'` (путь библиотеки) | У файла библиотеки в `.tpr` нет `location=commonlib`, либо нет `src_lib_ver`. | Исправить `.tpr` (см. §2); `tibbo_build.py` показывает это до сборки. |
+| `undeclared identifier 'fd'` (или `kp`, `lcd`, `wln`) | Объект выключен на платформе по умолчанию или его на ней нет. | Добавить в `[project]` файла `.tpr` `defines= /dOBJECT_FD=FD_ENABLED` (`tibbo_lint.py` называет нужный define); нет объекта на платформе - другая платформа. |
+| `'timercountms' is not member of 'sys'` в `mqtt.tbs` | Библиотека mqtt 2_01_05 не собирается на 15 старых платформах. | Платформа из списка `data/libraries.json` → mqtt → `broken_on` не подходит: другая платформа или свой клиент. |
 | `Unable to find library 'X'` | Нет версии библиотек `src_lib_ver` в этом TIDE. | Указать установленную версию (`-l` или правка `.tpr`). |
 
 Полный список текстов сообщений взят из компилятора TIDE (`tbc.exe`); номера `C####` компилятор ставит сам.

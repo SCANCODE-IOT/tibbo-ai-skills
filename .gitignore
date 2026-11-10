@@ -8,3 +8,8 @@ __pycache__/
 # downloaded packages
 *.whl
 *.tar.gz
+
+# compiler output
+skills/tibbo-firmware/recipes/*/tmp/
+skills/tibbo-firmware/recipes/*/*.tpc
+*.pdb

@@ -66,12 +66,31 @@ def build():
             chunks.append("\n\n<!-- ===== %s/%s ===== -->\n\n# [%s/%s]\n\n%s\n" % (skill, rel, skill, rel, body))
         with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
             f.write("".join(chunks))
+    # 08: recipes with their full code (a chat cannot open the recipes/ folder) and the Linux board notes
+    rdir = os.path.join(FW, "recipes")
+    chunks = ["# Tibbo firmware recipes (compiled by Tibbo's compiler) and the Linux board LTPP3(G2)\n\nTibbo Skills %s by Scancode - "
+              "knowledge file for chats. Start a program from the closest recipe; each one is a complete TIDE project.\n" % ver]
+    for rel in ("references/recipes.md", "references/linux.md"):
+        chunks.append("\n\n<!-- ===== tibbo-firmware/%s ===== -->\n\n# [tibbo-firmware/%s]\n\n%s\n" % (
+            rel, rel, open(os.path.join(FW, rel), encoding="utf-8").read().strip()))
+    for name in sorted(os.listdir(rdir)):
+        d = os.path.join(rdir, name)
+        if not os.path.isdir(d):
+            continue
+        chunks.append("\n\n<!-- ===== recipe %s ===== -->\n\n# [tibbo-firmware/recipes/%s]\n" % (name, name))
+        for fn in ("app.tpr", "global.tbh", "main.tbs", "device.tbs", "index.html", "settings.txt"):
+            fp = os.path.join(d, fn)
+            if os.path.isfile(fp):
+                body = open(fp, encoding="utf-8", newline="").read().replace("\r\n", "\n").strip()
+                chunks.append("\n## %s/%s\n\n```\n%s\n```\n" % (name, fn, body))
+    with open(os.path.join(OUT, "08-recipes-and-linux.md"), "w", encoding="utf-8") as f:
+        f.write("".join(chunks))
     with zipfile.ZipFile(os.path.join(OUT, "tibbo-tools.zip"), "w", zipfile.ZIP_DEFLATED) as z:
         for skill in ("tibbo-firmware", "appblocks"):
             for dirpath, dirs, files in os.walk(os.path.join(SK, skill)):
-                dirs[:] = [d for d in dirs if d != "__pycache__"]
+                dirs[:] = [d for d in dirs if d not in ("__pycache__", "tmp", "tests")]
                 for fn in sorted(files):
-                    if fn.endswith(".pyc") or fn == ".DS_Store":
+                    if fn.endswith((".pyc", ".tpc", ".pdb")) or fn == ".DS_Store":
                         continue
                     full = os.path.join(dirpath, fn)
                     z.write(full, os.path.relpath(full, SK))

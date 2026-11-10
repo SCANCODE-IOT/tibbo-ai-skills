@@ -195,6 +195,8 @@ HINTS = [
     (r"unresolved address '\?F:(\w+)'",
      "процедура {0} объявлена (declare), но не написана. Добавьте её тело. Для callback_* библиотеки - пустая "
      "заготовка: sub {0}(...) / end sub с аргументами как в .tbh библиотеки (python3 scripts/tibbo_new.py делает их сам)"),
+    (r"unresolved address '\?V:(\w+)'",
+     "переменная {0} объявлена (declare), но нигде не создана: добавьте dim {0} as <тип> в один .tbs"),
     (r"address '\?[VF]:(\w+)' is already defined",
      "имя {0} уже занято - так называется переменная или процедура подключённой библиотеки (или оно объявлено "
      "через dim в двух файлах). Переименуйте своё; общую переменную объявляют dim в одном .tbs и declare в global.tbh"),
@@ -210,6 +212,9 @@ HINTS = [
     (r"'(\w+)' is not member of '(\w+)' object",
      "у объекта {1} нет {0} на этой платформе: python3 scripts/tibbo_lint.py --platform подскажет похожее имя; "
      "список - references/tios-api.md"),
+    (r"undeclared identifier '(fd|kp|lcd|wln|ssi|bt|beep|rtc)'",
+     "объект {0} на этой платформе выключен или его нет. Включается строкой defines= в [project] файла .tpr, например "
+     "/dOBJECT_FD=FD_ENABLED (KP, LCD, WLN - так же); есть ли объект на платформе - python3 scripts/tibbo_lint.py <папка>"),
     (r"undeclared identifier 'elseif'", "в Tibbo BASIC пишут раздельно: else if ... then ... end if end if, либо select case"),
     (r"undeclared identifier 'return'", "return нет: значение функции присваивают её имени (f = 5), выход - exit function"),
     (r"undeclared identifier '(print|sleep|delay|wait|cstr|cint|int|integer_|printf)'",
