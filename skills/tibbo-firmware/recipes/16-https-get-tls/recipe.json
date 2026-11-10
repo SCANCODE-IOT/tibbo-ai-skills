@@ -1,0 +1,9 @@
+{
+ "title": "HTTPS-клиент: запрос GET по TLS с проверкой сертификата",
+ "platform": "TPP3W(G3)",
+ "also": [
+  "TPP2W(G3)",
+  "EM3000W"
+ ],
+ "tibbits": []
+}

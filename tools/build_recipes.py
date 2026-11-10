@@ -11,7 +11,7 @@ import json, os, re, shutil, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SK = os.path.join(ROOT, "skills", "tibbo-firmware")
 SRC = os.path.join(ROOT, "tools", "recipes_src")
-OUT = os.path.join(SK, "recipes")
+OUT = os.environ.get("RECIPES_OUT") or os.path.join(SK, "recipes")
 
 
 def crlf(text):
@@ -24,6 +24,17 @@ for name in sorted(os.listdir(SRC)):
     d = os.path.join(SRC, name)
     meta = json.load(open(os.path.join(d, "recipe.json"), encoding="utf-8"))
     dst = os.path.join(OUT, name)
+    if meta.get("raw"):        # a hand-written project (Tibbo C): copied as it is, text files with CRLF
+        os.makedirs(dst)
+        for fn in sorted(os.listdir(d)):
+            data = open(os.path.join(d, fn), "rb").read()
+            if fn == "recipe.json":
+                json.dump({k: meta[k] for k in ("title", "platform", "also", "tibbits", "language", "compiler") if k in meta},
+                          open(os.path.join(dst, fn), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            else:
+                open(os.path.join(dst, fn), "wb").write(crlf(data.decode("utf-8")))
+        index.append((name, meta))
+        continue
     cmd = [sys.executable, os.path.join(SK, "scripts", "tibbo_new.py"), dst, "--platform", meta["platform"], "--name", "app"]
     if meta.get("libs"):
         cmd += ["--libs", meta["libs"]]

@@ -1,0 +1,109 @@
+include "global.tbh"
+
+'Bluetooth LE to TCP bridge, after Tibbo's own test project BT-WLN-Echo-Test:
+'what a phone writes to the device over Bluetooth goes to the TCP client on port 1000 (Wi-Fi) and back.
+'Hardware: a board with the WA2000 Wi-Fi/Bluetooth module (TPP2W(G2), TPP3W(G2), EM2000W). Bluetooth lives in the
+'Wi-Fi module, so the Wi-Fi library must be started first. Change: WIFI_SSID, WIFI_PASSWORD, BT_NAME.
+'On the phone use a "BLE terminal" application (Microchip transparent UART service).
+
+const WIFI_SSID = "MyNetwork"
+const WIFI_PASSWORD = "MyPassword"
+const BT_NAME = "Tibbo-Bridge"
+const BRIDGE_PORT = "1000"
+const BRIDGE_SOCK = 5				'the libraries take the first sockets, this one is ours
+
+dim wifi_retry as byte
+
+declare sub wifi_join()
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	'Bluetooth: buffers first, enabled after the allocation
+	bt.emulation = PL_WLN_BT_EMULATION_MODE_MICROCHIP
+	bt.name = BT_NAME
+	bt.rxbuffrq(4)
+	bt.txbuffrq(4)
+
+	sock.num = BRIDGE_SOCK
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+	sock.allowedinterfaces = "WLN,NET"
+	sock.localportlist = BRIDGE_PORT
+	sock.rxbuffrq(4)
+	sock.txbuffrq(4)
+	sys.buffalloc()
+
+	wifi_retry = 0
+	wifi_join()
+	bt.enable()
+end sub
+
+'-------------------------------------------------------------------
+sub wifi_join()
+	if wln_start(WIFI_SSID, WLN_SECURITY_MODE_WPA2, WIFI_PASSWORD, PL_WLN_DOMAIN_FCC, YES, PL_WLN_SCAN_ALL) <> WLN_STATUS_OK then
+		wifi_retry = 20				'try again in 10 s
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	wln_proc_timer()
+	dhcp_proc_timer()
+	if wifi_retry > 0 then
+		wifi_retry = wifi_retry - 1
+		if wifi_retry = 0 then wifi_join()
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_bt_event(bt_event as pl_bt_events)
+	select case bt_event
+	case PL_BT_EVENT_ENABLED:
+		bt.advertise = YES			'visible to phones from now on
+	case PL_BT_EVENT_CONNECTED:
+		pat.play("G~", PL_PAT_CANINT)
+	case PL_BT_EVENT_DISCONNECTED:
+		pat.play("-", PL_PAT_CANINT)
+	end select
+end sub
+
+'-------------------------------------------------------------------
+sub on_bt_data_arrival()
+	'phone -> TCP client: take no more than the socket can accept, the rest waits in the Bluetooth buffer
+	dim s as string
+	sock.num = BRIDGE_SOCK
+	if sock.statesimple <> PL_SSTS_EST then
+		s = bt.getdata(255)			'nobody is connected: drop the data
+		exit sub
+	end if
+	if sock.txfree > 0 then
+		s = bt.getdata(sock.txfree)
+		sock.setdata(s)
+		sock.send()
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dim s as string
+	wln_proc_data()
+	dhcp_proc_data()
+	if sock.num = BRIDGE_SOCK then
+		'TCP client -> phone
+		if bt.txfree > 0 then
+			s = sock.getdata(bt.txfree)
+			bt.setdata(s)
+			bt.send()
+		end if
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_event(wln_event as pl_wln_events)
+	wln_proc_event(wln_event)
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_task_complete(completed_task as pl_wln_tasks)
+	wln_proc_task_complete(completed_task)
+end sub

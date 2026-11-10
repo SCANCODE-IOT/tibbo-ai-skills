@@ -1,0 +1,24 @@
+[project]
+defines= /dLCD_TYPE=SOLOMON_SSD1963_FIXED_IO2 /dOBJECT_LCD=LCD_ENABLED /dOBJECT_KP=KP_ENABLED
+name=app
+output=app.tpc
+debug=on
+platform=TPP2W(G2)
+src_lib_ver=2_01_05
+transport=udp_broadcast
+
+[file1]
+path=main.tbs
+type=basic
+location=project
+
+[file2]
+path=global.tbh
+type=header
+location=project
+
+[file3]
+path=device.tbs
+type=basic
+location=project
+

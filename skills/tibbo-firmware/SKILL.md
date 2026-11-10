@@ -5,7 +5,7 @@ license: MIT (Tibbo reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Scripts need Python 3.9+ (standard library only). Network is optional.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.2.1"
+  version: "2.3.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -64,7 +64,7 @@ metadata:
 
 | Файл | Когда открывать |
 |---|---|
-| `references/recipes.md` + `recipes/` | **Начало любой программы:** 13 готовых проектов, собранных компилятором (TCP-сервер и клиент, DHCP, Wi-Fi, RS232-TCP, Modbus RTU, MQTT, веб-сервер, настройки, реле и входы, SNTP, журнал на флеше, кнопка и светодиоды), приёмы и проверенные факты языка. |
+| `references/recipes.md` + `recipes/` | **Начало любой программы:** 20 готовых проектов, собранных компилятором (TCP-сервер и клиент, DHCP, Wi-Fi, RS232-TCP, Modbus RTU, MQTT, веб-сервер, настройки, реле и входы, SNTP, журнал на флеше, кнопка и светодиоды, Modbus TCP slave, HTTP-клиент, HTTPS по TLS, Bluetooth, дисплей с кнопками, два примера на Tibbo C), приёмы и проверенные факты языка. |
 | `references/tios-api.md` | Любое свойство, метод, событие, enum или константа объектов TiOS (`sys`, `io`, `sock`, `ser`, `net`, `wln`, `fd`, `stor`, `rtc`, `ssi`, `i2c`, `bt`, `tls`, `adc`, `pwm`, `kp`, `lcd` ...), syscalls, порядок работы с объектами. |
 | `references/platforms.md` | Платформа: память, версия TiOS, точные `PL_IO_NUM_*`, линии слотов, какие объекты включаются строкой `defines=`. Точное API по платформам - в `data/platform_api.json` (его читает линтер). |
 | `references/libraries.md` | Библиотеки Tibbo (sock, dhcp, wln, dns, sntp, mqtt, settings, tables, modbus, http, драйверы Tibbit ...): API, `callback_*`, defines, зависимости. |

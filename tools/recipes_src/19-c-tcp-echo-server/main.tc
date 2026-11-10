@@ -1,0 +1,52 @@
+#include "global.th"
+
+/* Tibbo C: TCP echo server - the same program as recipe 01, written in C.
+ * Objects, properties, methods and events are the same as in Tibbo BASIC; the syntax is C:
+ * event handlers are functions "void on_...()", statements end with ";", methods are called with "()",
+ * strings have the type "string". Files: main.tc (type=c in the .tpr), global.th (type=cheader).
+ * Tibbo C is compiled by TIDE or by Tibbo's cloud compiler; the compiler on Node.js builds Tibbo BASIC only.
+ * Hardware: any board with Ethernet. Change: the address and ECHO_PORT.
+ */
+
+#define ECHO_PORT "1001"
+#define ECHO_SOCK 0
+
+void on_sys_init()
+{
+	net.ip = "192.168.1.98";
+	net.netmask = "255.255.255.0";
+	net.gatewayip = "192.168.1.1";
+
+	sock.num = ECHO_SOCK;
+	sock.protocol = PL_SOCK_PROTOCOL_TCP;
+	sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT;
+	sock.localportlist = ECHO_PORT;
+	sock.rxbuffrq(2);
+	sock.txbuffrq(2);
+	sys.buffalloc();			/* once, after all buffer requests */
+}
+
+void on_sock_data_arrival()
+{
+	string s;
+
+	if (sock.num != ECHO_SOCK)
+		return;
+	/* take no more than the transmitter can accept: the rest stays in the receive buffer
+	   and this event comes again */
+	s = sock.getdata(sock.txfree);
+	if (len(s) > 0) {
+		sock.setdata(s);
+		sock.send();
+	}
+}
+
+void on_sock_event(enum pl_sock_state newstate, enum pl_sock_state_simple newstatesimple)
+{
+	if (sock.num != ECHO_SOCK)
+		return;
+	if (newstatesimple == PL_SSTS_EST)
+		pat.play("G~", PL_PAT_CANINT);		/* a client has connected */
+	else if (newstatesimple == PL_SSTS_CLOSED)
+		pat.play("-", PL_PAT_CANINT);
+}

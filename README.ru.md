@@ -39,8 +39,8 @@ Codex, Gemini CLI, Kimi Code, Deep Code и других агентах, а дл�
 
 | Скилл | Что умеет ваша нейросеть с ним |
 |---|---|
-| [**tibbo-firmware**](skills/tibbo-firmware/README.ru.md) | Писать, проверять и отлаживать прошивки на Tibbo BASIC / Tibbo C для TiOS (TPP2/TPP3, DS, EM, WM, WS); начинать проект с генератора или с одной из 13 готовых программ (`tibbo_new.py`, `recipes/`); проверять код по точному API вашей платформы (`tibbo_lint.py`) и **собирать его компилятором самой Tibbo** (`tibbo_build.py`); находить устройства в сети и загружать прошивку, не открывая TIDE (`tibbo_device.py`, экспериментально); подбирать Tibbit под задачу, раскладывать их по сокетам TPS и проверять линии, UART/INT, разъёмы, PoE и бюджет питания +5 В; рисовать плату и диаграммы состояний прошивки. Linux-платы LTPP3(G2): Tibbit, питание, слоты и первые шаги. |
-| [**appblocks**](skills/appblocks/README.ru.md) | Объяснять, проверять, править и создавать проекты [AppBlocks](https://appblocks.io) (экспорт JSON); рисовать схему логики; проверять железо через `tibbo-firmware`; компилировать сгенерированную прошивку компилятором TIDE у Tibbo; настраивать MQTT со своим брокером; работать с AppBlocks Cloud API (проекты, устройства, OTA, workflow) с подтверждением перед любой записью. |
+| [**tibbo-firmware**](skills/tibbo-firmware/README.ru.md) | Писать, проверять и отлаживать прошивки на Tibbo BASIC / Tibbo C для TiOS (TPP2/TPP3, DS, EM, WM, WS); начинать проект с генератора или с одной из 20 готовых программ (`tibbo_new.py`, `recipes/`); проверять код по точному API вашей платформы (`tibbo_lint.py`) и **собирать его компилятором самой Tibbo** (`tibbo_build.py`); находить устройства в сети и загружать прошивку, не открывая TIDE (`tibbo_device.py`, экспериментально); подбирать Tibbit под задачу, раскладывать их по сокетам TPS и проверять линии, UART/INT, разъёмы, PoE и бюджет питания +5 В; рисовать плату и диаграммы состояний прошивки. Linux-платы LTPP3(G2): Tibbit, питание, слоты и первые шаги. |
+| [**appblocks**](skills/appblocks/README.ru.md) | Объяснять, проверять, править и создавать проекты [AppBlocks](https://appblocks.io) (экспорт JSON); рисовать схему логики; проверять железо через `tibbo-firmware`; начинать с одного из 6 готовых проектов для TiOS; компилировать сгенерированную прошивку компилятором TIDE у Tibbo; настраивать MQTT со своим брокером; работать с AppBlocks Cloud API (проекты, устройства, OTA, workflow) с подтверждением перед любой записью. |
 
 Скиллы работают в паре: железо проекта AppBlocks проверяется скриптом TPS из `tibbo-firmware`,
 а прошивку, которую AppBlocks генерирует для TiOS, проверяют по чек-листу `tibbo-firmware`.
@@ -52,7 +52,7 @@ flowchart LR
     C -->|проект или облако AppBlocks| A[appblocks]
     A -->|железо проекта| T[tps_check.py]
     F --> T
-    F --> G[tibbo_new.py + 13 рецептов:<br/>проект, который собирается]
+    F --> G[tibbo_new.py + 20 рецептов:<br/>проект, который собирается]
     G --> N[tibbo_lint.py: точное API платформы]
     N --> B[tibbo_build.py: компилятор Tibbo]
     B --> D[tibbo_device.py: загрузка, запуск]
@@ -179,6 +179,20 @@ Tibbo: версией на Node.js (нужны Node.js 18+ и git; ставит�
 а что нет; в веб-чате ничего не собирается, и ответ прямо об этом говорит. Сборка без ошибок - ещё не проверка:
 всегда пробуйте прошивку на реальном устройстве. Что доступно агенту в вашем случае: [docs/INSTALL.ru.md](docs/INSTALL.ru.md#сборка-и-загрузка-прошивки).
 
+## Измерено
+
+В репозитории есть [14 контрольных задач с автоматической проверкой](evals/RESULTS.md): результат собирается
+компилятором Tibbo и проверяется инструментами скиллов. Первый прогон, 10 ноября 2026:
+
+| | Задач решено | Проверок пройдено |
+|---|---|---|
+| Claude Sonnet 5.5 со скиллами | 14 из 14 | 64 из 64 |
+| Claude Haiku 5.5 (маленькая модель) со скиллами | 14 из 14 | 64 из 64 |
+| Claude Sonnet 5.5 без скиллов | 4 из 14 | 39 из 64 |
+
+Без скиллов не собрался ни один проект прошивки. Проверки узкие («собирается и содержит нужное», а не «работает на
+устройстве»), другие агенты пока не прогонялись: это одна команда, см. `evals/README.md`.
+
 ## Структура репозитория
 
 ```text
@@ -186,13 +200,14 @@ tibbo-ai-skills/
 ├── skills/
 │   ├── tibbo-firmware/        # SKILL.md, references/, data/, scripts/, tests/
 │   └── appblocks/             # SKILL.md, references/, scripts/, examples/, tests/
+├── evals/                     # контрольные задачи с автоматической проверкой, результаты первого прогона
 ├── chat-pack/                 # PROMPT.md и README для веб-чатов (файлы знаний собираются из скиллов)
 ├── .claude-plugin/
 │   └── marketplace.json       # каталог плагинов Claude Code
 ├── docs/                      # INSTALL.md / INSTALL.ru.md, картинки (нарисованы скриптами самих скиллов)
 ├── tools/install.py           # ставит оба скилла в Codex, Gemini CLI, Kimi Code, Claude Code и другие агенты
 ├── tools/package.sh           # собирает dist/*.zip: два скилла + tibbo-chat-pack.zip (tools/build_chat_pack.py)
-├── tools/recipes_src/         # исходники 13 рецептов (tools/build_recipes.py, tools/check_recipes.py)
+├── tools/recipes_src/         # исходники рецептов прошивок (tools/build_recipes.py, tools/check_recipes.py)
 └── .github/workflows/         # тесты при каждом коммите, пакеты релиза по тегам
 ```
 
@@ -226,7 +241,7 @@ sh skills/appblocks/tests/run.sh
 ```
 
 Оба набора работают без сети и запускаются при каждом коммите вместе с проверкой установщика, валидатором
-Agent Skills и лимитами чат-пакета; отдельное задание ставит компилятор Tibbo и собирает все 13 рецептов на их платформах (см. [Actions](https://github.com/scancode-iot/tibbo-ai-skills/actions)).
+Agent Skills и лимитами чат-пакета; отдельное задание ставит компилятор Tibbo и собирает все рецепты на Tibbo BASIC на их платформах (см. [Actions](https://github.com/scancode-iot/tibbo-ai-skills/actions)).
 
 ## Источники данных
 

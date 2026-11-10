@@ -64,7 +64,7 @@ jobs:
           node-version: "20"
       - name: Install Tibbo's compiler
         run: python skills/tibbo-firmware/scripts/tibbo_build.py --setup-node --yes
-      - name: 13 recipes on their platforms
+      - name: recipes on their platforms
         run: env -u PYTHONUTF8 python tools/check_recipes.py "$(python -c "import os; print(os.path.join(os.path.expanduser('~'), '.tibbo', 'tibbo-basic'))")"
       - name: tibbo-firmware suite with the compiler (generated projects, recipes)
         run: env -u PYTHONUTF8 sh skills/tibbo-firmware/tests/run.sh

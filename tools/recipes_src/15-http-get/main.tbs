@@ -1,0 +1,103 @@
+include "global.tbh"
+
+'HTTP client: every 60 s sends GET to a server, reads the status code and the beginning of the answer.
+'Plain HTTP (port 80, no encryption); HTTPS is in recipe 16.
+'Hardware: any board with Ethernet. Change: SERVER_IP, HTTP_HOST, HTTP_PATH, the device address.
+'The server is addressed by IP; for a site name resolve it first with the dns library.
+
+const SERVER_IP = "192.168.1.10"
+const SERVER_PORT = 80
+const HTTP_HOST = "192.168.1.10"	'the Host: header - the site name when the server hosts several sites
+const HTTP_PATH = "/status"
+const PERIOD_TICKS = 120			'120 x 0.5 s = 60 s between requests
+const TIMEOUT_TICKS = 20			'10 s for the whole request
+const HTTP_SOCK = 0
+
+dim ticks as word
+dim wait_ticks as byte
+dim busy as no_yes
+dim reply as string				'the first 255 characters of the answer
+
+declare sub http_done()
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	net.ip = "192.168.1.96"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+	sock.num = HTTP_SOCK
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.targetip = SERVER_IP
+	sock.targetport = SERVER_PORT
+	sock.rxbuffrq(4)
+	sock.txbuffrq(1)
+	sys.buffalloc()
+	busy = NO
+	ticks = PERIOD_TICKS - 4			'the first request 2 s after start
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	sock.num = HTTP_SOCK
+	if busy = YES then
+		wait_ticks = wait_ticks + 1
+		if wait_ticks > TIMEOUT_TICKS then
+			sock.discard()				'no answer in time: drop the connection, try again next period
+			busy = NO
+			pat.play("R~", PL_PAT_CANINT)
+		end if
+		exit sub
+	end if
+	ticks = ticks + 1
+	if ticks >= PERIOD_TICKS then
+		ticks = 0
+		if sock.statesimple = PL_SSTS_CLOSED then
+			reply = ""
+			wait_ticks = 0
+			busy = YES
+			sock.connect()
+		end if
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)
+	if sock.num <> HTTP_SOCK then exit sub
+	select case newstatesimple
+	case PL_SSTS_EST:
+		'connected. HTTP/1.0: the server closes the connection after the answer - that is the end mark
+		sock.setdata("GET " + HTTP_PATH + " HTTP/1.0" + chr(13) + chr(10) + "Host: " + HTTP_HOST + chr(13) + chr(10) + chr(13) + chr(10))
+		sock.send()
+	case PL_SSTS_CLOSED:
+		if busy = YES then
+			busy = NO
+			http_done()
+		end if
+	end select
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dim s as string
+	if sock.num <> HTTP_SOCK then exit sub
+	s = sock.getdata(255)				'always take the data out, keep only the beginning
+	if len(reply) < 255 then
+		reply = reply + left(s, 255 - len(reply))
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub http_done()
+	dim code as word
+	'the status line looks like "HTTP/1.1 200 OK"
+	code = 0
+	if left(reply, 5) = "HTTP/" then
+		code = val(mid(reply, 10, 3))
+	end if
+	sys.debugprint("HTTP status " + str(code) + chr(13) + chr(10))
+	if code = 200 then
+		pat.play("G~", PL_PAT_CANINT)
+	else
+		pat.play("R~", PL_PAT_CANINT)
+	end if
+end sub

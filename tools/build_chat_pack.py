@@ -27,7 +27,7 @@ GROUPS = [
      [(FW, "SKILL.md"), (FW, "references/tibbit-selection.md"), (FW, "references/tibbits.md"), (FW, "references/power.md")]),
     ("02-appblocks-rules.md", "AppBlocks: rules, editor, JSON format, generated code, MQTT, Cloud API",
      [(AB, "SKILL.md"), (AB, "references/editor.md"), (AB, "references/format.md"), (AB, "references/generated-code.md"),
-      (AB, "references/mqtt.md"), (AB, "references/api.md")]),
+      (AB, "references/mqtt.md"), (AB, "references/api.md"), (AB, "references/recipes.md")]),
     ("03-appblocks-blocks.md", "AppBlocks: all blocks, features, Tibbit fields, real usage",
      [(AB, "references/blocks.md"), (AB, "references/features.md"), (AB, "references/catalog.md"),
       (AB, "references/catalog-examples.md")]),
@@ -78,7 +78,7 @@ def build():
         if not os.path.isdir(d):
             continue
         chunks.append("\n\n<!-- ===== recipe %s ===== -->\n\n# [tibbo-firmware/recipes/%s]\n" % (name, name))
-        for fn in ("app.tpr", "global.tbh", "main.tbs", "device.tbs", "index.html", "settings.txt"):
+        for fn in ("app.tpr", "global.tbh", "main.tbs", "device.tbs", "main.tc", "global.th", "index.html", "settings.txt"):
             fp = os.path.join(d, fn)
             if os.path.isfile(fp):
                 body = open(fp, encoding="utf-8", newline="").read().replace("\r\n", "\n").strip()

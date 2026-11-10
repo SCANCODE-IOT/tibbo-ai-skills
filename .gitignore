@@ -13,3 +13,4 @@ __pycache__/
 skills/tibbo-firmware/recipes/*/tmp/
 skills/tibbo-firmware/recipes/*/*.tpc
 *.pdb
+evals/runs/

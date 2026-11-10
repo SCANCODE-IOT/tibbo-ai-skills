@@ -1,0 +1,136 @@
+include "global.tbh"
+
+'HTTPS client (TLS): every 60 s sends GET over an encrypted connection and prints the status line.
+'Follows Tibbo's HTTPS sample and Tibbo's http library: tlsinit with the CA certificate -> connect -> tlshandshake.
+'Hardware: a platform with TLS (TPP2W(G3), TPP3W(G3), EM3000W ...). Only one socket can use TLS at a time.
+'BEFORE USE: replace the file ca.der with the root certificate of YOUR server's certificate chain in DER format.
+'The file in the recipe is a placeholder, with it sock.tlsinit returns an error (red LED, message in the debug output).
+'SERVER_HOST must be the name written in the server certificate.
+
+const SERVER_IP = "192.168.1.10"
+const SERVER_PORT = 443
+const SERVER_HOST = "server.example"
+const HTTP_PATH = "/status"
+const CA_CERT = "ca.der"
+const TLS_PAGES = 150				'buffer pages for TLS, the value Tibbo's mqtt library uses
+const PERIOD_TICKS = 120			'120 x 0.5 s = 60 s
+const TIMEOUT_TICKS = 40			'20 s for the handshake and the answer
+const HTTPS_SOCK = 0
+
+dim ticks as word
+dim wait_ticks as byte
+dim busy as no_yes
+dim reply as string
+
+declare sub https_start()
+declare sub https_fail(byref why as string)
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	net.ip = "192.168.1.97"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+	sock.num = HTTPS_SOCK
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.targetip = SERVER_IP
+	sock.targetport = SERVER_PORT
+	sock.rxbuffrq(4)
+	sock.txbuffrq(4)
+	sock.tlsbuffrq(TLS_PAGES)
+	sys.buffalloc()
+	busy = NO
+	ticks = PERIOD_TICKS - 4
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	sock.num = HTTPS_SOCK
+	if busy = YES then
+		wait_ticks = wait_ticks + 1
+		if wait_ticks > TIMEOUT_TICKS then https_fail("timeout")
+		exit sub
+	end if
+	ticks = ticks + 1
+	if ticks >= PERIOD_TICKS then
+		ticks = 0
+		if sock.statesimple = PL_SSTS_CLOSED then https_start()
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub https_start()
+	reply = ""
+	wait_ticks = 0
+	sock.tlsdeinit()
+	romfile.open(CA_CERT)
+	if romfile.size = 0 then
+		https_fail("no " + CA_CERT + " in the project")
+		exit sub
+	end if
+	if sock.tlsinit(romfile.offset) <> PL_TLS_SUCCESS then
+		https_fail("certificate not accepted: put the real root certificate (DER) into " + CA_CERT)
+		exit sub
+	end if
+	busy = YES
+	sock.connect()
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)
+	if sock.num <> HTTPS_SOCK then exit sub
+	select case newstate
+	case PL_SST_EST_AOPENED:
+		'TCP is up: now the TLS handshake (the name must match the certificate)
+		if sock.tlshandshake(SERVER_HOST) <> PL_TLS_SUCCESS then https_fail("handshake not started")
+	case PL_SST_EST_TLS:
+		'encrypted channel is ready
+		sock.tlssetdata("GET " + HTTP_PATH + " HTTP/1.0" + chr(13) + chr(10) + "Host: " + SERVER_HOST + chr(13) + chr(10) + chr(13) + chr(10))
+		sock.send()
+	end select
+	'A failed handshake (wrong certificate, name or date) ends with the socket closed or with our timeout.
+	'Tibbo's newest platform files also have the state PL_SST_EST_TLS_FAILED; the compiler's default ones do not.
+	if newstatesimple = PL_SSTS_CLOSED then
+		sock.rxclear()
+		sock.txclear()
+		sock.tlsdeinit()
+		if busy = YES then
+			busy = NO
+			if len(reply) = 0 then
+				sys.debugprint("HTTPS: closed without an answer - handshake failed (certificate, name, date) or the server refused" + chr(13) + chr(10))
+				pat.play("R-R-", PL_PAT_CANINT)
+			else
+				'the first line of the answer: "HTTP/1.1 200 OK"
+				sys.debugprint("HTTPS answer: " + left(reply, 15) + chr(13) + chr(10))
+				if mid(reply, 10, 3) = "200" then
+					pat.play("G~", PL_PAT_CANINT)
+				else
+					pat.play("R~", PL_PAT_CANINT)
+				end if
+			end if
+		end if
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dim s as string
+	if sock.num <> HTTPS_SOCK then exit sub
+	'decrypted data are read with tlsgetdata, not getdata
+	s = sock.tlsgetdata(255)
+	while len(s) > 0
+		if len(reply) < 255 then
+			reply = reply + left(s, 255 - len(reply))
+		end if
+		s = sock.tlsgetdata(255)
+	wend
+end sub
+
+'-------------------------------------------------------------------
+sub https_fail(byref why as string)
+	sys.debugprint("HTTPS: " + why + chr(13) + chr(10))
+	busy = NO
+	sock.num = HTTPS_SOCK
+	sock.discard()
+	sock.tlsdeinit()
+	pat.play("R-R-", PL_PAT_CANINT)
+end sub

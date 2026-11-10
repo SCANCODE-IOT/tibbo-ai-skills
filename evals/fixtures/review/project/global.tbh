@@ -1,0 +1,10 @@
+'===================================================================
+' project - global header. Platform: TPP2W(G2)
+'===================================================================
+
+'DEFINES: library settings must come BEFORE the include of the library
+
+'INCLUDES: order matters - a library goes after the libraries it uses
+
+'DECLARATIONS: your own subs, functions and global variables (dim them in ONE .tbs file)
+

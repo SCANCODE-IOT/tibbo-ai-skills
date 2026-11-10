@@ -239,5 +239,12 @@ def main():
 
 
 if __name__ == "__main__":
-    utf8_stdio()
-    main()
+    try:
+        utf8_stdio()
+        main()
+    except BrokenPipeError:      # the reader (head, grep -q) closed the pipe: not an error
+        try:
+            sys.stdout.close()
+        except OSError:
+            pass
+        os._exit(0)

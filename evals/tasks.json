@@ -1,0 +1,189 @@
+{
+ "_about": "Control tasks for the Tibbo skills. Every task is a request a real user would type, plus automatic checks of the result. Run: python3 evals/run.py --help",
+ "tail": {
+  "ru": "\n\nРаботай в текущей папке. Вопросов не задавай: если чего-то не хватает - прими разумное допущение и назови его."
+ },
+ "tasks": [
+  {
+   "id": "fw-tcp-relay",
+   "group": "firmware",
+   "title": "Прошивка: TCP-сервер управляет двумя реле",
+   "prompt": "Плата TPP2W(G2). В слоте S1 стоит Tibbit #03_1 (два реле), в S2 - разъём #19. Сеть - Ethernet, адрес статический 192.168.1.90.\nНапиши прошивку на Tibbo BASIC: TCP-сервер на порту 1001. Команда R1=1 включает первое реле, R1=0 выключает, R2=1 и R2=0 - то же для второго. Каждая команда заканчивается символом CR. На верную команду устройство отвечает OK, на неверную - ERR. При старте оба реле выключены.\nПолный проект TIDE сохрани в папку project.",
+   "checks": [
+    {"id": "project", "type": "tpr_platform", "platforms": ["TPP2W(G2)"], "what": "есть проект .tpr для TPP2W(G2)"},
+    {"id": "lint", "type": "lint_clean", "what": "проверка кода: 0 ошибок"},
+    {"id": "build", "type": "compiles", "what": "собирается компилятором Tibbo"},
+    {"id": "port", "type": "regex_all", "where": "sources", "patterns": ["localportlist\\s*=", "\\b1001\\b"], "what": "порт 1001"},
+    {"id": "lines", "type": "regex_all", "where": "sources", "patterns": ["PL_IO_NUM_9_TX0", "PL_IO_NUM_8_RX0"], "what": "линии реле слота S1: PL_IO_NUM_9_TX0 и PL_IO_NUM_8_RX0"},
+    {"id": "enabled", "type": "regex", "where": "sources", "pattern": "io\\.enabled\\s*=\\s*YES", "what": "линии включены как выходы (io.enabled = YES)"},
+    {"id": "alloc", "type": "regex", "where": "sources", "pattern": "sys\\.buffalloc", "what": "буферы выделены (sys.buffalloc)"}
+   ]
+  },
+  {
+   "id": "fw-dhcp",
+   "group": "firmware",
+   "title": "Прошивка: адрес по DHCP на плате с Wi-Fi",
+   "prompt": "Плата TPP3W(G2), подключена по Ethernet. Напиши прошивку на Tibbo BASIC: устройство получает IP-адрес по DHCP через библиотеку Tibbo, а после получения адреса раз в 10 секунд печатает его в отладочный вывод. Полный проект TIDE сохрани в папку project.",
+   "checks": [
+    {"id": "project", "type": "tpr_platform", "platforms": ["TPP3W(G2)"], "what": "есть проект .tpr для TPP3W(G2)"},
+    {"id": "lint", "type": "lint_clean", "what": "проверка кода: 0 ошибок"},
+    {"id": "build", "type": "compiles", "what": "собирается компилятором Tibbo"},
+    {"id": "lib", "type": "regex_all", "where": "sources", "patterns": ["dhcp_start\\s*\\(", "dhcp_proc_timer\\s*\\(", "dhcp_proc_data\\s*\\("], "what": "библиотека DHCP запущена и получает события таймера и данных"},
+    {"id": "apply", "type": "regex", "where": "sources", "pattern": "net\\.ip\\s*=", "what": "полученный адрес записан в net.ip (библиотека сама этого не делает)"},
+    {"id": "print", "type": "regex", "where": "sources", "pattern": "sys\\.debugprint", "what": "вывод через sys.debugprint"}
+   ]
+  },
+  {
+   "id": "fw-serial-tcp",
+   "group": "firmware",
+   "title": "Прошивка: мост RS232 - TCP",
+   "prompt": "Плата TPP2W(G2). В S1 - Tibbit #01 (RS232), в S2 - разъём #19. Сеть - Ethernet, адрес 192.168.1.91.\nНапиши прошивку на Tibbo BASIC - прозрачный мост: всё, что пришло по RS232 (9600 бод, 8 бит, без чётности), уходит TCP-клиенту, подключившемуся к порту 1001, и наоборот. Данные не должны теряться, если приёмник не успевает. Полный проект TIDE сохрани в папку project.",
+   "checks": [
+    {"id": "project", "type": "tpr_platform", "platforms": ["TPP2W(G2)"], "what": "есть проект .tpr для TPP2W(G2)"},
+    {"id": "lint", "type": "lint_clean", "what": "проверка кода: 0 ошибок"},
+    {"id": "build", "type": "compiles", "what": "собирается компилятором Tibbo"},
+    {"id": "serial", "type": "regex_all", "where": "sources", "patterns": ["ser\\.num\\s*=", "ser\\.baudrate\\s*=", "ser\\.enabled\\s*=\\s*YES"], "what": "порт выбран, скорость задана, порт включён"},
+    {"id": "both", "type": "regex_all", "where": "sources", "patterns": ["sub\\s+on_ser_data_arrival", "sub\\s+on_sock_data_arrival"], "what": "оба направления: on_ser_data_arrival и on_sock_data_arrival"},
+    {"id": "free", "type": "regex", "where": "sources", "pattern": "(sock|ser)\\.txfree", "what": "берёт не больше, чем влезет в передатчик (txfree)"}
+   ]
+  },
+  {
+   "id": "fw-mqtt",
+   "group": "firmware",
+   "title": "Прошивка: публикация в MQTT",
+   "prompt": "Плата TPP3W(G2), Ethernet, адрес по DHCP. Напиши прошивку на Tibbo BASIC с библиотекой MQTT от Tibbo: подключиться к брокеру 192.168.1.10 порт 1883 без пароля и каждые 30 секунд публиковать в топик tibbo/demo/uptime число секунд с момента включения. При потере связи с брокером - подключаться заново. Полный проект TIDE сохрани в папку project.",
+   "checks": [
+    {"id": "project", "type": "tpr_platform", "platforms": ["TPP3W(G2)"], "what": "есть проект .tpr для TPP3W(G2)"},
+    {"id": "lint", "type": "lint_clean", "what": "проверка кода: 0 ошибок"},
+    {"id": "build", "type": "compiles", "what": "собирается компилятором Tibbo"},
+    {"id": "mqtt", "type": "regex_all", "where": "sources", "patterns": ["mqtt_start\\s*\\(", "mqtt_publish\\s*\\(", "mqtt_proc_timer\\s*\\("], "what": "MQTT запущен, публикует, получает событие таймера"},
+    {"id": "topic", "type": "regex", "where": "sources", "pattern": "tibbo/demo/uptime", "what": "топик tibbo/demo/uptime"},
+    {"id": "sock_event", "type": "regex", "where": "sources", "pattern": "mqtt_sock_event\\s*\\(", "what": "событие сокета передано библиотеке (mqtt_sock_event)"}
+   ]
+  },
+  {
+   "id": "fw-fix",
+   "group": "firmware",
+   "title": "Исправить проект, который не собирается",
+   "fixture": "fixtures/fix-compile",
+   "prompt": "В папке project лежит проект TIDE для TPP2W(G2): после получения адреса по DHCP устройство подключается к серверу 192.168.1.50:5000 и по нажатию кнопки MD шлёт ему HELLO. В TIDE он не собирается, а когда я закомментировал ошибки, кнопка всё равно не работала. Найди и исправь все ошибки прямо в файлах проекта и перечисли, что было не так.",
+   "checks": [
+    {"id": "lint", "type": "lint_clean", "what": "проверка кода: 0 ошибок"},
+    {"id": "build", "type": "compiles", "what": "собирается компилятором Tibbo"},
+    {"id": "connect", "type": "regex", "where": "sources", "pattern": "sock\\.connect\\b", "what": "исправлено sock.conect -> sock.connect"},
+    {"id": "event", "type": "regex", "where": "sources", "pattern": "sub\\s+on_button_pressed\\s*\\(", "what": "исправлено выдуманное событие on_button_press -> on_button_pressed (компилятор о нём молчит)"},
+    {"id": "no_fake", "type": "regex_absent", "where": "sources", "pattern": "sub\\s+on_button_press\\s*\\(", "what": "выдуманного обработчика on_button_press не осталось"},
+    {"id": "callback", "type": "regex", "where": "sources", "pattern": "sub\\s+callback_dhcp_failure\\s*\\(", "what": "добавлен обязательный callback_dhcp_failure"}
+   ]
+  },
+  {
+   "id": "fw-review",
+   "group": "firmware",
+   "title": "Ревью: ошибки, которые компилятор не видит",
+   "fixture": "fixtures/review",
+   "prompt": "В папке project - прошивка для TPP2W(G2) с Tibbit #03_1 в S1: TCP-сервер на порту 2000 включает и выключает реле. Она собирается без ошибок, но устройство после включения не отвечает по сети, а реле не щёлкает. Сделай ревью main.tbs: что именно в коде неправильно и как исправить. Файлы не меняй, ответь текстом.",
+   "checks": [
+    {"id": "buffers", "type": "regex", "where": "answer", "pattern": "buffalloc", "what": "найдено: буферы запрошены после sys.buffalloc"},
+    {"id": "loop", "type": "regex", "where": "answer", "pattern": "(while|wend|цикл|блокир|завис|doevents)", "what": "найдено: блокирующий цикл ожидания в on_sys_init"},
+    {"id": "enabled", "type": "regex", "where": "answer", "pattern": "io\\.enabled", "what": "найдено: линия реле не включена как выход (io.enabled)"},
+    {"id": "socknum", "type": "regex", "where": "answer", "pattern": "sock\\.num", "what": "найдено: в on_sys_timer сокет не выбран (sock.num)", "critical": false}
+   ]
+  },
+  {
+   "id": "fw-events",
+   "group": "knowledge",
+   "title": "Точные имена событий TiOS",
+   "prompt": "Пишу на Tibbo BASIC для TPP2W(G2). Назови точные имена обработчиков событий с аргументами: 1) нажатие кнопки MD; 2) пришли данные в TCP-сокет; 3) изменилось состояние сокета; 4) пришли данные в последовательный порт. Только объявления sub, по одному на строку.",
+   "checks": [
+    {"id": "button", "type": "regex", "where": "answer", "pattern": "on_button_pressed\\b", "what": "on_button_pressed"},
+    {"id": "sockdata", "type": "regex", "where": "answer", "pattern": "on_sock_data_arrival\\b", "what": "on_sock_data_arrival"},
+    {"id": "sockevent", "type": "regex", "where": "answer", "pattern": "on_sock_event\\s*\\(\\s*newstate\\s+as\\s+pl_sock_state\\s*,\\s*newstatesimple\\s+as\\s+pl_sock_state_simple\\s*\\)", "what": "on_sock_event с точными аргументами"},
+    {"id": "serdata", "type": "regex", "where": "answer", "pattern": "on_ser_data_arrival\\b", "what": "on_ser_data_arrival"},
+    {"id": "no_fake", "type": "regex_absent", "where": "answer", "pattern": "\\bon_(button_press|button_click|button_down|sock_data|sock_receive|sock_data_received|ser_data|ser_receive|serial_data\\w*|sock_state_change\\w*|sock_connect\\w*)\\s*\\(", "what": "нет выдуманных имён"}
+   ]
+  },
+  {
+   "id": "hw-24v",
+   "group": "hardware",
+   "title": "Железо: 24 В на источник с входом 9-18 В",
+   "prompt": "TPP3W(G2): источник питания #10 в S1 с разъёмом #18 в S2, в шкафу 24 В. Всё правильно?",
+   "checks": [
+    {"id": "range", "type": "regex", "where": "answer", "pattern": "9\\s*[-–…]\\s*18", "what": "назван диапазон входа #10: 9-18 В"},
+    {"id": "wrong", "type": "regex", "where": "answer", "pattern": "(нельзя|не подход|неправильн|ошибк|не годит|не рассчитан|превыша|сгор|выйдет из строя|не выдерж|\\bнет\\b)", "what": "сказано, что так нельзя"},
+    {"id": "fix", "type": "regex", "where": "answer", "pattern": "#\\s*(25|33)\\b", "what": "предложена замена: #25 или #33"}
+   ]
+  },
+  {
+   "id": "hw-select",
+   "group": "hardware",
+   "title": "Железо: подобрать Tibbit и проверить питание",
+   "prompt": "Нужен контроллер на TPP3: опрашивает 4 счётчика по Modbus RTU через одну линию RS485 и отправляет данные в MQTT по Wi-Fi. Ещё нужны два дискретных входа «сухой контакт» и одно реле на лампу аварии. Питание в шкафу 24 В, температура до 50 °C. Подбери Tibbit, разложи по слотам и проверь питание. Конфигурацию сохрани в файл cfg.json в формате скрипта tps_check.py из скиллов Tibbo (ключи board, slots, power, wifi, ambient_c), если знаешь этот формат.",
+   "checks": [
+    {"id": "cfg", "type": "tps_check_ok", "file": "cfg.json", "what": "cfg.json проходит tps_check.py без ошибок"},
+    {"id": "board", "type": "cfg", "expr": "str(cfg.get('board','')).startswith('TPP3W')", "what": "плата TPP3 с Wi-Fi"},
+    {"id": "rs485", "type": "cfg", "expr": "any(m in ('05','02','44_1','44_2') for m in models)", "what": "RS485: Tibbit #05 (или #02, #44)"},
+    {"id": "power", "type": "cfg", "expr": "any(m in ('25','33') for m in models) and float((cfg.get('power') or {}).get('vin',0)) == 24", "what": "источник на 24 В: #25 или #33, vin = 24"},
+    {"id": "relay", "type": "cfg", "expr": "any(m.split('_')[0] in ('03','06','07','15') for m in models)", "what": "есть реле"},
+    {"id": "inputs", "type": "cfg", "expr": "any(m.split('_')[0] in ('04','54') for m in models)", "what": "есть дискретные входы"},
+    {"id": "wifi", "type": "cfg", "expr": "bool(cfg.get('wifi'))", "what": "учтён модуль Wi-Fi"}
+   ]
+  },
+  {
+   "id": "hw-adc",
+   "group": "hardware",
+   "title": "Железо: АЦП без источника ±15 В",
+   "prompt": "TPP2W(G2). Собираю: #13 (АЦП, 4 канала) в S1 с разъёмом #20 в S2, питание - #10 в S9 с #18 в S10 от блока 12 В. Больше ничего. Будет работать?",
+   "checks": [
+    {"id": "need12", "type": "regex", "where": "answer", "pattern": "#\\s*12\\b", "what": "сказано, что для #13 нужен Tibbit #12"},
+    {"id": "rail", "type": "regex", "where": "answer", "pattern": "(±\\s*15|\\+/-\\s*15|\\+-\\s*15|плюс-минус 15|15\\s*В)", "what": "названа причина: питание ±15 В"}
+   ]
+  },
+  {
+   "id": "linux-basic",
+   "group": "knowledge",
+   "title": "Linux-плата: Tibbo BASIC не подходит",
+   "prompt": "У меня плата Tibbo LTPP3(G2) и Tibbit #03_1 (реле) в S1. Напиши для неё прошивку на Tibbo BASIC в TIDE, которая раз в секунду переключает первое реле.",
+   "checks": [
+    {"id": "linux", "type": "regex", "where": "answer", "pattern": "Linux", "what": "сказано, что плата работает на Linux"},
+    {"id": "not_tios", "type": "regex", "where": "answer", "pattern": "(не\\s+(на\\s+)?TiOS|без\\s+TiOS|нет\\s+TiOS|не\\s+написал|не\\s+собира(ет|ют)ся|только\\s+для\\s+плат\\s+на\\s+TiOS|не\\s+работает\\s+(на|под)\\s+TiOS|не\\s+(подход|подойд|получит|примен|запуст|поддерж|собер|предназнач)|нельзя|невозможно|не\\s+для\\s+(этой|неё))", "what": "сказано, что Tibbo BASIC / TIDE для неё не подходит"},
+    {"id": "way", "type": "regex", "where": "answer", "pattern": "(Python|python|gpio|\\bC\\b|Node\\.js|TPP2|TPP3)", "what": "предложен рабочий путь: программа Linux или плата на TiOS"},
+    {"id": "no_tpr", "type": "no_file", "glob": "**/*.tpr", "what": "проект TIDE для Linux-платы не создан"}
+   ]
+  },
+  {
+   "id": "ab-edit",
+   "group": "appblocks",
+   "title": "AppBlocks: добавить переменную в проект",
+   "fixture_file": {"from": "skills/appblocks/examples/sprinkler5.json", "to": "project.json"},
+   "prompt": "В файле project.json - экспорт проекта Tibbo AppBlocks (полив, плата TPP2W(G2), среда TiOS). Добавь в проект глобальную переменную pump_runtime типа word с начальным значением 0. Больше ничего не меняй. Результат сохрани в файл out.json.",
+   "checks": [
+    {"id": "json", "type": "ab_check_ok", "file": "out.json", "what": "out.json проходит ab_tool.py check без ошибок"},
+    {"id": "var", "type": "ab_variable", "file": "out.json", "name": "pump_runtime", "what": "переменная pump_runtime есть в проекте"},
+    {"id": "same", "type": "ab_same_nodes", "file": "out.json", "base": "project.json", "what": "блоки логики не тронуты"}
+   ]
+  },
+  {
+   "id": "ab-zephyr-block",
+   "group": "appblocks",
+   "title": "AppBlocks: блок, которого нет в среде проекта",
+   "fixture_file": {"from": "skills/appblocks/examples/sprinkler5.json", "to": "project.json"},
+   "prompt": "В файле project.json - экспорт проекта Tibbo AppBlocks (плата TPP2W(G2), среда TiOS). Хочу при старте устройства (блок On Boot) посчитать квадратный корень из числа 2 блоком Square Root и вывести результат блоком Debug Print. Добавь это в проект и сохрани в out.json. Если так сделать нельзя - объясни почему и предложи, как быть.",
+   "checks": [
+    {"id": "zephyr", "type": "regex", "where": "answer", "pattern": "Zephyr", "what": "сказано, что блок Square Root есть только на Zephyr"},
+    {"id": "no_node", "type": "ab_no_node", "file": "out.json", "node": "node_sqrt", "what": "в проект на TiOS блок node_sqrt не добавлен (иначе генератор кода отвечает ошибкой 500)"}
+   ]
+  },
+  {
+   "id": "ab-review",
+   "group": "appblocks",
+   "title": "AppBlocks: реле включается при старте",
+   "fixture": "fixtures/ab-review",
+   "prompt": "В файле project.json - экспорт проекта Tibbo AppBlocks (теплица, плата TPP3W(G2)). После включения питания насосы на секунду-две включаются сами, хотя никто их не запускал. Найди причину в проекте и скажи, что поменять. Файл не меняй.",
+   "checks": [
+    {"id": "low", "type": "regex", "where": "answer", "pattern": "(LOW|низк|инверс|актив\\w*\\s+(по\\s+)?(нул|0))", "what": "названа причина: реле активны низким уровнем"},
+    {"id": "default", "type": "regex", "where": "answer", "pattern": "(по умолчанию|начальн\\w+ значени|DEFAULT|default)", "what": "указано, что менять: значение по умолчанию переменных реле"},
+    {"id": "one", "type": "regex", "where": "answer", "pattern": "(=\\s*1\\b|\\b1\\b\\s*\\(?(выключен|выкл|off)|на\\s+1\\b|в\\s+1\\b|значени\\w*\\s+1\\b|«1»|\"1\"|`1`)", "what": "правильное значение: 1 (выключено)"}
+   ]
+  }
+ ]
+}

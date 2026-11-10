@@ -5,14 +5,14 @@
     "url": "https://github.com/scancode-iot"
   },
   "description": "Agent skills for Tibbo firmware (TiOS, Tibbo BASIC, Tibbits, TPS) and Tibbo AppBlocks, by Scancode. Work in Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and other agents.",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "plugins": [
     {
       "name": "tibbo-skills",
       "displayName": "Tibbo Skills",
       "source": "./",
       "description": "Two agent skills: tibbo-firmware (write and review Tibbo BASIC/C firmware, check API names, choose Tibbits, check TPS sockets and power) and appblocks (explain, review, edit and generate AppBlocks projects, AppBlocks Cloud API).",
-      "version": "2.2.1",
+      "version": "2.3.0",
       "author": {
         "name": "Scancode",
         "url": "https://github.com/scancode-iot"

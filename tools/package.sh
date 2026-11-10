@@ -15,7 +15,7 @@ for dir in skills/*/; do
   stray=$(cd skills && find "$name" -type f ! -path '*/__pycache__/*' ! -name '*.pyc' ! -name '.DS_Store' \
           ! -path '*/tmp/*' \
           ! -name '*.md' ! -name '*.py' ! -name '*.json' ! -name '*.sh' ! -name '*.js' ! -name '*.svg' ! -name '*.png' \
-          ! -name '*.tbs' ! -name '*.tbh' ! -name '*.tpr' ! -name '*.html' ! -name '*.txt')
+          ! -name '*.tbs' ! -name '*.tbh' ! -name '*.tpr' ! -name '*.html' ! -name '*.txt' ! -name '*.tc' ! -name '*.th' ! -name '*.der')
   [ -z "$stray" ] || { echo "error: unexpected files in $dir: $stray" >&2; exit 1; }
   (cd skills && zip -qr "../dist/$name.zip" "$name" -x '*/__pycache__/*' '*.pyc' '*/.DS_Store' '*/tmp/*' '*.tpc' '*.pdb')
   echo "dist/$name.zip  $(du -h "dist/$name.zip" | cut -f1)"

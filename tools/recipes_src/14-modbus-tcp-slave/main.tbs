@@ -1,0 +1,108 @@
+include "global.tbh"
+
+'Modbus TCP slave (server): 16 holding registers, functions 03 (read) and 06 (write one register).
+'Two masters can be connected at the same time. Port 502, any unit address is answered.
+'Hardware: any board with Ethernet. Change: the IP address, MB_REGS, and put your values into regs().
+'Limits: a request must arrive in one TCP segment (masters send it that way); other functions get exception 01,
+'a wrong address or count gets exception 02.
+
+const MB_PORT = "502"
+const MB_REGS = 16
+const MB_SOCKS = 2				'sockets 0 and 1 serve the masters
+
+dim regs(MB_REGS) as word		'the register map: regs(0) is register 0
+dim uptime as dword
+
+declare function mb_reply(byref rq as string) as string
+declare function word_str(w as word) as string
+declare function str_word(byref s as string, pos as byte) as word
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	dim i as byte
+	net.ip = "192.168.1.95"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+	for i = 0 to MB_SOCKS - 1
+		sock.num = i
+		sock.protocol = PL_SOCK_PROTOCOL_TCP
+		sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+		sock.localportlist = MB_PORT
+		sock.connectiontout = 120		'a silent master is dropped after 60 s (the unit is 0.5 s)
+		sock.rxbuffrq(1)
+		sock.txbuffrq(1)
+	next i
+	sys.buffalloc()
+	uptime = 0
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	'example data: register 0 = seconds since start (low word), register 1 = the MD button (1 = pressed)
+	uptime = uptime + 1
+	regs(0) = uptime / 2
+	if button.pressed = YES then
+		regs(1) = 1
+	else
+		regs(1) = 0
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dim rq as string
+	dim rp as string
+	if sock.num >= MB_SOCKS then exit sub
+	rq = sock.getdata(255)
+	'MBAP header: transaction (2), protocol = 0 (2), length (2), unit (1); then function and data
+	if len(rq) < 12 then exit sub
+	if str_word(rq, 3) <> 0 then exit sub
+	if str_word(rq, 5) + 6 <> len(rq) then exit sub
+	rp = mb_reply(rq)
+	if sock.txfree >= len(rp) then
+		sock.setdata(rp)
+		sock.send()
+	end if
+end sub
+
+'-------------------------------------------------------------------
+function mb_reply(byref rq as string) as string
+	dim fn as byte
+	dim addr, cnt, i as word
+	dim pdu as string(40)
+	fn = asc(mid(rq, 8, 1))
+	addr = str_word(rq, 9)
+	cnt = str_word(rq, 11)			'for function 06 this is the value to write
+	select case fn
+	case 3:
+		if cnt = 0 or cnt > MB_REGS or addr + cnt > MB_REGS then
+			pdu = chr(&h83) + chr(2)
+		else
+			pdu = chr(3) + chr(cnt * 2)
+			for i = 0 to cnt - 1
+				pdu = pdu + word_str(regs(addr + i))
+			next i
+		end if
+	case 6:
+		if addr >= MB_REGS then
+			pdu = chr(&h86) + chr(2)
+		else
+			regs(addr) = cnt
+			pdu = mid(rq, 8, 5)			'the answer repeats the request
+		end if
+	case else:
+		pdu = chr(fn or &h80) + chr(1)
+	end select
+	'transaction and protocol as received, new length = unit + pdu
+	mb_reply = left(rq, 4) + word_str(len(pdu) + 1) + mid(rq, 7, 1) + pdu
+end function
+
+'-------------------------------------------------------------------
+function word_str(w as word) as string
+	word_str = chr(w / 256) + chr(w and 255)
+end function
+
+'-------------------------------------------------------------------
+function str_word(byref s as string, pos as byte) as word
+	str_word = asc(mid(s, pos, 1)) * 256 + asc(mid(s, pos + 1, 1))
+end function

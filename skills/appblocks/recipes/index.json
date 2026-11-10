@@ -1,0 +1,64 @@
+{
+ "recipes": [
+  {
+   "tibbits": "#03_1 в S1 + #20 в S2, питание #10 в S11 + #18 в S12",
+   "blocks": "On Button Released, Comparison, Variable Set",
+   "try": "нажмите и отпустите кнопку MD - реле щёлкнет; ещё раз - выключится",
+   "file": "01-button-relay.json",
+   "title": "Кнопка переключает реле",
+   "about": "Кнопка MD на плате включает и выключает реле 1. Показывает: событие, условие, запись в переменную реле.",
+   "board": "TPP2W(G2)",
+   "runtime": "tios"
+  },
+  {
+   "tibbits": "#03_1 в S1 + #20 в S2, питание #10 в S11 + #18 в S12",
+   "blocks": "On Time Period, Comparison, Variable Set",
+   "try": "после включения реле щёлкает каждые 5 секунд; период - поле Interval блока On Time Period",
+   "file": "02-blink-interval.json",
+   "title": "Мигалка: реле по интервалу",
+   "about": "Реле 1 переключается каждые 5 секунд. Показывает: периодическое действие блоком On Time Period.",
+   "board": "TPP2W(G2)",
+   "runtime": "tios"
+  },
+  {
+   "tibbits": "#03_1 в S1, #54 в S3, один разъём #20 в S2 на оба (он занимает S2 и S4), питание #10 в S11 + #18 в S12",
+   "blocks": "On Variable Changed, Comparison, Delay, Variable Set; настройка HOLD",
+   "try": "замкните вход 1 Tibbit #54 на общий - свет включится; разомкните - погаснет через 30 с",
+   "file": "03-input-delay-off.json",
+   "title": "Свет по датчику с задержкой выключения",
+   "about": "Контакт датчика замкнулся - свет включается и горит ещё 30 секунд после размыкания. Время хранится в настройке и переживает выключение питания. Показывает: вход «сухой контакт», Delay, настройку STG.",
+   "board": "TPP2W(G2)",
+   "runtime": "tios"
+  },
+  {
+   "tibbits": "#05 в S1, #03_1 в S3, один разъём #20 в S2 на оба (он занимает S2 и S4), питание #10 в S11 + #18 в S12",
+   "blocks": "On Variable Changed, Comparison, Variable Set, On Modbus Timeout; Modbus Master, настройки TLOW и THIGH",
+   "try": "подключите датчик с адресом 1, 9600 8N1; адрес, регистр и множитель - в Modbus Master",
+   "file": "04-modbus-thermostat.json",
+   "title": "Термостат по датчику Modbus RTU",
+   "about": "Раз в секунду читает температуру с датчика Modbus RTU (адрес 1, регистр 0, десятые доли градуса) и держит её между порогами: ниже нижнего - нагрев включён, выше верхнего - выключен. Нет связи с датчиком - нагрев выключается. Показывает: Modbus Master, гистерезис, безопасное состояние при потере связи.",
+   "board": "TPP2W(G2)",
+   "runtime": "tios"
+  },
+  {
+   "tibbits": "#03_1 в S1 + #20 в S2, питание #10 в S11 + #18 в S12",
+   "blocks": "On MQTT Message, Comparison, Variable Set, On Time Period, MQTT Publish; сервис MQTT",
+   "try": "укажите адрес брокера в MQTT → Server Host; отправьте on или off в tibbo/demo/cmd. В state приходит lamp=0 (включено) или lamp=1 (выключено)",
+   "file": "05-mqtt-relay.json",
+   "title": "MQTT: команды реле и телеметрия",
+   "about": "Подключается к брокеру MQTT, выполняет команды on и off из топика tibbo/demo/cmd и раз в 30 секунд публикует состояние реле в tibbo/demo/state. Показывает: подписку, публикацию, адрес брокера в настройках.",
+   "board": "TPP2W(G2)",
+   "runtime": "tios"
+  },
+  {
+   "tibbits": "#03_1 в S1 + #20 в S2, питание #10 в S11 + #18 в S12",
+   "blocks": "On Variable Changed, Comparison, Variable Set, On Time Period; веб-панель",
+   "try": "откройте в браузере адрес устройства (выданный DHCP), пользователь admin, пароль tibbo - сразу смените его в настройке WBPWD",
+   "file": "06-web-panel.json",
+   "title": "Веб-панель: переключатель и счётчик",
+   "about": "Страница на самом устройстве: переключатель управляет реле, карточка показывает время работы в секундах. Показывает: веб-панель, переменную для интерфейса отдельно от переменной реле.",
+   "board": "TPP2W(G2)",
+   "runtime": "tios"
+  }
+ ]
+}

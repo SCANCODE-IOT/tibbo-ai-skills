@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Lint every recipe and compile it with Tibbo's compiler on its platform and on every platform in "also".
-Usage: python3 tools/check_recipes.py <tibbo-basic folder> [name part ...]     exit code 1 if anything fails."""
+Recipes in Tibbo C are compiled by Tibbo's cloud compiler (the Node.js compiler builds Tibbo BASIC only): add --cloud,
+the recipe files are then sent to api.appblocks.io. Without --cloud they are only linted.
+Usage: python3 tools/check_recipes.py <tibbo-basic folder> [--cloud] [name part ...]     exit code 1 if anything fails."""
 import json, os, re, shutil, subprocess, sys, tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SK = os.path.join(ROOT, "skills", "tibbo-firmware")
-R = os.path.join(SK, "recipes")
+R = os.environ.get("RECIPES_OUT") or os.path.join(SK, "recipes")
 env = dict(os.environ, TIBBO_BASIC_HOME=sys.argv[1], TIDE_DIR="/nonexistent")
-only = sys.argv[2:]
+cloud = "--cloud" in sys.argv
+only = [a for a in sys.argv[2:] if not a.startswith("--")]
 ok = bad = 0
 for name in sorted(os.listdir(R)):
     d = os.path.join(R, name)
@@ -22,8 +25,13 @@ for name in sorted(os.listdir(R)):
         if p != meta["platform"]:   # the same sources on another board
             tpr = open(os.path.join(t, "app.tpr"), newline="").read()
             open(os.path.join(t, "app.tpr"), "w", newline="").write(re.sub(r"(?m)^platform=.*$", "platform=" + p, tpr))
-        b = subprocess.run([sys.executable, os.path.join(SK, "scripts", "tibbo_build.py"), t, "--node", "--json"],
-                           capture_output=True, text=True, env=env)
+        if meta.get("compiler") == "cloud" and not cloud:
+            shutil.rmtree(os.path.dirname(t), ignore_errors=True)
+            print("  skip (Tibbo C, needs --cloud)", name, p)
+            continue
+        how = ["--cloud", "--cloud-ok"] if meta.get("compiler") == "cloud" else ["--node"]
+        b = subprocess.run([sys.executable, os.path.join(SK, "scripts", "tibbo_build.py"), t, *how, "--json"],
+                           capture_output=True, text=True, env={k: v for k, v in env.items() if k != "APPBLOCKS_API_KEY"})
         shutil.rmtree(os.path.dirname(t), ignore_errors=True)
         try:
             j = json.loads(b.stdout)

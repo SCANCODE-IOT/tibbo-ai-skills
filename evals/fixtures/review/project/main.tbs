@@ -1,0 +1,61 @@
+include "global.tbh"
+
+'Device: TPP2W(G2), Tibbit #03_1 (two relays) in S1, connector #19 in S2.
+'TCP server on port 2000: "1" switches relay 1 on, "0" switches it off, the device answers "OK".
+'Every 0.5 s it reports the relay state to the client.
+
+dim srv_sock as byte
+dim report_sock as byte
+dim relay_on as no_yes
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	net.ip = "192.168.1.90"
+	net.netmask = "255.255.255.0"
+
+	srv_sock = 0
+	sock.num = srv_sock
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+	sock.localportlist = "2000"
+	sys.buffalloc()
+	sock.rxbuffrq(2)
+	sock.txbuffrq(2)
+
+	'relay 1 is on line A of socket S1
+	io.num = PL_IO_NUM_9_TX0
+	io.state = HIGH
+	relay_on = NO
+
+	'wait for the first client before going on
+	while sock.statesimple <> PL_SSTS_EST
+	wend
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	dim s as string(16)
+	if relay_on = YES then
+		s = "RELAY=1" + chr(13)
+	else
+		s = "RELAY=0" + chr(13)
+	end if
+	sock.setdata(s)
+	sock.send
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dim cmd as string(8)
+	cmd = sock.getdata(8)
+	io.num = PL_IO_NUM_9_TX0
+	if left(cmd, 1) = "1" then
+		io.state = LOW          'the relays of #03 are active LOW
+		relay_on = YES
+	else
+		io.state = HIGH
+		relay_on = NO
+	end if
+	sock.setdata("OK" + chr(13))
+	sock.send
+end sub

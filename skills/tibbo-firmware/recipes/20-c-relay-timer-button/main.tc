@@ -1,0 +1,54 @@
+#include "global.th"
+
+/* Tibbo C: a relay switched by the timer and by the MD button.
+ * Hardware: TPP2W(G2), Tibbit #03_1 (two relays) in socket S1, connector #19 or #20 in S2.
+ * Relay 1 is on line A of S1 (PL_IO_NUM_9_TX0), relay 2 on line B (PL_IO_NUM_8_RX0).
+ * The relays of #03 are active LOW: LOW = on, HIGH = off.
+ * Relay 1 changes its state every PERIOD_TICKS half-seconds; relay 2 is on while the MD button is held.
+ */
+
+#define RELAY1 PL_IO_NUM_9_TX0
+#define RELAY2 PL_IO_NUM_8_RX0
+#define PERIOD_TICKS 10			/* 10 x 0.5 s = 5 s */
+
+unsigned char ticks;
+unsigned char relay1_on;
+
+void relay_set(pl_io_num line, unsigned char on)
+{
+	io.num = line;
+	io.state = on ? LOW : HIGH;
+}
+
+void on_sys_init()
+{
+	/* both lines: level first (off), then switch the line to output */
+	io.num = RELAY1;
+	io.state = HIGH;
+	io.enabled = YES;
+	io.num = RELAY2;
+	io.state = HIGH;
+	io.enabled = YES;
+	ticks = 0;
+	relay1_on = 0;
+}
+
+void on_sys_timer()
+{
+	ticks++;
+	if (ticks >= PERIOD_TICKS) {
+		ticks = 0;
+		relay1_on = !relay1_on;
+		relay_set(RELAY1, relay1_on);
+	}
+}
+
+void on_button_pressed()
+{
+	relay_set(RELAY2, 1);
+}
+
+void on_button_released()
+{
+	relay_set(RELAY2, 0);
+}

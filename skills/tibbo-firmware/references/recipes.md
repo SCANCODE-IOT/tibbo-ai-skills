@@ -22,6 +22,22 @@
 | `recipes/11-sntp-clock` | Точное время из интернета (SNTP) в часы устройства | TPP3W(G2), TPP2W(G2), TPP3W(G3), EM2000W | - | sntp, dhcp |
 | `recipes/12-flash-disk-log` | Журнал событий в файле на флеш-диске (объект fd) | TPP3W(G2), TPP2W(G2), TPP3W(G3), EM2000W | - | - |
 | `recipes/13-buttons-leds-buzzer` | Кнопка MD, светодиоды состояния и зуммер | TPP3W(G2), TPP2W(G2), TPP3W(G3), EM2000W, EM1000 | - | - |
+| `recipes/14-modbus-tcp-slave` | Modbus TCP slave: 16 регистров хранения, функции 03 и 06, два мастера одновременно | TPP3W(G2), TPP2W(G2), TPP3W(G3), EM2000W, EM1000 | - | - |
+| `recipes/15-http-get` | HTTP-клиент: запрос GET раз в минуту, код ответа и начало тела | TPP3W(G2), TPP2W(G2), TPP3W(G3), EM2000W, EM1000 | - | - |
+| `recipes/16-https-get-tls` | HTTPS-клиент: запрос GET по TLS с проверкой сертификата сервера (файл `ca.der` - заглушка, замени своим) | TPP3W(G3), TPP2W(G3), EM3000W | - | - |
+| `recipes/17-bluetooth-tcp-bridge` | Bluetooth LE: мост между телефоном и TCP-клиентом, по тесту Tibbo BT-WLN-Echo-Test | TPP3W(G2), TPP2W(G2), EM2000W | - | wln, dhcp |
+| `recipes/18-lcd-keypad` | Дисплей 320x240 и четыре кнопки набора TPS2L: рисование, события клавиатуры | TPP2W(G2) | набор TPS2L | - |
+| `recipes/19-c-tcp-echo-server` | **Tibbo C**: TCP-сервер с эхом (рецепт 01 на C) | TPP3W(G2), TPP2W(G2) - облачным компилятором | - | - |
+| `recipes/20-c-relay-timer-button` | **Tibbo C**: реле по таймеру и по кнопке MD | TPP2W(G2) - облачным компилятором | #03_1 в S1, #19 или #20 в S2 | - |
+
+**Рецепты на Tibbo C (19, 20)** - проект с файлами `main.tc` (`type=c` в `.tpr`) и `global.th` (`type=cheader`). Объекты,
+свойства, методы и события те же, что в Tibbo BASIC; синтаксис - C: обработчик `void on_sys_init() { ... }`, вызов метода
+со скобками `sock.send();`, строки типа `string`, перечисления в аргументах событий с `enum` (`enum pl_sock_state newstate`).
+Компилятор на Node.js Tibbo C не собирает: `tibbo_build.py <папка>` сам уйдёт в TIDE или, с согласия пользователя
+(`--cloud-ok`), в облачный компилятор. `tibbo_lint.py` проверяет имена API и в файлах C.
+
+**Что проверено в рецептах 14-18.** Собраны компилятором Tibbo; на устройстве не запускались. Рецепты 17 и 18 повторяют
+проекты самой Tibbo (BT-WLN-Echo-Test, CA-TPS2L-LCD-Keypad), рецепт 16 - порядок вызовов TLS из библиотек http и mqtt Tibbo.
 
 ## Как пользоваться
 

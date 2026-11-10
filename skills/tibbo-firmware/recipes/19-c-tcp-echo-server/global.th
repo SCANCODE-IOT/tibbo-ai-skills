@@ -1,0 +1,6 @@
+#ifndef GLOBAL_TH
+#define GLOBAL_TH
+
+/* project-wide definitions go here: #define, typedef, function prototypes */
+
+#endif

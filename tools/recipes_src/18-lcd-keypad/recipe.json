@@ -1,0 +1,9 @@
+{
+ "title": "Дисплей и кнопки набора TPS2L: рисование и события клавиатуры",
+ "platform": "TPP2W(G2)",
+ "also": [],
+ "tibbits": [],
+ "project": {
+  "defines": " /dLCD_TYPE=SOLOMON_SSD1963_FIXED_IO2 /dOBJECT_LCD=LCD_ENABLED /dOBJECT_KP=KP_ENABLED"
+ }
+}

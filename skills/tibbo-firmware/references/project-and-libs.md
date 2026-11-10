@@ -244,7 +244,10 @@ Flow inside `on_sock_event` for your socket:
 1. `PL_SST_EST_AOPENED` → `sock.tlsdeinit`, `romfile.open(CA_CERT)`, `sock.tlsinit(romfile.offset)`,
    `sock.tlshandshake(SERVER_HOST)` (host must match the certificate name). Check each `pl_tls_result`.
 2. `PL_SST_EST_TLS` → handshake done: `sock.tlssetdata(...)`, `sock.send`.
-3. `PL_SST_EST_TLS_FAILED` → `sock.rxclear`, `sock.reset`.
+3. Handshake failure: the socket closes without data, or your own timeout fires. The state `PL_SST_EST_TLS_FAILED`
+   (→ `sock.rxclear`, `sock.reset`) and `sock.tlsinitfromarray` exist only in Tibbo's newest platform files: the default
+   compiler, the cloud compiler and older TIDE answer "undeclared identifier" (`tibbo_lint.py` warns). Complete
+   program without them: `recipes/16-https-get-tls`.
 4. `newstatesimple = PL_SSTS_CLOSED` → `sock.rxclear`, `sock.txclear`, `sock.tlsdeinit`.
 Data: `sock.tlsgetdata(255)` in a loop until empty (in on_sock_data_arrival).
 Buffers: 1 page = 256 bytes; ~6 RX/6 TX pages for ECDSA P-256, raise to 8 for RSA-2048.

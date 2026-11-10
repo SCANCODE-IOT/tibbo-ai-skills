@@ -1,0 +1,63 @@
+include "global.tbh"
+
+'LCD and keypad of the TPS2L kit (TPP2W(G2) with the 320x240 display and four buttons), after Tibbo's sample
+'CA-TPS2L-LCD-Keypad: the screen is split into four cells, a pressed button paints its cell.
+'Hardware: TPS2L. The display type and the objects are switched on in app.tpr (defines=): /dLCD_TYPE=...,
+'/dOBJECT_LCD=LCD_ENABLED, /dOBJECT_KP=KP_ENABLED. Text needs a font file added to the project as a resource
+'(lcd.setfont) - this recipe draws only shapes.
+
+declare sub draw_frame()
+declare sub paint_cell(n as byte, color as word)
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	lcd.width = 320
+	lcd.height = 240
+	lcd.iomapping = "55,43,42,41,40,0"		'RST,DC,WR,RD,CS,data bus - the wiring of TPS2L
+	lcd.rotated = YES						'the display of TPS2L is mounted upside down
+	lcd.enabled = YES
+	draw_frame()
+	kp.returnlinesmapping = "36,37,38,39"	'four buttons, one line each
+	kp.enabled = YES
+end sub
+
+'-------------------------------------------------------------------
+sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
+	'key_code 0..3 = buttons F1..F4
+	if key_code > 3 then exit sub
+	if key_event = PL_KP_EVENT_PRESSED then
+		paint_cell(key_code, &hFFE0)
+	else if key_event = PL_KP_EVENT_RELEASED then
+		paint_cell(key_code, 0)
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_kp_overflow()
+	kp.enabled = YES			'the keypad stops after an overflow: switch it on again
+end sub
+
+'-------------------------------------------------------------------
+sub draw_frame()
+	lcd.lock()					'draw everything, then show it at once
+	lcd.forecolor = 0
+	lcd.fill(0, 0, lcd.width, lcd.height)
+	lcd.forecolor = 65535
+	lcd.rectangle(10, 10, 310, 230)
+	lcd.line(160, 10, 160, 230)
+	lcd.line(10, 120, 310, 120)
+	lcd.unlock()
+end sub
+
+'-------------------------------------------------------------------
+sub paint_cell(n as byte, color as word)
+	dim x, y as word
+	x = 11
+	y = 11
+	if n = 1 or n = 3 then x = 161
+	if n >= 2 then y = 121
+	lcd.lock()
+	lcd.forecolor = color
+	lcd.fill(x, y, 149, 109)
+	lcd.unlock()
+end sub

@@ -58,6 +58,10 @@ G="$T/gen"; rm -rf "$G"
 "$PY" scripts/tibbo_new.py "$G/d" --platform "EM1000" --libs mqtt >"$T/out" 2>&1; [ $? = 2 ] && grep -q "timercountms" "$T/out" && echo "ok   new project refuses a library that does not compile on the platform" || { echo "FAIL new project broken lib"; cat "$T/out"; fail=1; }
 sed '/callback_wln_ok/,/^end sub/d' "$G/a/device.tbs" > "$T/dev" && cp "$T/dev" "$G/a/device.tbs"
 "$PY" scripts/tibbo_lint.py "$G/a" | grep -q "нет callback_wln_ok" && echo "ok   lint reports a missing library callback" || { echo "FAIL lint missing callback"; fail=1; }
+"$PY" scripts/tibbo_new.py "$G/skel" --platform "TPP2W(G2)" --libs dhcp >/dev/null 2>&1
+"$PY" scripts/tibbo_lint.py "$G/skel" | grep -q "нетронутая заготовка" && echo "ok   lint warns about an untouched skeleton" || { echo "FAIL lint skeleton"; fail=1; }
+printf 'sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)\r\n\tif newstate = PL_SST_EST_TLS_FAILED then sock.discard()\r\nend sub\r\n' > "$G/newer.tbs"
+"$PY" scripts/tibbo_lint.py "$G/newer.tbs" --platform "TPP3W(G3)" | grep -q "только в новых файлах платформ" && echo "ok   lint warns about names of the newest platform files only" || { echo "FAIL lint newer_only"; fail=1; }
 # recipes: every one is clean for the linter; compiled when Tibbo's Node.js compiler is installed
 rfail=0; rn=0
 for d in recipes/*/; do
@@ -65,15 +69,16 @@ for d in recipes/*/; do
   "$PY" scripts/tibbo_lint.py "$d" >"$T/out" 2>&1 || { echo "FAIL recipe lint $d"; cat "$T/out"; rfail=1; }
   grep -q "предупреждений: 0" "$T/out" || { echo "FAIL recipe lint warnings $d"; cat "$T/out"; rfail=1; }
 done
-[ "$rfail" = 0 ] && [ "$rn" -ge 13 ] && echo "ok   $rn recipes clean for the linter" || fail=1
+[ "$rfail" = 0 ] && [ "$rn" -ge 20 ] && echo "ok   $rn recipes clean for the linter" || fail=1
 NH="${TIBBO_BASIC_HOME:-$HOME/.tibbo/tibbo-basic}"
 if [ -f "$NH/server/out/compiler/compile-project.js" ] && command -v node >/dev/null 2>&1; then
   rfail=0
   for d in recipes/*/; do
+    [ -f "$d/main.tc" ] && continue          # Tibbo C: only TIDE and the cloud compiler build it
     rm -rf "$T/rb"; cp -r "$d" "$T/rb"      # build a copy: the compiler leaves tmp/ next to the project
     env TIDE_DIR=/nonexistent "$PY" scripts/tibbo_build.py "$T/rb" --node --out "$T/r.tpc" >"$T/out" 2>&1 || { echo "FAIL recipe build $d"; tail -5 "$T/out"; rfail=1; }
   done
-  [ "$rfail" = 0 ] && echo "ok   $rn recipes compile with Tibbo's compiler" || fail=1
+  [ "$rfail" = 0 ] && echo "ok   recipes in Tibbo BASIC compile with Tibbo's compiler" || fail=1
 else echo "skip recipe compilation (Tibbo's Node.js compiler is not installed)"; fi
 env -u PYTHONUTF8 PYTHONIOENCODING=cp1251 "$PY" scripts/tibbo_lint.py tests/lint/bad.tbs >/dev/null 2>"$T/err"; [ $? = 1 ] && echo "ok   lint non-UTF-8 console" || { echo "FAIL lint cp1251"; cat "$T/err"; fail=1; }
 # skills_update.py: in-place update from local zips, refusal for plugin installs, broken archive keeps the install

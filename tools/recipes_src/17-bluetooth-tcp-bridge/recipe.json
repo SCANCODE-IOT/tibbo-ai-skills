@@ -1,0 +1,13 @@
+{
+ "title": "Bluetooth LE: мост между телефоном и TCP (по тесту Tibbo BT-WLN-Echo-Test)",
+ "platform": "TPP3W(G2)",
+ "also": [
+  "TPP2W(G2)",
+  "EM2000W"
+ ],
+ "tibbits": [],
+ "libs": "wln,dhcp",
+ "declares": [
+  "declare wifi_retry as byte          'defined in main.tbs, used by the callbacks in device.tbs"
+ ]
+}
