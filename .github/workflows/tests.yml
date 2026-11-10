@@ -42,6 +42,26 @@ jobs:
         if: runner.os == 'Linux'
         run: sh tools/package.sh
 
+  # Tibbo's own compiler (github.com/tibbotech/tibbo-basic, Node.js): every recipe and every generated project must
+  # build. External repository: a failure here is reported but does not block the PR.
+  compiler:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Tibbo's compiler
+        run: python skills/tibbo-firmware/scripts/tibbo_build.py --setup-node --yes
+      - name: 13 recipes on their platforms
+        run: python tools/check_recipes.py "$HOME/.tibbo/tibbo-basic"
+      - name: tibbo-firmware suite with the compiler (generated projects, recipes)
+        run: TIBBO_BASIC_HOME="$HOME/.tibbo/tibbo-basic" sh skills/tibbo-firmware/tests/run.sh
+
   # Real HTTPS to api.appblocks.io from Windows with truststore and with certifi (external service: does not block the PR)
   windows-tls:
     runs-on: windows-latest

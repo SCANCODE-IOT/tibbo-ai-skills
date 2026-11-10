@@ -30,6 +30,8 @@ Already installed? How to update on any platform: [Updating](#updating).
 1. **Python 3.9 or newer.** The checking scripts need it. Check: `python --version` (Windows) or `python3 --version`
    (macOS, Linux). No Python on Windows: install it from [python.org](https://www.python.org/downloads/) and tick
    *Add python.exe to PATH*. Nothing else is needed: the scripts use only the standard library.
+   To let the agent compile firmware with Tibbo's compiler, also install [Node.js 18+](https://nodejs.org) and
+   [git](https://git-scm.com) - see [Building and uploading firmware](#building-and-uploading-firmware).
 2. **Download the files** from the [latest release](https://github.com/SCANCODE-IOT/tibbo-ai-skills/releases/latest):
    - `tibbo-firmware.zip` and `appblocks.zip` - the two skills (always install both: `appblocks` uses the board
      checker of `tibbo-firmware`);
@@ -130,21 +132,23 @@ The [Vercel skills CLI](https://github.com/vercel-labs/skills) installs into 80+
 
 ## Web chats
 
-Unpack `tibbo-chat-pack.zip`. Inside: `PROMPT.md` (instructions), seven knowledge files `01`-`07`, `tibbo-tools.zip`
+Unpack `tibbo-chat-pack.zip`. Inside: `PROMPT.md` (instructions), eight knowledge files `01`-`08`, `tibbo-tools.zip`
 (the scripts) and a short `README.md`.
 
 - **ChatGPT, custom GPT** (paid plans): Explore GPTs → Create → Configure. Paste the text of `PROMPT.md` into
-  *Instructions*, upload `01`-`07` and `tibbo-tools.zip` to *Knowledge*, turn on *Code Interpreter & Data Analysis*.
+  *Instructions*, upload `01`-`08` and `tibbo-tools.zip` to *Knowledge*, turn on *Code Interpreter & Data Analysis*.
   The GPT runs the checks itself.
 - **ChatGPT, Project:** create a project, paste `PROMPT.md` into the project instructions, add the files.
-- **Gemini, Gem:** Gems → New Gem. `PROMPT.md` into *Instructions*, `01`-`07` into *Knowledge* (up to 10 files).
+- **Gemini, Gem:** Gems → New Gem. `PROMPT.md` into *Instructions*, `01`-`08` into *Knowledge* (up to 10 files).
 - **Kimi (kimi.com), DeepSeek (chat.deepseek.com), GLM (chat.z.ai):** in a new chat attach `PROMPT.md` and the 1-3
   files your task needs and write "Follow PROMPT.md". Repeat in every new chat.
 
 | Task | Files |
 |---|---|
 | Choose Tibbits, check sockets and power | 01, 05 |
-| Write or review Tibbo BASIC firmware | 01, 04, 06 (+ 05 for the platform) |
+| Write new Tibbo BASIC firmware | 01, 08, 04 (+ 06 for libraries, 05 for the platform) |
+| Review firmware, fix compiler errors | 01, 04, 06 |
+| Linux board LTPP3(G2) | 08, 01 |
 | Libraries: DHCP, MQTT, Modbus, Wi-Fi, TLS | 06, 04 |
 | AppBlocks project | 02, 03 (+ 01 for hardware) |
 
@@ -153,7 +157,8 @@ A chat that cannot run code gives you the files and the commands. Run them on yo
 
 ```bash
 python tibbo-firmware/scripts/tps_check.py check cfg.json --svg board.svg
-python tibbo-firmware/scripts/tibbo_lint.py my_project --platform "TPP3W(G2)"
+python tibbo-firmware/scripts/tibbo_lint.py my_project
+python tibbo-firmware/scripts/tibbo_build.py my_project     # Tibbo's compiler: needs Node.js 18+ and git, or TIDE
 python appblocks/scripts/ab_tool.py check project.json
 ```
 
@@ -176,13 +181,49 @@ Both skills are always updated together.
 | **Gemini CLI**, installed with `gemini skills install` | Run both `gemini skills install …` commands from [Gemini CLI](#gemini-cli) again, then `/skills reload`. |
 | **Kimi Code**, imported with `/import-from-cc-codex` | Update the skills in Claude Code or Codex and run `/import-from-cc-codex` again. |
 | **Kimi app** (K3, K3.1 Pro) | Download the new [Kimi set](kimi/tibbo-skills-kimi-app.zip). Skills → **Custom Skills**: replace each skill's documents with the new ones (or delete the skill and create it again). |
-| **ChatGPT, custom GPT or Project** | Download the new `tibbo-chat-pack.zip`. In the GPT (or project) settings replace the instructions with the new `PROMPT.md`, delete the old knowledge files and upload the new `01`-`07` and `tibbo-tools.zip`. |
-| **Gemini, Gem** | The same: new `PROMPT.md` into *Instructions*, new `01`-`07` instead of the old ones in *Knowledge*. |
+| **ChatGPT, custom GPT or Project** | Download the new `tibbo-chat-pack.zip`. In the GPT (or project) settings replace the instructions with the new `PROMPT.md`, delete the old knowledge files and upload the new `01`-`08` and `tibbo-tools.zip`. |
+| **Gemini, Gem** | The same: new `PROMPT.md` into *Instructions*, new `01`-`08` instead of the old ones in *Knowledge*. |
 | **Kimi, DeepSeek, GLM chats** | Just attach the files from the new `tibbo-chat-pack.zip` - you attach them in every new chat anyway. |
 
 **No access to GitHub from the terminal?** Download `tibbo-firmware.zip` and `appblocks.zip` from the release in your
 browser, put them into one folder and run `python <skills folder>/tibbo-firmware/scripts/skills_update.py --from <that folder>`.
 The updater rolls back if an archive is broken and runs a self-test after the update.
+
+## Building and uploading firmware
+
+Since 2.2.0 the agent can compile what it writes and upload it to a device. What it can reach depends on **where the
+agent runs**, not on the model. The agent finds this out itself (`tibbo_build.py --doctor`) and tells you what to do;
+this table is the short version.
+
+| Where your agent runs | Compile | Find a device, upload, run | What you need to do |
+|---|---|---|---|
+| Terminal or editor agent **on the Windows computer with TIDE** (Claude Code, Codex CLI, Gemini CLI, Kimi Code, OpenCode, Cursor) | Tibbo's compiler on Node.js for checks, your TIDE for the firmware | TIDE's `tupload` or tide-proxy | Open the agent in the project folder and allow it to run `python`. TIDE not in `C:\Program Files (x86)\Tibbo\TIDE`: `setx TIDE_DIR "D:\Tibbo\TIDE"`. |
+| Terminal or editor agent on **Linux, macOS or Windows without TIDE** | Tibbo's compiler on Node.js (Tibbo BASIC) | tide-proxy (experimental) | Install [Node.js 18+](https://nodejs.org) and [git](https://git-scm.com). The agent asks before it downloads the compiler (about 200 MB from github.com/tibbotech) and tide-proxy. |
+| Agent **in a cloud sandbox** (Claude apps and claude.ai, ChatGPT with tools, the Kimi app) | Tibbo's compiler on Node.js inside the sandbox, when the sandbox may reach GitHub and npm; otherwise the cloud build | no: the sandbox is not in your network | Say "yes" to installing the compiler. You get the `.tpc` file and upload it yourself in TIDE, or run the agent on a computer in the device's network. |
+| **Web chat** without code execution (DeepSeek, GLM, plain ChatGPT and Gemini) | no | no | Build in TIDE (**Build → Rebuild All**) and paste the Output panel into the chat: the skill has a catalog of compiler errors. Or run the commands from `tibbo-tools.zip` yourself. |
+
+Three things are done only after your "yes", every time:
+
+1. **Installing Tibbo's compiler and tide-proxy** - code from github.com/tibbotech and npm packages are downloaded and run.
+2. **The cloud build** - the whole project is sent to Tibbo's server (api.appblocks.io). It is the fallback for Tibbo C
+   without TIDE; Tibbo BASIC is compiled locally.
+3. **Anything that changes a device** - upload, run, stop, reboot. Searching the network and reading the state are safe.
+
+You can run the same tools yourself:
+
+```bash
+cd skills/tibbo-firmware
+python3 scripts/tibbo_build.py --doctor                  # what works here and what is missing
+python3 scripts/tibbo_build.py --setup-node --yes        # install Tibbo's compiler (once)
+python3 scripts/tibbo_new.py my_app --platform "TPP3W(G2)" --libs dhcp
+python3 scripts/tibbo_build.py my_app                    # check: 0 errors
+python3 scripts/tibbo_build.py my_app --release --out my_app.tpc
+python3 scripts/tibbo_device.py list                     # devices in the network (after --setup --yes)
+```
+
+Limits: the Node.js compiler builds Tibbo BASIC only; step-by-step debugging stays in the TIDE window; `tibbo_device.py`
+is experimental and has not been run against real hardware yet - for a production upload use TIDE. Linux boards
+LTPP3(G2) are not TiOS: nothing in this section applies to them.
 
 ## Check that it works
 
@@ -195,7 +236,7 @@ restart the agent and check the folder.
 
 The skills carry the rules and the data, but the quality still depends on the model. Strong models follow the
 procedure on their own. Smaller and faster models skip steps more often: insist on the checks
-(`tps_check.py`, `tibbo_lint.py`, `ab_tool.py check`) and build every firmware in TIDE before it goes to hardware.
+(`tps_check.py`, `tibbo_lint.py`, `tibbo_build.py`, `ab_tool.py check`) and test every firmware on real hardware.
 
 ## Troubleshooting
 
