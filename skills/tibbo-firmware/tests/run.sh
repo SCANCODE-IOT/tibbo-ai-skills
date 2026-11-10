@@ -105,10 +105,13 @@ env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" s
 [ "$rc" = 0 ] && grep -q "TIDE на этом компьютере" "$B/out" && [ -f "$B/proj/test.tpc" ] && echo "ok   build local (tmake)" || { echo "FAIL build local (rc=$rc)"; cat "$B/out"; fail=1; }
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj/test.tpr" --release >"$B/out" 2>&1
 grep -q "release" "$B/out" && grep -q "debug = on" "$B/proj/test.tpr" && echo "ok   build release keeps the project unchanged" || { echo "FAIL build release"; cat "$B/out"; fail=1; }
-sed -i.bak 's/sock.num/sock.nmu/' "$B/proj/main.tbs"
+cp "$B/proj/main.tbs" "$B/main.good"; sed 's/sock\.num/sock.nmu/' "$B/main.good" > "$B/proj/main.tbs"
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" --json >"$B/out" 2>&1; rc=$?
 [ "$rc" = 1 ] && grep -q '"line": 2' "$B/out" && grep -q '"code": "C1013"' "$B/out" && echo "ok   build reports compiler errors" || { echo "FAIL build errors (rc=$rc)"; cat "$B/out"; fail=1; }
 ;; esac
+# the seeded mistake for the compiler tests below (also where the local build was skipped)
+grep -q "sock.nmu" "$B/proj/main.tbs" || { cp "$B/proj/main.tbs" "$B/main.good"; sed 's/sock\.num/sock.nmu/' "$B/main.good" > "$B/proj/main.tbs"; }
+grep -q "sock.nmu" "$B/proj/main.tbs" || { echo "FAIL test setup: no seeded mistake in main.tbs"; fail=1; }
 # --doctor: says what the USER must do; offline cloud (closed port) must not hang
 env -u TIBBO_CLOUD_BUILD -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR=/nonexistent APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/tibbo_build.py --doctor --json >"$B/doc" 2>&1
 "$PY" -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); assert d['mode']=='none' and not d['tide'] and d['user_actions'] and any('api.appblocks.io' in a or 'связи' in a for a in d['user_actions']), d" "$B/doc" && echo "ok   doctor tells the user what to do (no TIDE, no network)" || { echo "FAIL doctor no TIDE"; cat "$B/doc"; fail=1; }
@@ -127,8 +130,10 @@ $NB "$PY" scripts/tibbo_build.py "$B/ok" --release --out "$B/n.tpc" >"$B/out" 2>
 BOTH="env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=$PWD/tests/build/fake_node TIDE_DIR=$FT"
 $BOTH "$PY" scripts/tibbo_build.py "$B/ok" --json >"$B/out" 2>&1
 grep -q '"mode": "node"' "$B/out" && echo "ok   checking code prefers the Node.js compiler over TIDE" || { echo "FAIL check mode"; cat "$B/out"; fail=1; }
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) echo "skip firmware-prefers-TIDE (tmake stand-in is a script, Windows runs only real .exe)";; *)
 $BOTH "$PY" scripts/tibbo_build.py "$B/ok" --release --json >"$B/out" 2>&1
 grep -q '"mode": "local"' "$B/out" && echo "ok   firmware for a device prefers the user's TIDE" || { echo "FAIL firmware mode"; cat "$B/out"; fail=1; }
+;; esac
 else echo "skip node compiler tests (no Node.js)"; fi
 "$PY" scripts/tibbo_build.py --setup-node >"$B/out" 2>&1; [ $? = 3 ] && echo "ok   setup-node needs --yes" || { echo "FAIL setup-node guard"; cat "$B/out"; fail=1; }
 # tibbo_device.py: guards (no tide-proxy needed); end-to-end with tide-proxy + a protocol stand-in if installed
