@@ -1,0 +1,27 @@
+<?
+include "global.tbh"
+?>
+<html>
+<head><title>Tibbo device</title></head>
+<body>
+<h1>Tibbo device</h1>
+<?
+	'the request string is "relay=1" for /index.html?relay=1
+	if instr(1, sock.httprqstring, "relay=1", 1) > 0 then relay_set(YES)
+	if instr(1, sock.httprqstring, "relay=0", 1) > 0 then relay_set(NO)
+?>
+<p>Uptime, s: <?
+	sock.setdata(lstr(uptime_s))
+	sock.send()
+?></p>
+<p>Relay: <?
+	if relay_on = YES then
+		sock.setdata("ON")
+	else
+		sock.setdata("OFF")
+	end if
+	sock.send()
+?></p>
+<p><a href="index.html?relay=1">Switch on</a> | <a href="index.html?relay=0">Switch off</a> | <a href="index.html">Refresh</a></p>
+</body>
+</html>

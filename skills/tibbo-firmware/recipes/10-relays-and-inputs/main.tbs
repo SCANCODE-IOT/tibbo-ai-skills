@@ -1,0 +1,89 @@
+include "global.tbh"
+
+'Two isolated inputs and two relays. Input 1 toggles relay 1 on every press; relay 2 follows input 2.
+'The inputs are read every 50 ms and a new state counts only after 3 equal readings (contact bounce).
+'Hardware: relays Tibbit #03_1 in S3 (lines S3A, S3B), inputs Tibbit #04_1 in S7 (lines S7A, S7B),
+'terminal blocks #20 in S4 and S8. Relays are ON while the line is LOW; an input line is LOW while current flows.
+'Change: the line constants for other sockets (references/platforms.md).
+
+const DEBOUNCE = 3
+
+dim in_state(2) as low_high		'accepted state of every input
+dim in_count(2) as byte			'equal readings in a row that differ from the accepted state
+dim relay1 as no_yes
+
+declare sub relay_set(line as pl_io_num, state as no_yes)
+declare sub input_changed(n as byte, state as low_high)
+
+'-------------------------------------------------------------------
+sub relay_set(line as pl_io_num, state as no_yes)
+	io.num = line
+	if state = YES then
+		io.state = LOW
+	else
+		io.state = HIGH
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	'outputs: set the level first, then enable - the relay will not click at start
+	io.num = PL_IO_NUM_32			'S3A - relay 1
+	io.state = HIGH
+	io.enabled = YES
+	io.num = PL_IO_NUM_33			'S3B - relay 2
+	io.state = HIGH
+	io.enabled = YES
+	'inputs stay disabled as outputs (io.enabled = NO is the default)
+	in_state(0) = HIGH
+	in_state(1) = HIGH
+	in_count(0) = 0
+	in_count(1) = 0
+	relay1 = NO
+	sys.onsystimerperiod = 5		'on_sys_timer every 50 ms (units of 10 ms)
+end sub
+
+'-------------------------------------------------------------------
+sub input_changed(n as byte, state as low_high)
+	'an input has a new stable state; LOW = active
+	if n = 0 then
+		if state = LOW then
+			if relay1 = YES then
+				relay1 = NO
+			else
+				relay1 = YES
+			end if
+			relay_set(PL_IO_NUM_32, relay1)
+		end if
+	else
+		if state = LOW then
+			relay_set(PL_IO_NUM_33, YES)
+		else
+			relay_set(PL_IO_NUM_33, NO)
+		end if
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	dim n as byte
+	dim now as low_high
+
+	for n = 0 to 1
+		if n = 0 then
+			now = io.lineget(PL_IO_NUM_34)		'S7A - input 1
+		else
+			now = io.lineget(PL_IO_NUM_35)		'S7B - input 2
+		end if
+		if now = in_state(n) then
+			in_count(n) = 0
+		else
+			in_count(n) = in_count(n) + 1
+			if in_count(n) >= DEBOUNCE then
+				in_count(n) = 0
+				in_state(n) = now
+				input_changed(n, now)
+			end if
+		end if
+	next n
+end sub

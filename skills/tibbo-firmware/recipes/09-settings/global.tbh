@@ -1,0 +1,15 @@
+'===================================================================
+' app - global header. Platform: TPP3W(G2)
+'===================================================================
+
+'DEFINES: library settings must come BEFORE the include of the library
+#define STG_DESCRIPTOR_FILE "settings.txt"
+#define STG_MAX_NUM_SETTINGS 3
+#define STG_MAX_SETTING_NAME_LEN 2
+#define STG_MAX_SETTING_VALUE_LEN 15
+
+'INCLUDES: order matters - a library goes after the libraries it uses
+include "settings\trunk\settings.tbh"
+
+'DECLARATIONS: your own subs, functions and global variables (dim them in ONE .tbs file)
+

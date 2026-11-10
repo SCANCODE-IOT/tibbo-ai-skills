@@ -272,7 +272,8 @@ def main():
     elif c == "build":
         proj = json.load(open(a[1], encoding="utf-8"))
         files = call("POST", "/api/projects/code", {"params": {"project": proj, "debug": "--release" not in a}}, auth=bool(key(False)))
-        body = {"command": "build", "files": files, "debug": "--release" not in a,
+        # the build service wants "on"/"off": a JSON boolean (even false) gives a DEBUG build
+        body = {"command": "build", "files": files, "debug": "off" if "--release" in a else "on",
                 "project": {"runtime": proj.get("runtime") or "tios", "device": proj.get("device")}}
         st, b = post_raw("/api/projects/build", body, auth=bool(key(False)))
         try:

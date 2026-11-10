@@ -3,6 +3,81 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-11-10
+
+**The agent now builds what it writes.** New projects come from a generator and from 13 ready programs, code is checked
+against the exact API of the chosen platform and then compiled by Tibbo's own compiler, and the firmware can be uploaded
+to a device without opening TIDE. Linux boards LTPP3(G2) are covered.
+
+### Building with Tibbo's compiler
+- **New `tibbo-firmware/scripts/tibbo_build.py`** - compiles a TIDE project with Tibbo's real compiler and picks the
+  way by the purpose: checking code - Tibbo's compiler ported to Node.js (any OS, Tibbo BASIC, the code stays on the
+  computer; installed once with `--setup-node --yes`); firmware for a device (`--release`, `--out`, `--firmware`) - the
+  user's own TIDE (`tmake`) when it is installed; the AppBlocks cloud compiler - a fallback (Tibbo C without TIDE),
+  only with the user's consent. Errors as `file(line) code text` or JSON, **a "what to do" line under every error**,
+  linker errors (missing library callback, name already taken by a library) are shown and explained, the `.tpr` is
+  checked before the build (no platform, missing file, library file without `location = commonlib`, no
+  `src_lib_ver`). `--doctor [<project>]` - what works on this computer, what the user must do, advice for the project.
+- **New `tibbo-firmware/scripts/tibbo_device.py`** (experimental) - Tibbo devices on the LAN without TIDE, on any OS,
+  through Tibbo's tide-proxy: `list`, `buzz`, `state`, `upload --yes [--run]`, `run`/`stop`/`reboot --yes`; never
+  reflashes TiOS without `--allow-tios`. `tibbo_build.py --upload` uses it when TIDE is not installed.
+- **New `tibbo-firmware/references/tide.md`** - what the user needs per agent environment, `.tpr` format, `tmake` and
+  `tupload` switches, debug vs release, the compiler and linker message catalog with causes and fixes, TIDE menu
+  steps, how to write instructions for the user's own case.
+- The Node.js compiler was compared with the cloud compiler on 15 tibbotech projects in debug and release: identical
+  `.tpc` and identical errors.
+- CI installs Tibbo's compiler and builds every recipe on Linux and on Windows on each push.
+
+### New projects that compile the first time
+- **New `tibbo-firmware/scripts/tibbo_new.py`** - project generator: board + libraries → `.tpr`, `global.tbh`,
+  `main.tbs` with every library hook in its event handler, `device.tbs` with every required callback and its exact
+  signature. Resolves library dependencies (dhcp needs wln where the platform has Wi-Fi, mqtt needs sock and dns,
+  tables needs filenum and time), switches on optional platform objects (`fd`, `kp`, `lcd`, `wln`), refuses
+  combinations that do not build and says why. Checked by compiling on all 28 platforms of Tibbo's compiler with
+  13 libraries: sock, dhcp, wln, dns, sntp, mqtt, time, filenum, settings, tables, ssi, super_i2c, super_spi.
+- **13 recipes - complete projects in `tibbo-firmware/recipes/`** (index: `references/recipes.md`): TCP echo server,
+  TCP client with reconnect, DHCP on Ethernet, Wi-Fi WPA2 + DHCP, RS232-to-TCP, Modbus RTU master, MQTT publish and
+  subscribe, web server, settings, relays and inputs, SNTP clock, log on the flash disk, buttons-LEDs-buzzer. Every
+  recipe compiles on its platforms (58 builds) and passes the linter; the test suite rebuilds them.
+- `project-and-libs.md`: the `.tpr` sample was wrong for library files (they need `location = commonlib` and the
+  project needs `src_lib_ver`) and the DHCP skeleton did not compile on Wi-Fi platforms. Both fixed.
+
+### Exact API of every platform
+- **New `data/platform_api.json`** - objects, properties (read/write, type), methods (number of arguments), events
+  (signature) and enums of 28 platforms, taken from Tibbo's compiler itself, with the objects that are off by default.
+- **`tibbo_lint.py` is now platform-exact and reads the project**: takes the platform and the file list from the
+  `.tpr`; reports a member the platform does not have, a write to a read-only property, a wrong number of arguments,
+  an object that is switched off (and the `defines=` line that switches it on), **an invented event name - the
+  compiler accepts it silently and the handler never runs**, a wrong event signature, a duplicate or directly called
+  event handler, direct recursion, `string(>255)`, types and statements from other languages (`return`, `print`,
+  `sleep`, `+=`, `!=`, `&&`, `&` for strings), a required library callback that is missing. On 23 mistakes the
+  compiler reports it now finds 20 before the build (was 5), with no false errors on 15 tibbotech projects.
+
+### Linux boards
+- **New `tibbo-firmware/references/linux.md`** - LTPP3(G2) and LTPP3: what of the skill applies to a Linux board
+  (Tibbits and power - yes; Tibbo BASIC, TIDE, AppBlocks - no), sockets and I/O lines, logins, console, system update
+  with `ISPBOOOT.BIN`, Tibbo's Ubuntu distribution, PinMux, where to start. Every statement has its docs.tibbo.com page.
+- `tps_check.py` knows the **LTPP3(G2)** board: sockets, UART sockets, onboard 8-60 V supply (power Tibbits are not
+  needed), power budget.
+
+### Fresh data
+- TiOS 5.00 for the G3 platforms (TPP2W(G3), TPP3W(G3), EM3000W) in `platforms.md`; `tibbo_build.py --setup-node --yes
+  --latest-platforms` takes Tibbo's newest platform files.
+- AppBlocks: 9 new editor blocks (camera, binary buffers, file write, disk usage; Zephyr only) - 177 blocks in the
+  registry and in `blocks.md`.
+- New `tools/check_freshness.py` (compares the skill data with Tibbo's repositories), `tools/check_recipes.py`,
+  `tools/verify_libraries.py`, `tools/build_kimi_kit.py`.
+
+### Fixed
+- `appblocks/scripts/ab_api.py build --release` produced a debug `.tpc`: the build service wants `"debug": "off"`,
+  a JSON `false` still gives a debug build.
+- Test stubs no longer ship `.exe` files; build output (`tmp/`, `.tpc`, `.pdb`) never gets into the packages.
+
+### Not checked yet
+- `tmake` and `tupload` on a real Windows TIDE and `tibbo_device.py` with a real device: checked against stand-ins
+  that follow Tibbo's protocol and command line, not on hardware.
+- Agents other than Claude: the skills follow the Agent Skills standard, but only Claude ran them end to end.
+
 ## [2.1.0] - 2026-11-06
 
 **Clear updates on every platform.** Tell your agent "Update the Tibbo skills" - or run one command - and both skills

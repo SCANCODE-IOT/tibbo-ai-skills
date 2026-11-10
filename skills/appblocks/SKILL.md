@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.1.0"
+  version: "2.2.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -21,7 +21,7 @@ OTA, переменные/таблицы/команды, облачные workfl
 |---|---|
 | `references/editor.md` | Как устроен редактор и проект: шаги Hardware/Features/Application, Import/Export, Run/Debug/Release, runtime, **правила потоков** (поток с события, нет циклов, параметры видны только следующему блоку, ASYNC теряет параметры), переменные, плагины, частые ошибки. **Читать перед объяснением, ревью или проектированием логики.** |
 | `references/format.md` | Формат экспорта JSON: верх, группы feature, узлы, связи, `{{$…}}`, правила правки, формат плагинов (§5). **Читать перед любой правкой JSON.** |
-| `references/blocks.md` | **Все 168 блоков редактора** по категориям палитры: порты (`portId`) с параметрами, настройки с вариантами и значениями по умолчанию, нужная feature, ASYNC; скрытые/устаревшие отдельно. Снято из реестра app.appblocks.io. **Основной справочник портов и полей.** |
+| `references/blocks.md` | **Все 177 блоков редактора** по категориям палитры: порты (`portId`) с параметрами, настройки с вариантами и значениями по умолчанию, нужная feature, ASYNC; скрытые/устаревшие отдельно. Снято из реестра app.appblocks.io. **Основной справочник портов и полей.** |
 | `references/features.md` | Feature, сервисы-библиотеки, вложенные элементы (variable, timer, tbl_table…), поля `tibbit_NN`, периферия, виджеты LCD и веб-консоли - поля, варианты, ограничения по платам. |
 | `references/catalog.md` | Поля feature и узлов в экспортах Tibbo (ModbusMQTTGateway, bp_modbus_gateway_lcd) с примерами значений, поля Tibbit, структуры Modbus/LUIS. Полный список блоков и полей - blocks.md и features.md. |
 | `references/generated-code.md` | Что генерирует AppBlocks для `tios`: файлы TIDE-проекта, переменные → процедуры `var_X_*`, маркеры вставки кода, замеченные особенности. |

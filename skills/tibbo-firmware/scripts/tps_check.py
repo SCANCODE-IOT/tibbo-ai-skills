@@ -97,7 +97,7 @@ def occupied(board, t, start, rep):
     want = {"M": "M", "C": "C", "H": "M"}[kind]
     if s["type"] != want:
         rep.err(f"S{start}", f"#{t['model']} ({t['form']}) должен стоять в {want}-сокете, S{start} — {s['type']}-сокет"
-                + (" (M — нечётные, C — чётные номера)" if board["family"] in ("TPP2", "TPP3") else ""))
+                + (" (M — нечётные, C — чётные номера)" if board["family"] in ("TPP2", "TPP3", "LTPP3") else ""))
         return None
     if tile is None:
         return [start]
@@ -410,6 +410,15 @@ def power_budget(cfg, board, units, ambient, rep):
     sources = []
     if pw.get("ext5v_ma"):
         sources.append(("внешний БП 5 В на клеммах платы", int(pw["ext5v_ma"])))
+    onboard = board.get("onboard_supply")
+    if onboard:
+        sources.append((f"встроенный источник платы ({onboard['vin']})", int(onboard["ma"])))
+        rep.info("питание", f"у платы свой источник {onboard['vin']}, {onboard['ma']} мА: Tibbit-ы питания не нужны. "
+                            f"Потребление самой платы {board['board_5v_ma']} мА - {onboard.get('note', 'оценка')}")
+        if any(u["t"].get("supply_spec") and u["t"]["model"] != "12" for u in units):
+            rep.warn("питание", "на этой плате есть свой источник: Tibbit-источник 5 В лишний (docs.tibbo.com/ltpp3g2)")
+        if cfg.get("wifi"):
+            rep.info("питание", "потребление модуля Wi-Fi WM6256 Tibbo не публикует - в расчёт не включено, оставь запас")
     for u in units:
         t = u["t"]
         if t.get("supply_spec") and t["model"] != "12":
@@ -487,6 +496,9 @@ def cmd_board(name, boards):
     if not b:
         print("Платы:", ", ".join(boards)); return
     print(f"{name}: {b['family']} Gen{b['gen']}, плата {b['board_5v_ma']} мА + зуммер {b['buzzer_ma']} мА, Wi-Fi +{b['wa2000_ma']} мА")
+    if b.get("os") == "linux":
+        print("Linux-плата: не TiOS, программы - приложения Linux (references/linux.md). "
+              f"Свой источник {b['onboard_supply']['vin']}, {b['onboard_supply']['ma']} мА.")
     print("Тайлы:", " | ".join("S" + ",S".join(map(str, t)) for t in b["tiles"]))
     if b.get("poe"):
         print(f"PoE: M1 в S{b['poe']['m1']} или M2 в S{b['poe']['m2'][0]}+S{b['poe']['m2'][1]}, перемычки {b['poe']['jumpers']}")

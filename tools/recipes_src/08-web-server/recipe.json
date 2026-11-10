@@ -1,0 +1,19 @@
+{
+ "title": "Встроенный веб-сервер: страница состояния и кнопка управления реле",
+ "platform": "TPP3W(G2)",
+ "also": [
+  "TPP2W(G2)",
+  "TPP3W(G3)",
+  "EM2000W",
+  "EM1000"
+ ],
+ "tibbits": [
+  "#03_1 (реле) в S3",
+  "#20 в S4"
+ ],
+ "declares": [
+  "declare uptime_s as dword",
+  "declare relay_on as no_yes",
+  "declare sub relay_set(state as no_yes)"
+ ]
+}

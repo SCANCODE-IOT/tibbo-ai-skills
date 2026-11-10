@@ -1,0 +1,745 @@
+{
+ "_source": "github.com/tibbotech/platforms Platforms/src/2_01_05 (libraries bundled with TIDE)",
+ "src_lib_ver": "2_01_05",
+ "libraries": {
+  "aggregate": {
+   "files": [
+    "aggregate\\trunk\\aggregate.tbh",
+    "aggregate\\trunk\\aggregate.tbs"
+   ],
+   "header": "aggregate\\trunk\\aggregate.tbh",
+   "callbacks": [
+    {
+     "name": "callback_agg_external_data_source",
+     "decl": "function callback_agg_external_data_source(byref source_type as string, byref parameter1 as string, byref parameter2 as string, byref parameter3 as string, rw as en_agg_rdwr)",
+     "kind": "function"
+    },
+    {
+     "name": "callback_agg_external_data_modtime_sg",
+     "decl": "function callback_agg_external_data_modtime_sg(byref source_type as string, byref item_name as string, byref date_time as string, op as en_agg_rdwr) as ok_ng",
+     "kind": "function"
+    },
+    {
+     "name": "callback_agg_get_firmware_version",
+     "decl": "function callback_agg_get_firmware_version() as string",
+     "kind": "function"
+    },
+    {
+     "name": "callback_agg_pre_buffrq",
+     "decl": "sub callback_agg_pre_buffrq(required_buff_pages as byte)",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_agg_buff_released",
+     "decl": "sub callback_agg_buff_released()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_agg_error",
+     "decl": "sub callback_agg_error(failure_code as en_agg_status_codes, byref error_item as string)",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_agg_device_function",
+     "decl": "function callback_agg_device_function(byref function_name as string ,byref context_name as string, byref function_input as string, byref function_output as string) as ok_ng",
+     "kind": "function"
+    },
+    {
+     "name": "callback_agg_synchronized",
+     "decl": "sub callback_agg_synchronized()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_agg_rtc_sg",
+     "decl": "sub callback_agg_rtc_sg(byref wdaycount as word, byref wmincount as word, byref bsec as byte, byref wmilsec as word, op as en_agg_rdwr)",
+     "kind": "sub",
+     "when": "AGG_CUSTOM_RTC=1"
+    },
+    {
+     "name": "callback_agg_setting_saved",
+     "decl": "function callback_agg_setting_saved(byref setting_name as string,index as byte, byref setting_val as string) as en_stg_status_codes",
+     "kind": "function",
+     "when": "AGG_SETTING_CONTROL"
+    },
+    {
+     "name": "callback_agg_setting_error",
+     "decl": "sub callback_agg_setting_error(byref setting_name as string, error_code as en_stg_status_codes)",
+     "kind": "sub",
+     "when": "AGG_SETTING_CONTROL"
+    },
+    {
+     "name": "callback_agg_convert_setting",
+     "decl": "function callback_agg_convert_setting(byref setting_name as string, index as byte, byref setting_value as string, op as en_agg_rdwr) as ok_ng",
+     "kind": "function",
+     "when": "AGG_SETTING_CONTROL"
+    },
+    {
+     "name": "callback_agg_table_error",
+     "decl": "sub callback_agg_table_error(byref table_name as string, error_code as en_tbl_status_codes)",
+     "kind": "sub",
+     "when": "AGG_TABLE_CONTROL"
+    },
+    {
+     "name": "callback_agg_convert_table_field",
+     "decl": "sub callback_agg_convert_table_field(byref table_name as string, byref field_name as string, byref field_value as string, op as en_agg_rdwr)",
+     "kind": "sub",
+     "when": "AGG_TABLE_CONTROL"
+    },
+    {
+     "name": "callback_agg_firmware_upload_progress",
+     "decl": "sub callback_agg_firmware_upload_progress(total_size as dword, remain_size as dword)",
+     "kind": "sub",
+     "when": "AGG_REMOTE_FIRMWARE_UPLOAD"
+    }
+   ],
+   "hooks": [
+    {
+     "name": "agg_proc_timer",
+     "event": "on_sys_timer",
+     "call": "agg_proc_timer()"
+    },
+    {
+     "name": "agg_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "agg_proc_data()"
+    },
+    {
+     "name": "agg_proc_sock_event",
+     "event": "on_sock_event",
+     "call": "agg_proc_sock_event(newstate, newstatesimple)"
+    },
+    {
+     "name": "agg_proc_data_sent",
+     "event": "on_sock_data_sent",
+     "call": "agg_proc_data_sent()"
+    }
+   ],
+   "supported": false
+  },
+  "dhcp": {
+   "files": [
+    "dhcp\\trunk\\dhcp.tbh",
+    "dhcp\\trunk\\dhcp.tbs"
+   ],
+   "header": "dhcp\\trunk\\dhcp.tbh",
+   "callbacks": [
+    {
+     "name": "callback_dhcp_ok",
+     "decl": "sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip as string, byref gateway_ip as string, byref netmask as string, lease_time as dword)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dhcp_failure",
+     "decl": "sub callback_dhcp_failure(interface as pl_sock_interfaces,failure_code as en_dhcp_status_codes)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dhcp_pre_clear_ip",
+     "decl": "sub callback_dhcp_pre_clear_ip(interface as pl_sock_interfaces)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dhcp_pre_buffrq",
+     "decl": "sub callback_dhcp_pre_buffrq(required_buff_pages as byte)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dhcp_buff_released",
+     "decl": "sub callback_dhcp_buff_released()",
+     "kind": "sub",
+     "required": true
+    }
+   ],
+   "hooks": [
+    {
+     "name": "dhcp_proc_timer",
+     "event": "on_sys_timer",
+     "call": "dhcp_proc_timer()"
+    },
+    {
+     "name": "dhcp_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "dhcp_proc_data()"
+    }
+   ],
+   "needs": [
+    "sock"
+   ],
+   "needs_wifi": [
+    "wln"
+   ],
+   "title": "получение IP по DHCP",
+   "supported": true
+  },
+  "dns": {
+   "files": [
+    "dns\\trunk\\dns.tbh",
+    "dns\\trunk\\dns.tbs"
+   ],
+   "header": "dns\\trunk\\dns.tbh",
+   "callbacks": [
+    {
+     "name": "callback_dns_failure",
+     "decl": "sub callback_dns_failure(status as en_dns_status_codes)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dns_answer_acquired",
+     "decl": "sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dns_ok",
+     "decl": "sub callback_dns_ok()",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dns_pre_buffrq",
+     "decl": "sub callback_dns_pre_buffrq(num_of_pages_required as byte)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_dns_buff_released",
+     "decl": "sub callback_dns_buff_released()",
+     "kind": "sub",
+     "required": true
+    }
+   ],
+   "hooks": [
+    {
+     "name": "dns_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "dns_proc_data()"
+    },
+    {
+     "name": "dns_proc_timer",
+     "event": "on_sys_timer",
+     "call": "dns_proc_timer()"
+    }
+   ],
+   "needs": [
+    "sock"
+   ],
+   "title": "имя сайта -> IP",
+   "supported": true
+  },
+  "filenum": {
+   "files": [
+    "filenum\\trunk\\filenum.tbh",
+    "filenum\\trunk\\filenum.tbs"
+   ],
+   "header": "filenum\\trunk\\filenum.tbh",
+   "callbacks": [],
+   "hooks": [],
+   "objects": [
+    "fd"
+   ],
+   "title": "раздаёт номера файлов флеш-диска (fd)",
+   "supported": true
+  },
+  "gprs": {
+   "files": [
+    "gprs\\trunk\\gprs.tbh",
+    "gprs\\trunk\\gprs.tbs"
+   ],
+   "header": "gprs\\trunk\\gprs.tbh",
+   "callbacks": [
+    {
+     "name": "callback_gprs_pre_buffrq",
+     "decl": "sub callback_gprs_pre_buffrq(required_buff_pages as byte)",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_gprs_ok",
+     "decl": "sub callback_gprs_ok()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_gprs_failure",
+     "decl": "sub callback_gprs_failure()",
+     "kind": "sub"
+    }
+   ],
+   "hooks": [
+    {
+     "name": "gprs_proc_ser_data",
+     "event": "on_ser_data_arrival",
+     "call": "gprs_proc_ser_data()"
+    },
+    {
+     "name": "gprs_proc_sock_data",
+     "event": "on_sock_data_arrival",
+     "call": "gprs_proc_sock_data()"
+    },
+    {
+     "name": "gprs_proc_timer",
+     "event": "on_sys_timer",
+     "call": "gprs_proc_timer()"
+    }
+   ],
+   "supported": false
+  },
+  "luis": {
+   "files": [
+    "luis\\trunk\\luis.tbh",
+    "luis\\trunk\\luis.tbs"
+   ],
+   "header": "luis\\trunk\\luis.tbh",
+   "callbacks": [
+    {
+     "name": "callback_luis_bt_connected",
+     "decl": "sub callback_luis_bt_connected()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_luis_bt_disconnected",
+     "decl": "sub callback_luis_bt_disconnected()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_luis_bt_enabled",
+     "decl": "sub callback_luis_bt_enabled()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_luis_bt_disabled",
+     "decl": "sub callback_luis_bt_disabled()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_luis_buzz_command",
+     "decl": "sub callback_luis_buzz_command()",
+     "kind": "sub"
+    }
+   ],
+   "hooks": [],
+   "supported": false
+  },
+  "mqtt": {
+   "files": [
+    "mqtt\\trunk\\mqtt.tbh",
+    "mqtt\\trunk\\mqtt.tbs"
+   ],
+   "header": "mqtt\\trunk\\mqtt.tbh",
+   "callbacks": [
+    {
+     "name": "callback_mqtt_connect_ok",
+     "decl": "sub callback_mqtt_connect_ok()",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_mqtt_connect_lost",
+     "decl": "sub callback_mqtt_connect_lost()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_mqtt_sub_ok",
+     "decl": "sub callback_mqtt_sub_ok()",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_mqtt_notif",
+     "decl": "sub callback_mqtt_notif(byref topic as string,byref data as string,remaining_bytes as dword)",
+     "kind": "sub",
+     "required": true
+    }
+   ],
+   "hooks": [
+    {
+     "name": "mqtt_proc_timer",
+     "event": "on_sys_timer",
+     "call": "mqtt_proc_timer()"
+    },
+    {
+     "name": "mqtt_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "mqtt_proc_data()"
+    },
+    {
+     "name": "mqtt_sock_event",
+     "event": "on_sock_event",
+     "call": "mqtt_sock_event(newstate, newstatesimple)"
+    }
+   ],
+   "needs": [
+    "sock",
+    "dns"
+   ],
+   "title": "клиент MQTT",
+   "broken_on": {
+    "DS1100": "'timercountms' is not member of 'sys' object",
+    "EM1000": "'timercountms' is not member of 'sys' object",
+    "EM1000N": "'timercountms' is not member of 'sys' object",
+    "EM1000W": "'timercountms' is not member of 'sys' object",
+    "EM1001N": "'timercountms' is not member of 'sys' object",
+    "EM1001W": "'timercountms' is not member of 'sys' object",
+    "EM500W": "'timercountms' is not member of 'sys' object",
+    "NB1010": "'timercountms' is not member of 'sys' object",
+    "NB1010N": "'timercountms' is not member of 'sys' object",
+    "NB1010W": "'timercountms' is not member of 'sys' object",
+    "T1000W": "'timercountms' is not member of 'sys' object",
+    "TPP2N": "'timercountms' is not member of 'sys' object",
+    "TPP2W": "'timercountms' is not member of 'sys' object",
+    "TPP3N": "'timercountms' is not member of 'sys' object",
+    "TPP3W": "'timercountms' is not member of 'sys' object"
+   },
+   "extra_defines": {
+    "EM510W": [
+     "#define MQTT_DEBUG_PRINT 1        'mqtt 2_01_05 does not compile on this platform without it"
+    ],
+    "SIMULATOR": [
+     "#define MQTT_DEBUG_PRINT 1        'mqtt 2_01_05 does not compile on this platform without it"
+    ]
+   },
+   "supported": true
+  },
+  "pppoe": {
+   "files": [
+    "pppoe\\trunk\\pppoe.tbh",
+    "pppoe\\trunk\\pppoe.tbs"
+   ],
+   "header": "pppoe\\trunk\\pppoe.tbh",
+   "callbacks": [
+    {
+     "name": "callback_pppoe_pre_buffrq",
+     "decl": "sub callback_pppoe_pre_buffrq(required_buff_pages as byte)",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_pppoe_ok",
+     "decl": "sub callback_pppoe_ok()",
+     "kind": "sub"
+    },
+    {
+     "name": "callback_pppoe_failure",
+     "decl": "sub callback_pppoe_failure(pppoe_code as en_pppoe_status_codes)",
+     "kind": "sub"
+    }
+   ],
+   "hooks": [
+    {
+     "name": "pppoe_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "pppoe_proc_data()"
+    },
+    {
+     "name": "pppoe_proc_timer",
+     "event": "on_sys_timer",
+     "call": "pppoe_proc_timer()"
+    }
+   ],
+   "supported": false
+  },
+  "settings": {
+   "files": [
+    "settings\\trunk\\settings.tbh",
+    "settings\\trunk\\settings.tbs"
+   ],
+   "header": "settings\\trunk\\settings.tbh",
+   "callbacks": [
+    {
+     "name": "callback_stg_error",
+     "decl": "sub callback_stg_error(byref stg_name_or_num as string, index as byte, status as en_stg_status_codes)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_stg_pre_get",
+     "decl": "sub callback_stg_pre_get(byref stg_name_or_num as string, index as byte, byref stg_value as string)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_stg_post_set",
+     "decl": "sub callback_stg_post_set(byref stg_name_or_num as string, index as byte, byref stg_value as string)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_stg_validation_check",
+     "decl": "sub callback_stg_validation_check(byref stg_name_or_num as string, index as byte, byref stg_value as string) as en_stg_status_codes",
+     "kind": "sub",
+     "when": "STG_ENABLE_VALIDATION_CALLBACK"
+    },
+    {
+     "name": "callback_stg_vm_read",
+     "decl": "function callback_stg_vm_read(address as word) as byte",
+     "kind": "function"
+    },
+    {
+     "name": "callback_stg_vm_write",
+     "decl": "sub callback_stg_vm_write(data_to_write as byte, address as word)",
+     "kind": "sub"
+    }
+   ],
+   "hooks": [],
+   "title": "настройки в EEPROM/флеш по описанию settings.txt",
+   "supported": true
+  },
+  "sntp": {
+   "files": [
+    "sntp\\trunk\\sntp.tbh",
+    "sntp\\trunk\\sntp.tbs"
+   ],
+   "header": "sntp\\trunk\\sntp.tbh",
+   "callbacks": [
+    {
+     "name": "callback_sntp_failure",
+     "decl": "sub callback_sntp_failure(sntp_status as en_sntp_status_codes)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_sntp_ok",
+     "decl": "sub callback_sntp_ok(byref w_days as word,byref w_mins as word,byref b_seconds as byte)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_sntp_pre_buffrq",
+     "decl": "sub callback_sntp_pre_buffrq(required_buff_pages as byte)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_sntp_get_rtc",
+     "decl": "sub callback_sntp_get_rtc(byref w_days as word,byref w_mins as word,byref b_seconds as byte)",
+     "kind": "sub",
+     "when": "SNTP_OFFSET_CALCULATION"
+    }
+   ],
+   "hooks": [
+    {
+     "name": "sntp_proc_timer",
+     "event": "on_sys_timer",
+     "call": "sntp_proc_timer()"
+    },
+    {
+     "name": "sntp_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "sntp_proc_data()"
+    },
+    {
+     "name": "sntp_proc_sock_event",
+     "event": "on_sock_event",
+     "call": "sntp_proc_sock_event(newstatesimple)"
+    }
+   ],
+   "needs": [
+    "sock"
+   ],
+   "title": "время из интернета",
+   "supported": true
+  },
+  "sock": {
+   "files": [
+    "sock\\trunk\\sock.tbh",
+    "sock\\trunk\\sock.tbs"
+   ],
+   "header": "sock\\trunk\\sock.tbh",
+   "callbacks": [],
+   "hooks": [],
+   "title": "раздаёт сокеты библиотекам и программе (sock_get)",
+   "supported": true
+  },
+  "ssi": {
+   "files": [
+    "ssi\\trunk\\ssi.tbh",
+    "ssi\\trunk\\ssi.tbs"
+   ],
+   "header": "ssi\\trunk\\ssi.tbh",
+   "callbacks": [],
+   "hooks": [],
+   "objects": [
+    "ssi"
+   ],
+   "title": "раздаёт каналы SSI (SPI/I2C программно)",
+   "supported": true
+  },
+  "super_i2c": {
+   "files": [
+    "super_i2c\\trunk\\super_i2c.tbh",
+    "super_i2c\\trunk\\super_i2c.tbs"
+   ],
+   "header": "super_i2c\\trunk\\super_i2c.tbh",
+   "callbacks": [],
+   "hooks": [],
+   "needs": [
+    "ssi"
+   ],
+   "title": "I2C на любых линиях",
+   "supported": true
+  },
+  "super_spi": {
+   "files": [
+    "super_spi\\trunk\\super_spi.tbh",
+    "super_spi\\trunk\\super_spi.tbs"
+   ],
+   "header": "super_spi\\trunk\\super_spi.tbh",
+   "callbacks": [],
+   "hooks": [],
+   "needs": [
+    "ssi"
+   ],
+   "title": "SPI на любых линиях",
+   "supported": true
+  },
+  "tables": {
+   "files": [
+    "tables\\trunk\\tables.tbh",
+    "tables\\trunk\\tables.tbs"
+   ],
+   "header": "tables\\trunk\\tables.tbh",
+   "callbacks": [
+    {
+     "name": "callback_tbl_error",
+     "decl": "sub callback_tbl_error(status as en_tbl_status_codes)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_tbl_fail_to_open",
+     "decl": "function callback_tbl_fail_to_open(byref filename as string, status as pl_fd_status_codes, filenum as byte) as no_yes",
+     "kind": "function",
+     "required": true
+    },
+    {
+     "name": "callback_tbl_field_error",
+     "decl": "sub callback_tbl_field_error(byref file_name as string,byref field_name as string,tbl_result as en_tbl_status_codes)",
+     "kind": "sub",
+     "required": true
+    },
+    {
+     "name": "callback_tbl_modified",
+     "decl": "sub callback_tbl_modified(byref file_name as string, modified_operation as en_tbl_modified_operation)",
+     "kind": "sub",
+     "required": true
+    }
+   ],
+   "hooks": [],
+   "needs": [
+    "filenum",
+    "time"
+   ],
+   "objects": [
+    "fd"
+   ],
+   "title": "таблицы на флеш-диске по описанию tables.txt",
+   "supported": true
+  },
+  "time": {
+   "files": [
+    "time\\trunk\\time.tbh",
+    "time\\trunk\\time.tbs"
+   ],
+   "header": "time\\trunk\\time.tbh",
+   "callbacks": [],
+   "hooks": [],
+   "title": "дата и время: преобразования",
+   "supported": true
+  },
+  "wln": {
+   "files": [
+    "wln\\trunk\\wln.tbh",
+    "wln\\trunk\\wln.tbs"
+   ],
+   "header": "wln\\trunk\\wln.tbh",
+   "callbacks": [
+    {
+     "name": "callback_wln_failure",
+     "decl": "sub callback_wln_failure(wln_state as en_wln_status_codes)",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################",
+     "required": true
+    },
+    {
+     "name": "callback_wln_ok",
+     "decl": "sub callback_wln_ok()",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################",
+     "required": true
+    },
+    {
+     "name": "callback_wln_starting_association",
+     "decl": "sub callback_wln_starting_association()",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################",
+     "required": true
+    },
+    {
+     "name": "callback_wln_pre_buffrq",
+     "decl": "sub callback_wln_pre_buffrq(required_buff_pages as byte)",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################",
+     "required": true
+    },
+    {
+     "name": "callback_wln_mkey_progress_update",
+     "decl": "sub callback_wln_mkey_progress_update(progress as byte)",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################"
+    },
+    {
+     "name": "callback_wln_rescan_result",
+     "decl": "sub callback_wln_rescan_result(current_rssi as byte, scan_rssi as byte, different_ap as no_yes)",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################",
+     "required": true
+    },
+    {
+     "name": "callback_wln_debugprint",
+     "decl": "sub callback_wln_debugprint(print_data as string)",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################"
+    },
+    {
+     "name": "callback_wln_rescan_for_better_ap",
+     "decl": "sub callback_wln_rescan_for_better_ap()",
+     "kind": "sub",
+     "when": "WLN_AVAILABLE '##################################################",
+     "required": true
+    }
+   ],
+   "hooks": [
+    {
+     "name": "wln_proc_timer",
+     "event": "on_sys_timer",
+     "call": "wln_proc_timer()"
+    },
+    {
+     "name": "wln_proc_event",
+     "event": "on_wln_event",
+     "call": "wln_proc_event(wln_event)"
+    },
+    {
+     "name": "wln_proc_task_complete",
+     "event": "on_wln_task_complete",
+     "call": "wln_proc_task_complete(completed_task)"
+    },
+    {
+     "name": "wln_proc_data",
+     "event": "on_sock_data_arrival",
+     "call": "wln_proc_data()"
+    }
+   ],
+   "needs": [
+    "sock"
+   ],
+   "objects": [
+    "wln"
+   ],
+   "title": "Wi-Fi: поиск сети, подключение, WPA2",
+   "supported": true
+  }
+ }
+}

@@ -1,0 +1,3 @@
+@callback_stg_error
+	'a setting could not be read or written (status says why): show it while debugging
+	sys.debugprint("STG error, setting " + stg_name_or_num + chr(13) + chr(10))

@@ -1,0 +1,30 @@
+include "global.tbh"
+
+'Settings that survive power-off: the settings library keeps them in the EEPROM by the description in settings.txt
+'(one line per setting; the format - references/project-and-libs.md, section 5).
+'Reading: stg_get("IP", 0). Writing: stg_set("IP", 0, "192.168.1.50").
+'Holding the MD button for 3 s restores the defaults and reboots.
+'Hardware: any Tibbo device. Change: settings.txt and the STG_MAX_* defines in global.tbh (number of settings,
+'longest name, longest value) - they must cover the file.
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	if stg_start() <> EN_STG_STATUS_OK then
+		'first start, or the description was changed, or the memory is damaged: write the defaults
+		stg_restore_multiple(EN_STG_INIT_MODE_OVERRIDE)
+	end if
+
+	net.ip = stg_get("IP", 0)
+	net.netmask = "255.255.255.0"
+	sys.debugprint("Device name: " + stg_get("DN", 0) + ", port: " + stg_get("PN", 0) + chr(13) + chr(10))
+end sub
+
+'-------------------------------------------------------------------
+sub on_button_released()
+	'button.time: how long the button was held, in 0.5 s units
+	if button.time >= 6 then
+		stg_restore_multiple(EN_STG_INIT_MODE_OVERRIDE)
+		pat.play("RG", PL_PAT_CANINT)
+		sys.reboot()
+	end if
+end sub

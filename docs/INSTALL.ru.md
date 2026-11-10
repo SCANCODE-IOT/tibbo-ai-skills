@@ -30,6 +30,8 @@
 1. **Python 3.9 или новее.** Он нужен скриптам проверки. Проверьте: `python --version` (Windows) или
    `python3 --version` (macOS, Linux). Если на Windows его нет, установите с [python.org](https://www.python.org/downloads/)
    и отметьте *Add python.exe to PATH*. Больше ничего не нужно: скрипты используют только стандартную библиотеку.
+   Чтобы агент сам собирал прошивки компилятором Tibbo, поставьте ещё [Node.js 18+](https://nodejs.org) и
+   [git](https://git-scm.com) - см. [Сборка и загрузка прошивки](#сборка-и-загрузка-прошивки).
 2. **Скачайте файлы** из [последнего релиза](https://github.com/SCANCODE-IOT/tibbo-ai-skills/releases/latest):
    - `tibbo-firmware.zip` и `appblocks.zip` - два скилла (ставьте всегда оба: `appblocks` проверяет плату
      скриптом из `tibbo-firmware`);
@@ -129,20 +131,22 @@ into a Skill» → загрузите три .docx из папки → вста�
 
 ## Веб-чаты
 
-Распакуйте `tibbo-chat-pack.zip`. Внутри: `PROMPT.md` (инструкция), семь файлов знаний `01`-`07`,
+Распакуйте `tibbo-chat-pack.zip`. Внутри: `PROMPT.md` (инструкция), восемь файлов знаний `01`-`08`,
 `tibbo-tools.zip` (скрипты) и короткий `README.md`.
 
 - **ChatGPT, свой GPT** (платные тарифы): Обзор GPT → Создать → Настроить. Текст `PROMPT.md` - в поле «Инструкции»,
-  `01`-`07` и `tibbo-tools.zip` - в «Знания», включите «Интерпретатор кода и анализ данных». GPT сам запускает проверки.
+  `01`-`08` и `tibbo-tools.zip` - в «Знания», включите «Интерпретатор кода и анализ данных». GPT сам запускает проверки.
 - **ChatGPT, Проект:** создайте проект, вставьте `PROMPT.md` в инструкции проекта, добавьте файлы.
-- **Gemini, Gem:** Gems → Новый Gem. `PROMPT.md` - в «Инструкции», `01`-`07` - в «Знания» (до 10 файлов).
+- **Gemini, Gem:** Gems → Новый Gem. `PROMPT.md` - в «Инструкции», `01`-`08` - в «Знания» (до 10 файлов).
 - **Kimi (kimi.com), DeepSeek (chat.deepseek.com), GLM (chat.z.ai):** в новом чате приложите `PROMPT.md` и 1-3 файла
   под задачу, напишите «Следуй PROMPT.md». В каждом новом чате - заново.
 
 | Задача | Файлы |
 |---|---|
 | Подобрать Tibbit, проверить сокеты и питание | 01, 05 |
-| Написать или проверить прошивку на Tibbo BASIC | 01, 04, 06 (+ 05 для платформы) |
+| Написать новую прошивку на Tibbo BASIC | 01, 08, 04 (+ 06 для библиотек, 05 для платформы) |
+| Проверить прошивку, разобрать ошибки компилятора | 01, 04, 06 |
+| Linux-плата LTPP3(G2) | 08, 01 |
 | Библиотеки: DHCP, MQTT, Modbus, Wi-Fi, TLS | 06, 04 |
 | Проект AppBlocks | 02, 03 (+ 01 для железа) |
 
@@ -151,7 +155,8 @@ into a Skill» → загрузите три .docx из папки → вста�
 
 ```bash
 python tibbo-firmware/scripts/tps_check.py check cfg.json --svg board.svg
-python tibbo-firmware/scripts/tibbo_lint.py my_project --platform "TPP3W(G2)"
+python tibbo-firmware/scripts/tibbo_lint.py my_project
+python tibbo-firmware/scripts/tibbo_build.py my_project     # компилятор Tibbo: нужны Node.js 18+ и git или TIDE
 python appblocks/scripts/ab_tool.py check project.json
 ```
 
@@ -174,13 +179,49 @@ python appblocks/scripts/ab_tool.py check project.json
 | **Gemini CLI**, если ставили через `gemini skills install` | Повторите обе команды `gemini skills install …` из раздела [Gemini CLI](#gemini-cli), затем `/skills reload`. |
 | **Kimi Code**, если переносили через `/import-from-cc-codex` | Обновите скиллы в Claude Code или Codex и снова выполните `/import-from-cc-codex`. |
 | **Приложение Kimi** (K3, K3.1 Pro) | Скачайте новый [комплект для Kimi](kimi/tibbo-skills-kimi-app.zip). Skills → вкладка **Custom Skills**: у каждого скилла замените документы на новые (или удалите скилл и создайте заново по инструкции). |
-| **ChatGPT, свой GPT или Проект** | Скачайте новый `tibbo-chat-pack.zip`. В настройках GPT (или проекта) замените текст инструкций на новый `PROMPT.md`, удалите старые файлы знаний и загрузите новые `01`-`07` и `tibbo-tools.zip`. |
-| **Gemini, Gem** | То же: новый `PROMPT.md` в «Инструкции», новые файлы `01`-`07` вместо старых в «Знаниях». |
+| **ChatGPT, свой GPT или Проект** | Скачайте новый `tibbo-chat-pack.zip`. В настройках GPT (или проекта) замените текст инструкций на новый `PROMPT.md`, удалите старые файлы знаний и загрузите новые `01`-`08` и `tibbo-tools.zip`. |
+| **Gemini, Gem** | То же: новый `PROMPT.md` в «Инструкции», новые файлы `01`-`08` вместо старых в «Знаниях». |
 | **Чаты Kimi, DeepSeek, GLM** | Просто прикладывайте файлы из нового `tibbo-chat-pack.zip` - в каждом новом чате они и так прикладываются заново. |
 
 **Нет доступа к GitHub из терминала?** Скачайте `tibbo-firmware.zip` и `appblocks.zip` из релиза в браузере, положите
 в одну папку и запустите `python <папка скиллов>/tibbo-firmware/scripts/skills_update.py --from <эта папка>`.
 Скрипт обновления сам откатывает изменения, если архив повреждён, и проверяет новую версию после установки.
+
+## Сборка и загрузка прошивки
+
+С версии 2.2.0 агент может сам собрать то, что написал, и загрузить в устройство. Что ему доступно, зависит не от
+модели, а от того, **где агент работает**. Он выясняет это сам (`tibbo_build.py --doctor`) и говорит, что сделать вам;
+таблица ниже - краткая версия.
+
+| Где работает агент | Сборка | Поиск устройства, загрузка, запуск | Что сделать вам |
+|---|---|---|---|
+| Агент в терминале или редакторе **на Windows-компьютере с TIDE** (Claude Code, Codex CLI, Gemini CLI, Kimi Code, OpenCode, Cursor) | компилятор Tibbo на Node.js для проверки, ваша TIDE для прошивки | `tupload` из TIDE или tide-proxy | Открыть агента в папке проекта и разрешить ему запуск `python`. TIDE не в `C:\Program Files (x86)\Tibbo\TIDE`: `setx TIDE_DIR "D:\Tibbo\TIDE"`. |
+| Агент в терминале или редакторе на **Linux, macOS или Windows без TIDE** | компилятор Tibbo на Node.js (Tibbo BASIC) | tide-proxy (экспериментально) | Поставить [Node.js 18+](https://nodejs.org) и [git](https://git-scm.com). Перед скачиванием компилятора (около 200 МБ с github.com/tibbotech) и tide-proxy агент спросит согласие. |
+| Агент **в облачной песочнице** (приложения Claude и claude.ai, ChatGPT с инструментами, приложение Kimi) | компилятор Tibbo на Node.js внутри песочницы, если ей разрешены GitHub и npm; иначе облачная сборка | нет: песочница не в вашей сети | Ответить «да» на установку компилятора. Файл `.tpc` вы получите и загрузите сами в TIDE - или запустите агента на компьютере в одной сети с устройством. |
+| **Веб-чат** без запуска кода (DeepSeek, GLM, обычные ChatGPT и Gemini) | нет | нет | Собрать в TIDE (**Build → Rebuild All**) и вставить в чат текст панели Output: в скилле есть каталог ошибок компилятора. Или самому выполнить команды из `tibbo-tools.zip`. |
+
+Три вещи делаются только после вашего «да», каждый раз:
+
+1. **Установка компилятора Tibbo и tide-proxy** - скачивается и запускается код с github.com/tibbotech и пакеты npm.
+2. **Облачная сборка** - весь проект уходит на сервер Tibbo (api.appblocks.io). Это запасной путь для Tibbo C без
+   TIDE; Tibbo BASIC собирается на месте.
+3. **Всё, что меняет устройство** - загрузка, запуск, остановка, перезагрузка. Поиск в сети и чтение состояния безопасны.
+
+Те же инструменты можно запускать самому:
+
+```bash
+cd skills/tibbo-firmware
+python3 scripts/tibbo_build.py --doctor                  # что здесь работает и чего не хватает
+python3 scripts/tibbo_build.py --setup-node --yes        # поставить компилятор Tibbo (один раз)
+python3 scripts/tibbo_new.py my_app --platform "TPP3W(G2)" --libs dhcp
+python3 scripts/tibbo_build.py my_app                    # проверка: ошибок 0
+python3 scripts/tibbo_build.py my_app --release --out my_app.tpc
+python3 scripts/tibbo_device.py list                     # устройства в сети (после --setup --yes)
+```
+
+Ограничения: компилятор на Node.js собирает только Tibbo BASIC; отладка по шагам остаётся в окне TIDE;
+`tibbo_device.py` - экспериментальный и на реальном устройстве ещё не проверен, для рабочей загрузки используйте TIDE.
+Linux-платы LTPP3(G2) - не TiOS: к ним этот раздел не относится.
 
 ## Проверьте, что работает
 
@@ -192,8 +233,8 @@ python appblocks/scripts/ab_tool.py check project.json
 ## Насколько хорошо справляются разные модели
 
 Скиллы дают правила и данные, но качество всё равно зависит от модели. Сильные модели проходят процедуру сами.
-Небольшие и быстрые чаще пропускают шаги: требуйте проверки (`tps_check.py`, `tibbo_lint.py`, `ab_tool.py check`)
-и собирайте каждую прошивку в TIDE, прежде чем загружать в устройство.
+Небольшие и быстрые чаще пропускают шаги: требуйте проверки (`tps_check.py`, `tibbo_lint.py`, `tibbo_build.py`, `ab_tool.py check`)
+и проверяйте каждую прошивку на реальном устройстве.
 
 ## Если что-то не так
 

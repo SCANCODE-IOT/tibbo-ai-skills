@@ -5,6 +5,8 @@ CA-Test-WLN-lib, HTTPS_GET, CA-Test-Tibbits-13-14) and from the library sources.
 
 ## 1. TIDE project files
 
+Build, upload and compiler errors: see `tide.md` (`scripts/tibbo_build.py`).
+
 | File | Role |
 |---|---|
 | `<name>.tpr` | Project file (INI). Platform, library version, defines, file list. |
@@ -23,7 +25,7 @@ CA-Test-WLN-lib, HTTPS_GET, CA-Test-Tibbits-13-14) and from the library sources.
 [project]
 version = 3.06.00
 platform = TPP3W(G2)          ; folder name from Platforms/ — see platforms.md
-src_lib_ver = 2_01_04         ; which Platforms/src/<ver>/ library set to use
+src_lib_ver = 2_01_05         ; which Platforms/src/<ver>/ library set to use. REQUIRED when the project uses libraries
 name = test_stg_lib_1
 output = test_stg_lib_1.tpc   ; compiled binary (TPC) uploaded to the device
 debug = on                    ; on = debug build (sys.debugprint works, breakpoints), off = release
@@ -37,20 +39,31 @@ address = 0.9.5.2.7.6         ; device MAC in Tibbo dotted-decimal form
 
 [file1]
 path = main.tbs
-type = basic                  ; basic | header | text | binary ...
-format =
-condition =
-locked = no
-location =
+type = basic                  ; basic | header | text | html | binary ...
+location = project            ; the file lies in the project folder
 
 [file2]
 path = global.tbh
 type = header
+location = project
 
 [file3]
-path = settings\trunk\settings.tbs   ; library files referenced by relative path
+path = settings\trunk\settings.tbs   ; library file: path inside Platforms/src/<src_lib_ver>/
 type = basic
+location = commonlib          ; REQUIRED for every library file, or the compiler looks for it in the project folder
+
+[file4]
+path = settings\trunk\settings.tbh
+type = header
+location = commonlib
 ```
+
+Checked with Tibbo's compiler and with the AppBlocks cloud build: a library file without `location = commonlib`
+or a project without `src_lib_ver` does not build ("file not found" / "unable to open include file").
+`defines =` switches on the platform objects that are off by default (`fd`, `kp`, `lcd`, on older platforms `wln`):
+`/dOBJECT_FD=FD_ENABLED` etc.; which objects are optional on a platform - `data/platform_api.json` → `optional`.
+**Do not write a `.tpr` by hand - run `scripts/tibbo_new.py`**: it writes all of the above for the chosen platform
+and libraries, and `scripts/tibbo_build.py` checks an existing `.tpr` before every build.
 
 Every source/header/resource must be listed as a `[fileN]` section, otherwise TIDE does not compile it or
 does not embed it as a resource (romfile.open fails).
@@ -59,7 +72,21 @@ New projects: TIDE templates per platform ("1 - Empty BASIC Project", "2 - Empty
 "3 - Empty BASIC and C Project") or Tibbo's CODY web tool (cody.tibbo.com) that generates a configured
 project. VS Code: extension `tibbo-development-vscode` (+ `tide-proxy` for device discovery/upload over UDP 65535).
 
-## 2. Program skeleton (pattern used across Tibbo samples)
+## 2. Program skeleton
+
+Start every new project with the generator, not from memory:
+
+```
+python3 scripts/tibbo_new.py <folder> --platform "TPP3W(G2)" --libs dhcp,settings
+python3 scripts/tibbo_new.py --list                # libraries it knows and what each one pulls in
+```
+
+It writes `app.tpr` (library files with `location = commonlib`, `src_lib_ver`, `defines` for optional objects),
+`global.tbh` (library `#define`s before the `include`s), `main.tbs` (handlers with every library hook already
+called) and `device.tbs` (every callback the chosen libraries require, with the exact signature). The result
+compiles as is on all 28 platforms Tibbo's compiler builds. Complete working programs: `recipes.md`.
+
+What the generated files look like (Ethernet platform, `--libs dhcp`), so you can read and extend them:
 
 ```basic
 'global.tbh
@@ -109,7 +136,7 @@ end sub
 ```
 
 ```basic
-'device.tbs — every callback the included libraries declare must exist (empty body is fine)
+'device.tbs — every callback the included libraries REQUIRE must exist (empty body is fine)
 include "global.tbh"
 sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip as string, byref gateway_ip as string, byref netmask as string, lease_time as dword)
     if renew = YES and net.ip = ip then exit sub
@@ -127,6 +154,22 @@ end sub
 sub callback_dhcp_buff_released()
 end sub
 ```
+
+Facts found by compiling, not written in the library headers (the generator already applies them):
+
+- **Where the platform has the `wln` object, the dhcp library also needs the wln library** and its six callbacks,
+  even when the program uses only Ethernet (otherwise: `undeclared identifier 'wln_check_association'`). That is
+  every platform except DS1100, EM1000, NB1010 and SIMULATOR; the generator adds wln by itself. On WM2000 there is
+  no `net` object: apply the address to `wln.ip` / `wln.netmask` / `wln.gatewayip`.
+- mqtt needs sock and dns; call `mqtt_sock_event(newstate, newstatesimple)` from `on_sock_event` and
+  `mqtt_dns_answer_acquired` from `callback_dns_answer_acquired`. `callback_mqtt_connect_lost` exists in the header
+  but library 2_01_05 never calls it: watch the connection through `callback_mqtt_connect_ok` and your own timer.
+  mqtt 2_01_05 does not compile on 15 older platforms (`'timercountms' is not member of 'sys'`): the generator
+  refuses and names the platforms (`data/libraries.json` → `broken_on`).
+- tables needs filenum and time and the `fd` object; filenum needs `fd`; super_i2c / super_spi need the ssi library.
+- A missing required callback is a linker error `unresolved address '?F:callback_...'`, not a compile error.
+- A global variable with a name a library already uses (for example `sntp_sock`) is a linker error
+  `address '?V:name' is already defined`: rename yours.
 
 ## 3. Library event hooks — call them from YOUR handlers
 

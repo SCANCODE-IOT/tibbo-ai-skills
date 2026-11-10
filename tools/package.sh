@@ -13,9 +13,11 @@ for dir in skills/*/; do
   [ "$fm" = "$name" ] || { echo "error: $dir has name '$fm' in SKILL.md" >&2; exit 1; }
   # only text sources of a skill go into the package
   stray=$(cd skills && find "$name" -type f ! -path '*/__pycache__/*' ! -name '*.pyc' ! -name '.DS_Store' \
-          ! -name '*.md' ! -name '*.py' ! -name '*.json' ! -name '*.sh' ! -name '*.js' ! -name '*.svg' ! -name '*.png' ! -name '*.tbs')
+          ! -path '*/tmp/*' \
+          ! -name '*.md' ! -name '*.py' ! -name '*.json' ! -name '*.sh' ! -name '*.js' ! -name '*.svg' ! -name '*.png' \
+          ! -name '*.tbs' ! -name '*.tbh' ! -name '*.tpr' ! -name '*.html' ! -name '*.txt')
   [ -z "$stray" ] || { echo "error: unexpected files in $dir: $stray" >&2; exit 1; }
-  (cd skills && zip -qr "../dist/$name.zip" "$name" -x '*/__pycache__/*' '*.pyc' '*/.DS_Store')
+  (cd skills && zip -qr "../dist/$name.zip" "$name" -x '*/__pycache__/*' '*.pyc' '*/.DS_Store' '*/tmp/*' '*.tpc' '*.pdb')
   echo "dist/$name.zip  $(du -h "dist/$name.zip" | cut -f1)"
 done
 # chat pack for web chats without skills (ChatGPT, Gemini, Kimi, DeepSeek, GLM); checks its own limits

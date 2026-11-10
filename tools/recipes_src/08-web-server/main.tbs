@@ -1,0 +1,60 @@
+include "global.tbh"
+
+'Built-in web server: http://<device ip>/ shows the uptime and the relay state, two links switch the relay.
+'The page is index.html in the project (type=html in the .tpr): the code between <? and ?> runs on the device
+'when the page is sent. Hardware: Ethernet; relay Tibbit #03_1 in S3 (relay 1 = line S3A), #20 in S4.
+'Change: the page, HTTP_SOCKETS (how many browsers are served at once).
+
+const HTTP_SOCKETS = 4
+
+dim uptime_s as dword
+dim relay_on as no_yes
+dim half as byte
+
+'-------------------------------------------------------------------
+sub relay_set(state as no_yes)
+	relay_on = state
+	io.num = PL_IO_NUM_32			'S3A - relay 1 of Tibbit #03_1
+	if state = YES then
+		io.state = LOW				'relays of Tibbits are on while the line is LOW
+	else
+		io.state = HIGH
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	dim i as byte
+
+	net.ip = "192.168.1.40"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+
+	io.num = PL_IO_NUM_32
+	io.state = HIGH					'off before the line becomes an output
+	io.enabled = YES
+	relay_set(NO)
+
+	for i = 0 to HTTP_SOCKETS - 1
+		sock.num = i
+		sock.txbuffrq(4)			'the page goes out through the TX buffer
+		sock.varbuffrq(1)			'the request line (GET /index.html?relay=1) lands here
+		sock.protocol = PL_SOCK_PROTOCOL_TCP
+		sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+		sock.reconmode = PL_SOCK_RECONMODE_3
+		sock.httpportlist = "80"	'a connection to this port is served as HTTP
+		sock.connectiontout = 20
+	next i
+	sys.buffalloc()
+	uptime_s = 0
+	half = 0
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	half = half + 1					'the timer comes every 0.5 s
+	if half >= 2 then
+		half = 0
+		uptime_s = uptime_s + 1
+	end if
+end sub

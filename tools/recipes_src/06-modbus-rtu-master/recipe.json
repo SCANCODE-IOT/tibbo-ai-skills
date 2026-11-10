@@ -1,0 +1,13 @@
+{
+ "title": "Modbus RTU мастер по RS485 (Tibbit #05 в слоте S5): опрос регистров",
+ "platform": "TPP3W(G2)",
+ "also": [
+  "TPP2W(G2)",
+  "TPP3W(G3)",
+  "TPP2W(G3)"
+ ],
+ "tibbits": [
+  "#05 в S5",
+  "#20 в S6"
+ ]
+}

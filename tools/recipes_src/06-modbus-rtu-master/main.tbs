@@ -1,0 +1,122 @@
+include "global.tbh"
+
+'Modbus RTU master: once a second reads holding registers (function 03) of one slave over RS485.
+'Hardware: Tibbit #05 (RS485) in socket S5 = serial port 1, terminal block Tibbit #20 in S6.
+'#05 switches direction by its third line (S5C): LOW = receive, HIGH = transmit - the port drives it itself.
+'Change: MB_SLAVE, MB_FIRST_REG, MB_NUM_REGS (also the size of mb_reg), MB_BAUD.
+
+const MB_PORT = 1				'S5 is serial port 1 on TPP2/TPP3
+const MB_BAUD = 9600
+const MB_SLAVE = 1
+const MB_FIRST_REG = 0
+const MB_NUM_REGS = 2
+const MB_TIMEOUT = 2			'timer ticks (0.5 s) to wait for the answer
+
+dim mb_reg(2) as word			'the values read
+dim mb_wait as byte				'ticks left to wait, 0 = no request is pending
+dim mb_errors as word
+
+declare function mb_crc(byref s as string) as word
+declare sub mb_poll()
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	dim d as dword
+
+	'lines of S5: TX and the direction line are outputs
+	io.num = PL_IO_NUM_11_TX1
+	io.enabled = YES
+	io.num = PL_IO_NUM_1			'S5C - direction
+	io.enabled = YES
+
+	ser.num = MB_PORT
+	ser.enabled = NO
+	ser.mode = PL_SER_MODE_UART
+	ser.interface = PL_SER_SI_HALFDUPLEX
+	ser.rtsmap = PL_IO_NUM_1				'the direction line
+	ser.dircontrol = PL_SER_DCP_LOWFORINPUT	'LOW = receive, as Tibbit #05 needs
+	ser.flowcontrol = PL_SER_FC_DISABLED
+	ser.parity = PL_SER_PR_NONE
+	ser.bits = PL_SER_BB_8
+	d = ser.div9600
+	d = d * 9600 / MB_BAUD
+	ser.baudrate = d
+	ser.interchardelay = 2			'a pause of 20 ms ends a frame: the whole answer arrives in one event
+	ser.rxbuffrq(1)
+	ser.txbuffrq(1)
+	sys.buffalloc()
+	ser.enabled = YES
+
+	mb_wait = 0
+	mb_errors = 0
+	sys.onsystimerperiod = 50		'on_sys_timer every 0.5 s
+end sub
+
+'-------------------------------------------------------------------
+function mb_crc(byref s as string) as word
+	'CRC-16/Modbus
+	dim crc as word
+	dim i, j as byte
+
+	crc = &hFFFF
+	for i = 1 to len(s)
+		crc = crc xor asc(mid(s, i, 1))
+		for j = 0 to 7
+			if (crc and 1) <> 0 then
+				crc = (crc shr 1) xor &hA001
+			else
+				crc = crc shr 1
+			end if
+		next j
+	next i
+	mb_crc = crc
+end function
+
+'-------------------------------------------------------------------
+sub mb_poll()
+	dim rq as string(8)
+	dim crc as word
+
+	rq = chr(MB_SLAVE) + chr(3) + chr(MB_FIRST_REG / 256) + chr(MB_FIRST_REG and 255) + chr(0) + chr(MB_NUM_REGS)
+	crc = mb_crc(rq)
+	rq = rq + chr(crc and 255) + chr(crc / 256)	'CRC goes low byte first
+	ser.num = MB_PORT
+	ser.rxclear()
+	ser.setdata(rq)
+	ser.send()
+	mb_wait = MB_TIMEOUT
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	if mb_wait > 0 then
+		mb_wait = mb_wait - 1
+		if mb_wait = 0 then mb_errors = mb_errors + 1	'no answer in time
+		exit sub
+	end if
+	mb_poll()
+end sub
+
+'-------------------------------------------------------------------
+sub on_ser_data_arrival()
+	dim s as string
+	dim crc as word
+	dim n, i as byte
+
+	if ser.num <> MB_PORT then exit sub
+	s = ser.getdata(255)
+	n = len(s)
+	if mb_wait = 0 then exit sub					'nothing was asked: ignore
+	mb_wait = 0
+	if n <> 5 + MB_NUM_REGS * 2 then goto bad		'slave, function, byte count, data, CRC
+	if asc(mid(s, 1, 1)) <> MB_SLAVE or asc(mid(s, 2, 1)) <> 3 then goto bad
+	crc = mb_crc(left(s, n - 2))
+	if asc(mid(s, n - 1, 1)) <> (crc and 255) or asc(mid(s, n, 1)) <> crc / 256 then goto bad
+	for i = 0 to MB_NUM_REGS - 1
+		mb_reg(i) = asc(mid(s, 4 + i * 2, 1)) * 256 + asc(mid(s, 5 + i * 2, 1))
+	next i
+	sys.debugprint("reg0=" + str(mb_reg(0)) + " reg1=" + str(mb_reg(1)) + chr(13) + chr(10))
+	exit sub
+bad:
+	mb_errors = mb_errors + 1
+end sub

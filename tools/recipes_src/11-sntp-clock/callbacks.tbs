@@ -1,0 +1,13 @@
+@callback_dhcp_ok
+	'the library does NOT apply the address itself
+	if interface <> PL_SOCK_INTERFACE_NET then exit sub
+	if renew = YES and net.ip = ip then exit sub
+	if renew = YES then
+		sys.reboot()
+	end if
+	net.ip = ip
+	net.netmask = netmask
+	net.gatewayip = gateway_ip
+	app_net_ready()
+@callback_sntp_ok
+	app_time_set(w_days, w_mins, b_seconds)

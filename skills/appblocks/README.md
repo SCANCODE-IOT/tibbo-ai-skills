@@ -30,7 +30,7 @@ Runtimes covered: **`tios`** (Tibbo BASIC for TPP2, TPP3, DS1101, DS1102, EM510)
 | `SKILL.md` | Instructions the agent follows: where to get the project, review, editing, cloud write rules, browser, visualisation. |
 | `references/editor.md` | Editor structure (Hardware / Features / Application), Import/Export, Run/Debug/Release, runtimes, **flow rules**, variables, plugins, common mistakes. |
 | `references/format.md` | The exported JSON format: top level, feature groups, nodes, links, `{{$…}}` references, editing rules, plugin (`custom_feature`) format. |
-| `references/blocks.md` | **All 168 editor blocks** by palette category: ports with parameters, settings with allowed values and defaults, required feature, ASYNC; hidden/legacy blocks listed separately. Taken from the app.appblocks.io registry. |
+| `references/blocks.md` | **All 177 editor blocks** by palette category: ports with parameters, settings with allowed values and defaults, required feature, ASYNC; hidden/legacy blocks listed separately. Taken from the app.appblocks.io registry. |
 | `references/features.md` | Features, service libraries, nested items, `tibbit_NN` fields, peripherals, LCD and web console widgets. |
 | `references/catalog.md` | Fields of features and nodes in Tibbo's exports with sample values, Tibbit fields, Modbus and LUIS structures. |
 | `references/catalog-examples.md` | How blocks and Tibbits are used in **78 appblocks.io projects** (59 node types, 28 Tibbits): typical wiring, arguments, sockets. |

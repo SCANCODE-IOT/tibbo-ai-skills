@@ -3,6 +3,23 @@
 Each platform = one TIDE target. `Object headers` shows which TiOS objects exist on it (see tios-api.md).
 I/O line, serial port, ADC enums below are exact constant names for that platform.
 
+**Exact API per platform** (which objects, properties, methods and events really exist, what is read-only, how many
+arguments) is in `data/platform_api.json`, taken from Tibbo's compiler; `tibbo_lint.py` checks code against it. The
+`Objects` column lists the headers a platform includes - a header may still leave an object out (`tls` exists only on
+WM2000, WS1102 and the G3 boards). **Optional objects**: on EM1000, EM1001, EM500W, EM510W, NB1010, T1000W, KLM,
+TPP2W/TPP2N/TPP3W/TPP3N (first generation) the objects `fd`, `kp`, `lcd`, `wln` exist only when the project switches them
+on: `defines= /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED /dOBJECT_LCD=LCD_ENABLED /dOBJECT_WLN=WLN_ENABLED` in the
+`.tpr` (TIDE: Project Settings → Customize). `tibbo_new.py` adds what the chosen libraries need; the linter tells when
+an object is switched off.
+
+**TiOS versions (checked November 2026).** A `.tpc` carries the platform line it was built for (`TPP3W(G3)-5.00`) and
+must match the major TiOS line on the device. For the G3 boards (TPP2W(G3), TPP3W(G3), EM3000W) the platform files on
+GitHub are already 5.00, while Tibbo's cloud compiler and the platforms bundled with the Node.js compiler still build
+for 4.01. `tibbo_build.py` prints "Собрано для: ..." after every build - compare it with the TiOS on the device
+(`tibbo_device.py state` or Device Explorer). Platforms 5.00 for the Node.js compiler:
+`python3 scripts/tibbo_build.py --setup-node --yes --latest-platforms`. Platforms `LTPP3` and `LKLM601` (Tibbo BASIC
+on Linux) do not compile with Tibbo's Node.js compiler - see linux.md.
+
 | Folder | Description | PLATFORM_ID | ROM | RAM | Objects | Firmware in repo |
 |---|---|---|---|---|---|---|
 | DS1100 | DS1100 Device | 17 | 327680 | 17920 | io-5xx net pppoe sys-5xx | tios-ds1100-3_60_06.bin |
@@ -25,8 +42,8 @@ I/O line, serial port, ADC enums below are exact constant names for that platfor
 | EM1206N | EM1206 Module + WA2000 Wi-Fi add-on | 37 | 983040 | 22271 | gen-em1206 wln | tios-em1206n-3_70_02.bin |
 | EM1206W | EM1206 Module + GA1000 Wi-Fi add-on | 13 | 983040 | 22271 | gen-em1206 wln | tios-em1206w-3_60_06.bin |
 | EM2000W | EM2000 Module | 24 | 786432 | 66816 | adc beep bt fd i2c io-1xxx kp lcd net pppoe rtc ssi sys-2xxx tls wln | tios-em2000w-4_02_02.bin |
-| EM3000W | EM3000 Module | 49 | 1310720 | 132352 | adc beep bt em3000w_sock fd i2c io-2xxx kp lcd net pppoe rtc ssi sys-2xxx tls wln | tios-em3000w-4_01_08.bin |
-| EM500W | EM500 Module + GA1000 Wi-Fi add-on | 15 | 327680 | 17920 | fd io-5xx net pppoe sys-5xx wln | tios-em500w-3_60_08.bin |
+| EM3000W | EM3000 Module | 49 | 1310720 | 132352 | adc beep bt em3000w_sock fd i2c io-2xxx kp lcd net pppoe rtc ssi sys-2xxx tls wln | tios-em3000w-5_00_00.bin |
+| EM500W | EM500 Module + GA1000 Wi-Fi add-on | 15 | 327680 | 17920 | fd io-5xx net pppoe sys-5xx wln | tios-em500w-3_60_06.bin, tios-em500w-3_60_08.bin |
 | EM510W | EM510 Module | 43 | 262144 | 16128 | bt fd io-5xx net pppoe ssi sys-5xx wln | tios-EM510W-3_80_26.bin |
 | KLM106_32 | KLM106 platform | 33 | 786432 | 86784 | bt gen-st tls wln | tios-klm106-4_00_01.bin |
 | KLM601 | KLM601 platform | 7 | 983040 | 21760 | gen-t1000 wln | tios-klm601-3_60_00.bin |
@@ -46,7 +63,7 @@ I/O line, serial port, ADC enums below are exact constant names for that platfor
 | TPP3N | TPP3 Board + WA2000 Wi-Fi add on | 41 | 983040 | 22271 | beep fd io-1xxx kp lcd net pppoe rtc ssi sys-1xxx wln | tios-tpp3n-3_70_02.bin |
 | TPP3W | TPP3 Board | 20 | 983040 | 22271 | beep fd io-1xxx kp lcd net pppoe rtc ssi sys-1xxx wln | tios-tpp3w-3_60_06.bin |
 | TPP3W(G2) | TPP3(G2) Board | 26 | 786432 | 66816 | adc beep bt fd i2c io-2xxx kp net pppoe rtc ssi sys-2xxx tls wln | tios-tpp3w(g2)-4_02_02.bin |
-| TPP3W(G3) | TPP3(G3) Board | 47 | 1310720 | 132352 | adc beep bt fd i2c io-2xxx kp net pppoe rtc ssi sys-2xxx tls tpp3w(g3)_sock wln | tios-tpp3w(g3)-4_01_08.bin |
+| TPP3W(G3) | TPP3(G3) Board | 47 | 1310720 | 132352 | adc beep bt fd i2c io-2xxx kp net pppoe rtc ssi sys-2xxx tls tpp3w(g3)_sock wln | tios-tpp3w(g3)-5_00_00.bin |
 | WM2000 | WM2000 Module | 44 | 1728512 | 59392 | adc beep bt dhcp fd io-1xxx kp pwm rtc ssi sys-2xxx tls wln wm2000_ser wm2000_sock wm2000_sys wm2000_wln | tios-wm2000-4_03_08.bin |
 | WS1101 | WS1101 | 45 | 1728512 | 59392 | beep bt dhcp fd io-1xxx rtc ssi sys-2xxx tls wln ws1101_ser ws1101_sys ws1101_wln |  |
 | WS1102 | WS1102 | 46 | 1728512 | 59392 | beep bt dhcp fd io-1xxx rtc ssi sys-2xxx tls wln ws1102_ser ws1102_sys ws1102_wln | tios-ws1102-4_03_08.bin |
@@ -969,7 +986,7 @@ I/O line, serial port, ADC enums below are exact constant names for that platfor
 
 ## EM3000W — EM3000 Module
 
-- PLATFORM_ID: 49; rom=1310720 ram=132352; firmware file(s): tios-em3000w-4_01_08.bin
+- PLATFORM_ID: 49; rom=1310720 ram=132352; firmware file(s): tios-em3000w-5_00_00.bin
 - Object headers included: gen, sys-2xxx, em3000w_sock, net, pppoe, io-2xxx, beep, rtc, lcd, kp, ssi, fd, wln, bt, adc, tls, i2c
 - Feature defines: BUFF_PAGE_TYPE word, BUFF_SIZE_TYPE dword, EXTENDED_SOCK 1, SER_7BIT_LIMITATION 1, PLATFORM_TYPE_32 1, OBJECT_KP KP_ENABLED, OBJECT_FD FD_ENABLED, OBJECT_WLN WLN_ENABLED, OBJECT_BT BT_ENABLED, OBJECT_LCD LCD_ENABLED, EXTENDED_FD 1
 - TIDE project templates: 1 - Empty BASIC Project, 2 - Empty C Project, 3 - Empty BASIC and C Project
@@ -2151,7 +2168,7 @@ I/O line, serial port, ADC enums below are exact constant names for that platfor
 
 ## TPP3W(G3) — TPP3(G3) Board
 
-- PLATFORM_ID: 47; rom=1310720 ram=132352; firmware file(s): tios-tpp3w(g3)-4_01_08.bin
+- PLATFORM_ID: 47; rom=1310720 ram=132352; firmware file(s): tios-tpp3w(g3)-5_00_00.bin
 - Object headers included: gen, sys-2xxx, tpp3w(g3)_sock, net, pppoe, io-2xxx, beep, rtc, kp, ssi, fd, wln, adc, bt, tls, i2c
 - Feature defines: BUFF_PAGE_TYPE word, BUFF_SIZE_TYPE dword, EXTENDED_SOCK 1, SER_7BIT_LIMITATION 1, PLATFORM_TYPE_32 1, OBJECT_KP KP_ENABLED, OBJECT_FD FD_ENABLED, OBJECT_WLN WLN_ENABLED, OBJECT_BT BT_ENABLED, EXTENDED_FD 1
 - TIDE project templates: 1 - Empty BASIC Project, 2 - Empty C Project, 3 - Empty BASIC and C Project

@@ -71,7 +71,7 @@ def install(src, dest):
         target = dest / s
         if target.exists():
             shutil.rmtree(target)
-        shutil.copytree(src / s, target, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store"))
+        shutil.copytree(src / s, target, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".DS_Store", "tmp", "*.tpc", "*.pdb"))
     # quick self-test from the installed copy: both skills, including the appblocks -> tps_check bridge
     py = sys.executable or "python3"
     ok = subprocess.run([py, str(dest / "tibbo-firmware" / "scripts" / "tps_check.py"), "find", "rs485"],
