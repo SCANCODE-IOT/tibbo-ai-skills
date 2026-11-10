@@ -108,7 +108,11 @@ def call(method, path, body=None, auth=True, raw=False):
     except urllib.error.URLError as e:
         sys.exit(f"{BASE}: " + tls_hint(e))
     if not (200 <= st < 300):
-        sys.exit(f"HTTP {st} {method} {path}: {b[:500].decode('utf-8', 'replace')}")
+        hint = ""
+        if st >= 500 and path in ("/api/projects/code", "/api/projects/build"):
+            hint = ("\nСервер не объяснил причину. Частая причина - в проекте блок, которого нет в его среде исполнения "
+                    "(например, блок только для Zephyr в проекте на TiOS): python3 scripts/ab_tool.py check <project.json>")
+        sys.exit(f"HTTP {st} {method} {path}: {b[:500].decode('utf-8', 'replace')}{hint}")
     if raw:
         return b
     try:

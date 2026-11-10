@@ -98,6 +98,51 @@ def settings(sets, keep_common=False):
     return out
 
 
+RT_LABEL = {"tios": "TiOS", "zephyr": "Zephyr", "micropython": "MicroPython"}
+
+
+def runtimes_of(e):
+    """Runtimes on which the editor offers this entry, from its per-runtime "requirements".
+
+    A requirement is a list; every element must hold; an element that is a list means "any of". Elements naming a
+    runtime (tios / zephyr / micropython) restrict the runtime, the rest are board capabilities (camera, network, TPP...).
+    The dump keeps a zephyr / micropython variant only when it differs from the tios one.
+    """
+    ok = []
+    for rt in RUNTIMES:
+        v = e.get(rt) or e.get("tios") or next((x for x in e.values() if x), None)
+        if not v or "err" in v:
+            continue
+        allowed = True
+        for el in v.get("requirements") or []:
+            alts = el if isinstance(el, list) else [el]
+            if all(a in RUNTIMES for a in alts) and rt not in alts:
+                allowed = False
+        if allowed:
+            ok.append(rt)
+    return ok
+
+
+def needs_of(v):
+    """Board capabilities an entry requires (requirements without the runtime names), as text."""
+    out = []
+    for el in v.get("requirements") or []:
+        alts = [a for a in (el if isinstance(el, list) else [el]) if a not in RUNTIMES]
+        if alts and len(alts) == len(el if isinstance(el, list) else [el]):
+            out.append(" или ".join(map(str, alts)))
+    return out
+
+
+def availability_notes(v):
+    notes = []
+    if v.get("runtimes") is not None:
+        notes.append("только " + ", ".join(RT_LABEL[r] for r in v["runtimes"]) if v["runtimes"] else "нет ни в одной среде")
+    need = needs_of(v)
+    if need:
+        notes.append("нужно: " + ", ".join(need)[:120])
+    return notes
+
+
 def entry(e, kind):
     """Compact one registry entry; keeps per-runtime differences."""
     base = e.get("tios") or next((v for v in e.values() if v), None)
@@ -115,6 +160,9 @@ def entry(e, kind):
         r["in"] = port_list(base.get("in"))
         r["out"] = port_list(base.get("out"))
     r["set"] = settings(base.get("set"), keep_common=(kind != "nodes"))
+    rts = runtimes_of(e)
+    if len(rts) < len(RUNTIMES):
+        r["runtimes"] = rts
     for rt in ("zephyr", "micropython"):
         if rt in e and e[rt] and "err" not in e[rt]:
             diff = {}
@@ -190,18 +238,38 @@ def main():
                 v.setdefault(side, {}).update(ports)
         if k in DYNAMIC_PORTS:
             v["dynamic_ports"] = True
+        # a block lives where its feature lives (camera blocks need the Camera peripheral, which is Zephyr only)
+        ft = v.get("feat")
+        for kind in ("features", "peripherals", "libraries"):
+            owner = (reg.get(kind) or {}).get(ft) if ft else None
+            if owner and owner.get("runtimes") is not None:
+                mine = v.get("runtimes", list(RUNTIMES))
+                both = [r for r in mine if r in owner["runtimes"]]
+                if len(both) < len(RUNTIMES):
+                    v["runtimes"] = both
     os.makedirs(os.path.join(SKILL, "data"), exist_ok=True)
     with open(os.path.join(SKILL, "data", "registry.json"), "w", encoding="utf-8") as f:
         json.dump(reg, f, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
     # ---------------- blocks.md
     n_vis = sum(1 for v in reg["nodes"].values() if v["cat"] != "Hidden")
+    z_only = [v for v in reg["nodes"].values() if v.get("runtimes") == ["zephyr"]]
+    z_count = {}
+    for v in z_only:
+        if v["cat"] != "Hidden":
+            z_count[v["cat"]] = z_count.get(v["cat"], 0) + 1
+    z_cats = "по разделам палитры: " + ", ".join(f"{c} - {n}" for c, n in sorted(z_count.items(), key=lambda x: -x[1]))
     L = [f"# Блоки логики AppBlocks: порты, параметры, настройки",
          "",
          f"Снято из реестра редактора app.appblocks.io ({reg['snapshot']}): {len(reg['nodes'])} типов блоков, "
          f"из них {n_vis} в палитре и {len(reg['nodes']) - n_vis} скрытых (служебные и устаревшие, встречаются в старых проектах).",
          "Машинная версия - `data/registry.json` (её использует `ab_tool.py check` и `ab_tool.py lookup`). Пересборка: "
          "`scripts/extract_registry.js` в браузере на app.appblocks.io, затем `scripts/build_registry.py`.",
+         "",
+         f"**Среда исполнения.** Блоков только для Zephyr - {len(z_only)} ({z_cats}): в столбце «Особенности» у них "
+         "стоит «только Zephyr». **В проект на TiOS их ставить нельзя** - генератор кода AppBlocks отвечает на такой "
+         "проект ошибкой 500 без объяснений (проверено блоками Square Root и String Trim); `ab_tool.py check` "
+         "находит это заранее. «нужно: X» - что должно быть у платы или в проекте (camera, touch, network, TPP ...).",
          "",
          "Как читать: **Входы/Выходы** - `portId` для `node_link` (SOURCE_PORT/TARGET_PORT) и параметры, которые порт передаёт "
          "следующему блоку (`{{$имя}}`) или принимает в ARGUMENTS (TARGETPARAM). **Настройки** - поля `settings` узла: "
@@ -225,6 +293,7 @@ def main():
             notes = []
             if v.get("async"):
                 notes.append("ASYNC")
+            notes += availability_notes(v)
             if v.get("devices"):
                 notes.append("только " + ", ".join(v["devices"]))
             if v.get("unsupportedDevices"):
@@ -263,6 +332,7 @@ def main():
             notes = []
             if v.get("single") is False and kind in ("features", "libraries"):
                 notes.append("несколько экземпляров")
+            notes += availability_notes(v)
             if v.get("devices"):
                 notes.append("только " + ", ".join(map(str, v["devices"]))[:120])
             if v.get("unsupportedDevices"):

@@ -301,6 +301,9 @@ def check_registry(d, errs, warns, reg=None):
     feats = {f["settings"].get("ID"): f for f in F}
     present = {f["id"]: f for f in F}
     device = str(d.get("device") or "")
+    runtime = d.get("runtime") or "tios"
+    rt_name = {"tios": "TiOS", "zephyr": "Zephyr", "micropython": "MicroPython"}
+    only = lambda v: ", ".join(rt_name.get(r, r) for r in v["runtimes"]) or "ни в одной среде"
     for f in F:
         k, s = f["id"], f["settings"]
         if not k.startswith(NODE_PREFIX) or k == "node_link":
@@ -309,6 +312,13 @@ def check_registry(d, errs, warns, reg=None):
                     v = (reg.get(kind) or {}).get(k)
                     if v and v.get("devices") and device not in v["devices"]:
                         warns.append(f"{k}: в редакторе доступен только для {', '.join(v['devices'])}, а плата проекта {device}")
+            if str(s.get("ENABLED", "1")) != "0":
+                for kind in ("features", "peripherals", "libraries", "items", "widgets"):
+                    v = (reg.get(kind) or {}).get(k)
+                    if v and v.get("runtimes") is not None and runtime not in v["runtimes"]:
+                        warns.append(f"{k} ({v.get('name')}): по реестру редактора есть только в среде {only(v)}, "
+                                     f"а проект на {rt_name.get(runtime, runtime)} - проверь вкладку Problems в редакторе")
+                        break
             continue
         v = N.get(k)
         if v is None:
@@ -320,6 +330,11 @@ def check_registry(d, errs, warns, reg=None):
         if device and (v.get("unsupportedDevices") and device in v["unsupportedDevices"]
                        or v.get("devices") and device not in v["devices"]):
             errs.append(f"узел {k} {s.get('ID')}: блок недоступен на плате {device}")
+        if v.get("runtimes") is not None and runtime not in v["runtimes"]:
+            # checked with the code generator: such a block in a TiOS project gives HTTP 500 with no explanation
+            errs.append(f"узел {k} {s.get('ID')} ({v.get('name')}): блок есть только в среде {only(v)}, а проект на "
+                        f"{rt_name.get(runtime, runtime)}. Генератор кода AppBlocks на таком проекте отвечает ошибкой 500 без "
+                        "объяснений. Убери блок или собери то же из блоков этой среды (blocks.md, столбец «Особенности»)")
         ft = v.get("feat")
         if ft and ft != "general" and ft in reg.get("features", {}):
             if ft not in present:
@@ -833,7 +848,9 @@ def lookup(q):
             if side in v:
                 print(f"  {'входы ' if side == 'in' else 'выходы'}: " + (", ".join(
                     p + (f"({', '.join(a)})" if a else "") for p, a in v[side].items()) or "-"))
-        extra = [x for x in ("feat", "async", "dynamic_ports", "devices", "unsupportedDevices") if v.get(x)]
+        if v.get("runtimes") is not None:
+            print("  только в среде: " + (", ".join(v["runtimes"]) or "нет"))
+        extra = [x for x in ("feat", "async", "dynamic_ports", "devices", "unsupportedDevices", "requirements") if v.get(x)]
         if extra:
             print("  " + "; ".join(f"{x}={v[x]}" for x in extra))
         for sk, st in v.get("set", {}).items():
