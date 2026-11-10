@@ -64,8 +64,10 @@ RESOURCES = {
     "tables": ("tables.txt", "text", "==LOG\t100\tT\t0\r\n>>VAL\tW\t0\t65535\t0\r\n"),
 }
 # bodies of callbacks that must do something for the library to work (the rest stay empty)
-def callback_body(name, objects, wifi):
+def callback_body(name, objects, wifi, order=()):
     """Bodies of the callbacks that must do something for the library to work (the rest stay empty)."""
+    if name.lower() == "callback_dns_answer_acquired" and "mqtt" in order:
+        return ["mqtt_dns_answer_acquired(return_type, return_string)    'the mqtt library resolves the broker name through dns"]
     if name.lower() != "callback_dhcp_ok":
         return []
     b = ["'the library does NOT apply the address itself"]
@@ -215,7 +217,7 @@ def main(argv):
                 continue   # needed only with non-default library settings
             ncb += 1
             d += [cb["decl"]]
-            d += ["\t" + x for x in callback_body(cb["name"], objects | set(optional if defines else []), wifi)]
+            d += ["\t" + x for x in callback_body(cb["name"], objects | set(optional if defines else []), wifi, order)]
             d += ["end " + cb["kind"], ""]
 
     # ---- .tpr

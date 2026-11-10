@@ -1,0 +1,31 @@
+dim big as string(300)
+dim cnt as int
+
+sub on_sys_init()
+	dim s as string
+	ser.baud = 9600
+	sock.statesimple = 1
+	sock.setdata("a", "b")
+	lcd.width = 5
+	cnt += 1
+	s = "a" & "b"
+	if cnt != 1 then
+	end if
+	print "hello"
+	sleep(100)
+	on_sys_timer()
+	return
+end sub
+
+sub on_sys_timer(x as byte)
+end sub
+
+sub on_sock_connected()
+end sub
+
+sub on_sys_init()
+end sub
+
+sub again()
+	again()
+end sub

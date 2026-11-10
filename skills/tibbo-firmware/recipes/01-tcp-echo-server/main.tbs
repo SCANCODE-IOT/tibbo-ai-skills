@@ -1,0 +1,36 @@
+include "global.tbh"
+
+'TCP echo server. Listens on port 1001 and sends back everything it receives.
+'Hardware: any Tibbo device with Ethernet. Test: telnet <device ip> 1001
+'Change: APP_PORT, the IP settings in on_sys_init.
+
+const APP_PORT = "1001"
+const APP_BUFF_PAGES = 2		'1 page = 256 bytes
+
+dim app_sock as byte
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	net.ip = "192.168.1.40"			'fixed address; DHCP - recipe 03
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+
+	app_sock = 0
+	sock.num = app_sock
+	sock.rxbuffrq(APP_BUFF_PAGES)
+	sock.txbuffrq(APP_BUFF_PAGES)
+	sys.buffalloc()					'ONE call after ALL buffer requests
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT	'accept connections from anyone
+	sock.reconmode = PL_SOCK_RECONMODE_3			'a new connection replaces a hung one
+	sock.localportlist = APP_PORT
+	sock.connectiontout = 120		'close a silent connection after 60 s (units of 0.5 s)
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	'sock.num already points at the socket that has data
+	if sock.num <> app_sock then exit sub
+	sock.setdata(sock.getdata(sock.txfree))	'take only what fits into the TX buffer
+	sock.send()
+end sub

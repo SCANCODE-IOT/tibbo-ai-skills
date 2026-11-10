@@ -1,0 +1,17 @@
+'===================================================================
+' app - global header. Platform: TPP3W(G2)
+'===================================================================
+
+'DEFINES: library settings must come BEFORE the include of the library
+#define WLN_AVAILABLE 1
+#define WLN_WPA 1               'WPA/WPA2 support
+
+'INCLUDES: order matters - a library goes after the libraries it uses
+include "sock\trunk\sock.tbh"
+include "sntp\trunk\sntp.tbh"
+include "wln\trunk\wln.tbh"
+include "dhcp\trunk\dhcp.tbh"
+
+'DECLARATIONS: your own subs, functions and global variables (dim them in ONE .tbs file)
+declare sub app_net_ready()
+declare sub app_time_set(days as word, mins as word, secs as byte)

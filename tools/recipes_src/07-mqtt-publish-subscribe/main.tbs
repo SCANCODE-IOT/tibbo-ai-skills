@@ -1,0 +1,92 @@
+include "global.tbh"
+
+'MQTT client: publishes a counter every 10 s to "tibbo/demo/counter" and switches relay 1 by messages
+'"1"/"0" in "tibbo/demo/relay". Address by DHCP (Ethernet). The mqtt library needs sock and dns; on Wi-Fi boards
+'dhcp also needs wln - tibbo_new.py adds them.
+'Hardware: Ethernet; relay Tibbit #03_1 in S3 (relay 1 = line S3A), terminal block #20 in S4.
+'Change: BROKER (a name or an IP), BROKER_PORT, the topics, client id.
+
+const BROKER = "test.mosquitto.org"
+const BROKER_PORT = 1883
+const TOPIC_COUNTER = "tibbo/demo/counter"
+const TOPIC_RELAY = "tibbo/demo/relay"
+const PUBLISH_PERIOD = 20		'timer ticks, 0.5 s each
+
+dim mqtt_online as no_yes
+dim tick as byte
+dim counter as dword
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	io.num = PL_IO_NUM_32			'S3A - relay 1 of Tibbit #03_1
+	io.state = HIGH					'the relay is off while the line is HIGH
+	io.enabled = YES
+
+	mqtt_online = NO
+	tick = 0
+	counter = 0
+	dhcp_start(PL_SOCK_INTERFACE_NET, "", "")	'-> callback_dhcp_ok -> app_net_ready
+end sub
+
+'-------------------------------------------------------------------
+sub app_net_ready()
+	'called from callback_dhcp_ok when the device has an address
+	mqtt_start(PL_SOCK_INTERFACE_NET, BROKER, BROKER_PORT, "", "", "tibbo-" + sys.serialnum, false)
+end sub
+
+'-------------------------------------------------------------------
+sub app_mqtt_connected()
+	'called from callback_mqtt_connect_ok (also after every reconnection: the library reconnects by itself)
+	mqtt_online = YES
+	mqtt_sub(TOPIC_RELAY, QOS_AT_MOST_ONCE)
+end sub
+
+'-------------------------------------------------------------------
+sub app_mqtt_message(byref topic as string, byref data as string)
+	'called from callback_mqtt_notif: a message for a topic we are subscribed to
+	if topic <> TOPIC_RELAY then exit sub
+	io.num = PL_IO_NUM_32
+	if left(data, 1) = "1" then
+		io.state = LOW				'relay on
+	else
+		io.state = HIGH				'relay off
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	dhcp_proc_timer()
+	wln_proc_timer()
+	dns_proc_timer()
+	mqtt_proc_timer()
+
+	if mqtt_online = NO then exit sub
+	tick = tick + 1
+	if tick < PUBLISH_PERIOD then exit sub
+	tick = 0
+	counter = counter + 1
+	mqtt_publish(TOPIC_COUNTER, lstr(counter), QOS_AT_MOST_ONCE)
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dhcp_proc_data()
+	wln_proc_data()
+	dns_proc_data()
+	mqtt_proc_data()
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)
+	mqtt_sock_event(newstate, newstatesimple)
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_event(wln_event as pl_wln_events)
+	wln_proc_event(wln_event)
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_task_complete(completed_task as pl_wln_tasks)
+	wln_proc_task_complete(completed_task)
+end sub

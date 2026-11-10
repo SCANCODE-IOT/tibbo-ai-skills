@@ -1,0 +1,63 @@
+include "global.tbh"
+
+'Event log in a file on the flash disk. Mounts the disk (formats it on the first start), appends a line on
+'every press of the MD button and once a minute. The file is cleared when it grows over LOG_MAX bytes.
+'Flash wears out (about 100 000 writes per sector): do not write more often than you need.
+'Hardware: a device with a flash disk (TPP2/TPP3 G2 and G3, EM2000W). On EM1000-family platforms the fd object
+'must be switched on in the project: defines= /dOBJECT_FD=FD_ENABLED in the .tpr.
+'Change: LOG_FILE, LOG_MAX.
+
+const LOG_FILE = "log.txt"
+const LOG_MAX = 32768
+
+dim disk_ok as no_yes
+dim ticks as byte
+
+declare sub log_add(byref text as string)
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	disk_ok = NO
+	ticks = 0
+	if fd.mount() <> PL_FD_STATUS_OK then
+		'no disk yet: make one from all the free flash, room for 8 files
+		if fd.format(fd.availableflashspace, 8) <> PL_FD_STATUS_OK then exit sub
+		if fd.mount() <> PL_FD_STATUS_OK then exit sub
+	end if
+	disk_ok = YES
+	log_add("start")
+end sub
+
+'-------------------------------------------------------------------
+sub log_add(byref text as string)
+	dim days, mins as word
+	dim secs as byte
+	dim s as string
+
+	if disk_ok = NO then exit sub
+	fd.filenum = 0
+	if fd.open(LOG_FILE) <> PL_FD_STATUS_OK then
+		if fd.create(LOG_FILE) <> PL_FD_STATUS_OK then exit sub
+		if fd.open(LOG_FILE) <> PL_FD_STATUS_OK then exit sub
+	end if
+	if fd.filesize > LOG_MAX then fd.setfilesize(0)
+	rtc.getdata(days, mins, secs)
+	s = str(days) + " " + str(mins) + " " + text + chr(13) + chr(10)
+	fd.setpointer(fd.filesize + 1)		'positions in a file start from 1: this is "the end"
+	fd.setdata(s)
+	fd.close()							'closing writes the data to the flash
+end sub
+
+'-------------------------------------------------------------------
+sub on_button_pressed()
+	log_add("button")
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	ticks = ticks + 1					'the timer comes every 0.5 s
+	if ticks >= 120 then
+		ticks = 0
+		log_add("alive")
+	end if
+end sub

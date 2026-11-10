@@ -1,0 +1,17 @@
+include "global.tbh"
+
+'Callbacks of the libraries. Every one of them must exist, even if empty:
+'the linker reports a missing one as "unresolved address '?F:callback_...'".
+
+'------------------------------ settings
+sub callback_stg_error(byref stg_name_or_num as string, index as byte, status as en_stg_status_codes)
+	'a setting could not be read or written (status says why): show it while debugging
+	sys.debugprint("STG error, setting " + stg_name_or_num + chr(13) + chr(10))
+end sub
+
+sub callback_stg_pre_get(byref stg_name_or_num as string, index as byte, byref stg_value as string)
+end sub
+
+sub callback_stg_post_set(byref stg_name_or_num as string, index as byte, byref stg_value as string)
+end sub
+

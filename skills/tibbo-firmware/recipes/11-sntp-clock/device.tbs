@@ -1,0 +1,61 @@
+include "global.tbh"
+
+'Callbacks of the libraries. Every one of them must exist, even if empty:
+'the linker reports a missing one as "unresolved address '?F:callback_...'".
+
+'------------------------------ sntp
+sub callback_sntp_failure(sntp_status as en_sntp_status_codes)
+end sub
+
+sub callback_sntp_ok(byref w_days as word,byref w_mins as word,byref b_seconds as byte)
+	app_time_set(w_days, w_mins, b_seconds)
+end sub
+
+sub callback_sntp_pre_buffrq(required_buff_pages as byte)
+end sub
+
+'------------------------------ wln
+sub callback_wln_failure(wln_state as en_wln_status_codes)
+end sub
+
+sub callback_wln_ok()
+end sub
+
+sub callback_wln_starting_association()
+end sub
+
+sub callback_wln_pre_buffrq(required_buff_pages as byte)
+end sub
+
+sub callback_wln_rescan_result(current_rssi as byte, scan_rssi as byte, different_ap as no_yes)
+end sub
+
+sub callback_wln_rescan_for_better_ap()
+end sub
+
+'------------------------------ dhcp
+sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip as string, byref gateway_ip as string, byref netmask as string, lease_time as dword)
+	'the library does NOT apply the address itself
+	if interface <> PL_SOCK_INTERFACE_NET then exit sub
+	if renew = YES and net.ip = ip then exit sub
+	if renew = YES then
+		sys.reboot()
+	end if
+	net.ip = ip
+	net.netmask = netmask
+	net.gatewayip = gateway_ip
+	app_net_ready()
+end sub
+
+sub callback_dhcp_failure(interface as pl_sock_interfaces,failure_code as en_dhcp_status_codes)
+end sub
+
+sub callback_dhcp_pre_clear_ip(interface as pl_sock_interfaces)
+end sub
+
+sub callback_dhcp_pre_buffrq(required_buff_pages as byte)
+end sub
+
+sub callback_dhcp_buff_released()
+end sub
+

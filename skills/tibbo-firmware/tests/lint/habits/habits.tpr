@@ -1,0 +1,9 @@
+[project]
+name=habits
+output=habits.tpc
+debug=on
+platform=TPP3W(G2)
+
+[file1]
+path=main.tbs
+type=basic

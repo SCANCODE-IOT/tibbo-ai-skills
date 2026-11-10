@@ -45,6 +45,35 @@ done
 [ "$rc" = 1 ] && echo "ok   lint seeded errors" || { echo "FAIL lint exit code $rc"; fail=1; }
 "$PY" scripts/tibbo_lint.py tests/lint/tpp2_adc.tbs --platform "TPP2W(G2)" | grep -q "объекта adc нет на платформе" && echo "ok   lint platform objects" || { echo "FAIL lint platform objects"; fail=1; }
 "$PY" scripts/tibbo_lint.py tests/lint/tpp2_adc.tbs >/dev/null && echo "ok   lint without platform" || { echo "FAIL lint without platform"; fail=1; }
+# lint: 17 habits of other languages and platform mistakes, one per line of the fixture
+n=$("$PY" scripts/tibbo_lint.py tests/lint/habits --json | "$PY" -c "import json,sys; print(json.load(sys.stdin)['errors'])")
+[ "$n" = 17 ] && echo "ok   lint catches 17 of 17 seeded mistakes (platform from the .tpr)" || { echo "FAIL lint habits: $n of 17"; "$PY" scripts/tibbo_lint.py tests/lint/habits; fail=1; }
+# tibbo_new.py: a generated project is clean for the linter and the .tpr preflight; refusals are explained
+G="$T/gen"; rm -rf "$G"
+"$PY" scripts/tibbo_new.py "$G/a" --platform "TPP3W(G2)" --libs dhcp,settings,mqtt >"$T/out" 2>&1 && "$PY" scripts/tibbo_lint.py "$G/a" >"$T/out2" 2>&1 \
+  && grep -q "wln" "$T/out" && grep -q "location=commonlib" "$G/a/a.tpr" && grep -q "callback_wln_ok" "$G/a/device.tbs" \
+  && echo "ok   new project: libraries, dependencies, callbacks; linter clean" || { echo "FAIL new project"; cat "$T/out" "$T/out2"; fail=1; }
+"$PY" scripts/tibbo_new.py "$G/b" --platform "EM1000" --libs tables >"$T/out" 2>&1 && grep -q "OBJECT_FD=FD_ENABLED" "$G/b/b.tpr" && echo "ok   new project switches on optional objects (defines=)" || { echo "FAIL new project defines"; cat "$T/out"; fail=1; }
+"$PY" scripts/tibbo_new.py "$G/c" --platform "LTPP3(G2)" >"$T/out" 2>&1; [ $? = 2 ] && grep -q "linux.md" "$T/out" && echo "ok   new project refuses the Linux board" || { echo "FAIL new project LTPP3"; cat "$T/out"; fail=1; }
+"$PY" scripts/tibbo_new.py "$G/d" --platform "EM1000" --libs mqtt >"$T/out" 2>&1; [ $? = 2 ] && grep -q "timercountms" "$T/out" && echo "ok   new project refuses a library that does not compile on the platform" || { echo "FAIL new project broken lib"; cat "$T/out"; fail=1; }
+sed '/callback_wln_ok/,/^end sub/d' "$G/a/device.tbs" > "$T/dev" && cp "$T/dev" "$G/a/device.tbs"
+"$PY" scripts/tibbo_lint.py "$G/a" | grep -q "нет callback_wln_ok" && echo "ok   lint reports a missing library callback" || { echo "FAIL lint missing callback"; fail=1; }
+# recipes: every one is clean for the linter; compiled when Tibbo's Node.js compiler is installed
+rfail=0; rn=0
+for d in recipes/*/; do
+  rn=$((rn+1))
+  "$PY" scripts/tibbo_lint.py "$d" >"$T/out" 2>&1 || { echo "FAIL recipe lint $d"; cat "$T/out"; rfail=1; }
+  grep -q "предупреждений: 0" "$T/out" || { echo "FAIL recipe lint warnings $d"; cat "$T/out"; rfail=1; }
+done
+[ "$rfail" = 0 ] && [ "$rn" -ge 13 ] && echo "ok   $rn recipes clean for the linter" || fail=1
+NH="${TIBBO_BASIC_HOME:-$HOME/.tibbo/tibbo-basic}"
+if [ -f "$NH/server/out/compiler/compile-project.js" ] && command -v node >/dev/null 2>&1; then
+  rfail=0
+  for d in recipes/*/; do
+    env TIDE_DIR=/nonexistent "$PY" scripts/tibbo_build.py "$d" --node --out "$T/r.tpc" >"$T/out" 2>&1 || { echo "FAIL recipe build $d"; tail -5 "$T/out"; rfail=1; }
+  done
+  [ "$rfail" = 0 ] && echo "ok   $rn recipes compile with Tibbo's compiler" || fail=1
+else echo "skip recipe compilation (Tibbo's Node.js compiler is not installed)"; fi
 env -u PYTHONUTF8 PYTHONIOENCODING=cp1251 "$PY" scripts/tibbo_lint.py tests/lint/bad.tbs >/dev/null 2>"$T/err"; [ $? = 1 ] && echo "ok   lint non-UTF-8 console" || { echo "FAIL lint cp1251"; cat "$T/err"; fail=1; }
 # skills_update.py: in-place update from local zips, refusal for plugin installs, broken archive keeps the install
 U=$(mktemp -d); mkdir -p "$U/skills" "$U/zips" "$U/bad"

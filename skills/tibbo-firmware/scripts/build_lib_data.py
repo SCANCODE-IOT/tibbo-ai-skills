@@ -23,6 +23,7 @@ HOOK_EVENTS = [
     (r"_proc_data_sent$", "on_sock_data_sent", "{h}()"),
     (r"^sntp_proc_sock_event$", "on_sock_event", "{h}(newstatesimple)"),
     (r"_proc_sock_event$", "on_sock_event", "{h}(newstate, newstatesimple)"),
+    (r"^mqtt_sock_event$", "on_sock_event", "{h}(newstate, newstatesimple)"),
     (r"^wln_proc_event$", "on_wln_event", "{h}(wln_event)"),
     (r"^wln_proc_task_complete$", "on_wln_task_complete", "{h}(completed_task)"),
 ]
@@ -93,7 +94,7 @@ def main(argv):
                     if stack:
                         cb["when"] = " and ".join(stack)
                     callbacks.append(cb)
-                elif "_proc_" in fn.lower():
+                elif "_proc_" in fn.lower() or fn.lower() == "mqtt_sock_event":
                     for pat, event, call in HOOK_EVENTS:
                         if re.search(pat, fn.lower()):
                             hooks.append({"name": fn, "event": event, "call": call.format(h=fn)})

@@ -1,0 +1,86 @@
+include "global.tbh"
+
+'Serial-to-Ethernet bridge: everything from the RS232 port goes to the TCP client and back.
+'Hardware: Tibbit #01 (RS232) in socket S1 = serial port 0, connector Tibbit #19 (DB9) in S2.
+'Test: connect by telnet to port 1001, send text - it comes out of the RS232 port.
+'Change: SER_BAUD, APP_PORT. Another socket: other ser.num and TX/RX lines (references/platforms.md).
+
+const APP_PORT = "1001"
+const SER_PORT = 0				'S1 is serial port 0 on TPP2/TPP3
+const SER_BAUD = 115200
+
+dim app_sock as byte
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	dim d as dword
+
+	net.ip = "192.168.1.40"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+
+	'the lines of the socket: TX is an output, RX stays an input
+	io.num = PL_IO_NUM_9_TX0
+	io.enabled = YES
+	io.num = PL_IO_NUM_8_RX0
+	io.enabled = NO
+
+	ser.num = SER_PORT
+	ser.enabled = NO				'port settings are changed while the port is off
+	ser.mode = PL_SER_MODE_UART
+	ser.interface = PL_SER_SI_FULLDUPLEX
+	ser.flowcontrol = PL_SER_FC_DISABLED
+	ser.parity = PL_SER_PR_NONE
+	ser.bits = PL_SER_BB_8
+	d = ser.div9600					'divisor for 9600 on this device
+	d = d * 9600 / SER_BAUD
+	ser.baudrate = d
+	ser.interchardelay = 0			'pass data on at once
+	ser.rxbuffrq(4)
+	ser.txbuffrq(4)
+
+	app_sock = 0
+	sock.num = app_sock
+	sock.rxbuffrq(4)
+	sock.txbuffrq(4)
+	sys.buffalloc()					'ONE call after ALL buffer requests (serial and socket)
+
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+	sock.reconmode = PL_SOCK_RECONMODE_3
+	sock.localportlist = APP_PORT
+	ser.enabled = YES
+end sub
+
+'-------------------------------------------------------------------
+sub on_ser_data_arrival()
+	'serial -> network. Move only what the socket can take: the rest stays in the serial buffer
+	'and the event comes again.
+	dim n as word
+
+	if ser.num <> SER_PORT then exit sub
+	sock.num = app_sock
+	if sock.statesimple <> PL_SSTS_EST then
+		ser.rxclear()				'nobody is connected: drop the data
+		exit sub
+	end if
+	n = sock.txfree
+	if n > 255 then n = 255
+	if n = 0 then exit sub
+	sock.setdata(ser.getdata(n))
+	sock.send()
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	'network -> serial, same rule
+	dim n as word
+
+	if sock.num <> app_sock then exit sub
+	ser.num = SER_PORT
+	n = ser.txfree
+	if n > 255 then n = 255
+	if n = 0 then exit sub
+	ser.setdata(sock.getdata(n))
+	ser.send()
+end sub

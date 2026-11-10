@@ -1,0 +1,19 @@
+@callback_dhcp_ok
+	'the library does NOT apply the address itself
+	if interface <> PL_SOCK_INTERFACE_WLN then exit sub
+	if renew = YES and wln.ip = ip then exit sub
+	if renew = YES then
+		sys.reboot()				'the address changed while connections were open: start clean
+	end if
+	wln.ip = ip
+	wln.netmask = netmask
+	wln.gatewayip = gateway_ip
+	pat.play("G~", PL_PAT_CANINT)
+@callback_wln_ok
+	'joined the access point: now ask for an address
+	dhcp_start(PL_SOCK_INTERFACE_WLN, "", "")
+@callback_wln_failure
+	'could not join or the access point is gone: stop DHCP and try again in 10 s
+	dhcp_stop(PL_SOCK_INTERFACE_WLN)
+	pat.play("R-", PL_PAT_CANINT)
+	wifi_retry = 20

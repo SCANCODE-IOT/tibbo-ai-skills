@@ -1,0 +1,12 @@
+'===================================================================
+' app - global header. Platform: TPP3W(G2)
+'===================================================================
+
+'DEFINES: library settings must come BEFORE the include of the library
+
+'INCLUDES: order matters - a library goes after the libraries it uses
+
+'DECLARATIONS: your own subs, functions and global variables (dim them in ONE .tbs file)
+declare uptime_s as dword
+declare relay_on as no_yes
+declare sub relay_set(state as no_yes)

@@ -1,0 +1,75 @@
+include "global.tbh"
+
+'TCP client. Connects to a server, sends a line every 5 s, reconnects by itself when the link drops.
+'Nothing waits in a loop: all work is done in events (on_sys_timer comes every 0.5 s).
+'Hardware: any Tibbo device with Ethernet. Change: SERVER_IP, SERVER_PORT, SEND_PERIOD.
+
+const SERVER_IP = "192.168.1.100"
+const SERVER_PORT = 5000
+const SEND_PERIOD = 10			'timer ticks, 0.5 s each
+
+dim app_sock as byte
+dim tick as byte
+dim counter as dword
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	net.ip = "192.168.1.40"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+
+	app_sock = 0
+	sock.num = app_sock
+	sock.rxbuffrq(1)
+	sock.txbuffrq(1)
+	sys.buffalloc()
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.inconmode = PL_SOCK_INCONMODE_NONE		'we only connect out
+	sock.targetip = SERVER_IP
+	sock.targetport = SERVER_PORT
+	sock.connectiontout = 60		'drop the connection if the server is silent for 30 s
+	tick = 0
+	counter = 0
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	dim s as string(32)
+
+	sock.num = app_sock
+	if sock.statesimple = PL_SSTS_CLOSED then
+		sock.connect()				'does not block: the result comes to on_sock_event
+		exit sub
+	end if
+	if sock.statesimple <> PL_SSTS_EST then exit sub	'still connecting
+
+	tick = tick + 1
+	if tick < SEND_PERIOD then exit sub
+	tick = 0
+	counter = counter + 1
+	s = "count=" + lstr(counter) + chr(13) + chr(10)
+	if sock.txfree >= len(s) then	'never put more than fits
+		sock.setdata(s)
+		sock.send()
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dim s as string
+
+	if sock.num <> app_sock then exit sub
+	s = sock.getdata(255)			'what the server sent
+	sys.debugprint("RX: " + s + chr(13) + chr(10))
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)
+	if sock.num <> app_sock then exit sub
+	select case newstatesimple
+	case PL_SSTS_EST:
+		pat.play("G~", PL_PAT_CANINT)		'green: connected
+	case PL_SSTS_CLOSED:
+		pat.play("R-", PL_PAT_CANINT)		'red: no connection, on_sys_timer will reconnect
+	end select
+end sub

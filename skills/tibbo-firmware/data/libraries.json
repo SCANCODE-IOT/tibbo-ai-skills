@@ -364,6 +364,11 @@
      "name": "mqtt_proc_data",
      "event": "on_sock_data_arrival",
      "call": "mqtt_proc_data()"
+    },
+    {
+     "name": "mqtt_sock_event",
+     "event": "on_sock_event",
+     "call": "mqtt_sock_event(newstate, newstatesimple)"
     }
    ],
    "needs": [
@@ -371,15 +376,6 @@
     "dns"
    ],
    "title": "клиент MQTT",
-   "supported": true,
-   "extra_defines": {
-    "EM510W": [
-     "#define MQTT_DEBUG_PRINT 1        'mqtt 2_01_05 does not compile on this platform without it"
-    ],
-    "SIMULATOR": [
-     "#define MQTT_DEBUG_PRINT 1        'mqtt 2_01_05 does not compile on this platform without it"
-    ]
-   },
    "broken_on": {
     "DS1100": "'timercountms' is not member of 'sys' object",
     "EM1000": "'timercountms' is not member of 'sys' object",
@@ -396,7 +392,16 @@
     "TPP2W": "'timercountms' is not member of 'sys' object",
     "TPP3N": "'timercountms' is not member of 'sys' object",
     "TPP3W": "'timercountms' is not member of 'sys' object"
-   }
+   },
+   "extra_defines": {
+    "EM510W": [
+     "#define MQTT_DEBUG_PRINT 1        'mqtt 2_01_05 does not compile on this platform without it"
+    ],
+    "SIMULATOR": [
+     "#define MQTT_DEBUG_PRINT 1        'mqtt 2_01_05 does not compile on this platform without it"
+    ]
+   },
+   "supported": true
   },
   "pppoe": {
    "files": [

@@ -1,0 +1,36 @@
+include "global.tbh"
+
+'The MD button, the status LEDs and the buzzer of the board.
+'A short press switches between two LED patterns; a press longer than 2 s gives a double beep.
+'LED pattern letters: G green, R red, B both, - off, ~ at the end = repeat forever. Each letter lasts 100 ms.
+'Buzzer pattern letters: B beep, - silence.
+'Hardware: any Tibbo board with the MD button and status LEDs. Change: the patterns.
+
+dim mode as byte
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	mode = 0
+	pat.play("G-G-----~", PL_PAT_CANINT)	'two short green flashes, repeated: "I am alive"
+end sub
+
+'-------------------------------------------------------------------
+sub on_button_released()
+	'button.time: how long the button was held, in 0.5 s units
+	if button.time >= 4 then
+		beep.play("B-B", PL_BEEP_CANINT)
+		exit sub
+	end if
+	if mode = 0 then
+		mode = 1
+		pat.play("R-R-----~", PL_PAT_CANINT)
+	else
+		mode = 0
+		pat.play("G-G-----~", PL_PAT_CANINT)
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_pat()
+	'comes when a pattern that does not repeat has finished playing
+end sub

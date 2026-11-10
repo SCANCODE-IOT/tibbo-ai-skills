@@ -1,0 +1,69 @@
+include "global.tbh"
+
+'Sets the real-time clock from an SNTP server after the device gets its address, then once an hour.
+'The clock keeps UTC as days since 1 January 2000, minutes since midnight and seconds (rtc.getdata).
+'Hardware: Ethernet. Change: SNTP_SERVER (an IP address), RESYNC_PERIOD.
+
+const SNTP_SERVER = "216.239.35.0"	'time.google.com
+const RESYNC_PERIOD = 7200			'timer ticks, 0.5 s each = 1 hour
+
+dim time_sock as byte
+dim net_ok as no_yes
+dim resync as word
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	time_sock = sock_get("SNTP")		'the sock library hands out free sockets
+	sntp_init()
+	net_ok = NO
+	resync = 0
+	dhcp_start(PL_SOCK_INTERFACE_NET, "", "")	'-> callback_dhcp_ok -> app_net_ready
+end sub
+
+'-------------------------------------------------------------------
+sub app_net_ready()
+	net_ok = YES
+	sntp_start(PL_SOCK_INTERFACE_NET, SNTP_SERVER, 0, time_sock)	'0 = standard port 123
+end sub
+
+'-------------------------------------------------------------------
+sub app_time_set(days as word, mins as word, secs as byte)
+	'called from callback_sntp_ok
+	rtc.setdata(days, mins, secs)
+	resync = RESYNC_PERIOD
+	sys.debugprint("Time set: day " + str(days) + ", minute " + str(mins) + chr(13) + chr(10))
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	dhcp_proc_timer()
+	wln_proc_timer()
+	sntp_proc_timer()
+	if net_ok = NO then exit sub
+	if resync > 0 then
+		resync = resync - 1
+		if resync = 0 then sntp_start(PL_SOCK_INTERFACE_NET, SNTP_SERVER, 0, time_sock)
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	dhcp_proc_data()
+	wln_proc_data()
+	sntp_proc_data()
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_event(newstate as pl_sock_state, newstatesimple as pl_sock_state_simple)
+	sntp_proc_sock_event(newstatesimple)
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_event(wln_event as pl_wln_events)
+	wln_proc_event(wln_event)
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_task_complete(completed_task as pl_wln_tasks)
+	wln_proc_task_complete(completed_task)
+end sub

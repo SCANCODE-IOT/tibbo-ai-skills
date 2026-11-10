@@ -194,6 +194,9 @@ HINTS = [
     (r"unresolved address '\?F:(\w+)'",
      "процедура {0} объявлена (declare), но не написана. Добавьте её тело. Для callback_* библиотеки - пустая "
      "заготовка: sub {0}(...) / end sub с аргументами как в .tbh библиотеки (python3 scripts/tibbo_new.py делает их сам)"),
+    (r"address '\?[VF]:(\w+)' is already defined",
+     "имя {0} уже занято - так называется переменная или процедура подключённой библиотеки (или оно объявлено "
+     "через dim в двух файлах). Переименуйте своё; общую переменную объявляют dim в одном .tbs и declare в global.tbh"),
     (r"undeclared identifier 'wln_check_association'",
      "на платформах с Wi-Fi библиотека dhcp требует библиотеку wln: добавьте wln\\trunk\\wln.tbs и wln.tbh в проект "
      "(location = commonlib), include \"wln\\trunk\\wln.tbh\" перед dhcp.tbh и её callback_wln_* (tibbo_new.py --libs dhcp)"),

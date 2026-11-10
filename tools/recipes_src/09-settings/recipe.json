@@ -1,0 +1,17 @@
+{
+ "title": "Настройки в энергонезависимой памяти (библиотека settings) и сброс кнопкой MD",
+ "platform": "TPP3W(G2)",
+ "also": [
+  "TPP2W(G2)",
+  "TPP3W(G3)",
+  "EM2000W",
+  "EM1000"
+ ],
+ "tibbits": [],
+ "libs": "settings",
+ "defines": [
+  "#define STG_MAX_NUM_SETTINGS 3",
+  "#define STG_MAX_SETTING_NAME_LEN 2",
+  "#define STG_MAX_SETTING_VALUE_LEN 15"
+ ]
+}
