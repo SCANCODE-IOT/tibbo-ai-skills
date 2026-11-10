@@ -1,0 +1,12 @@
+{
+ "title": "Tibbo C: реле по таймеру и по кнопке MD",
+ "also": [],
+ "tibbits": [
+  "#03_1 в S1",
+  "#19 или #20 в S2"
+ ],
+ "platform": "TPP2W(G2)",
+ "raw": true,
+ "language": "Tibbo C",
+ "compiler": "cloud"
+}

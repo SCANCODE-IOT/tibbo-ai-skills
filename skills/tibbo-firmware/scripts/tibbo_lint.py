@@ -294,6 +294,16 @@ def basic_checks(src_files, exact, api, enabled_optional, platform, tpr, libs, a
                     add("error", where, 0, "библиотека %s: в проекте нет %s - компоновщик выдаст unresolved address. Добавь: %s ... end %s"
                         % (lib, cb["name"], cb["decl"], cb["kind"]))
 
+    # ---- an untouched tibbo_new.py skeleton: it compiles, lints clean and does nothing
+    for f, lines in files:
+        raw = open(f, encoding="utf-8", errors="replace").read()
+        if "'your code" not in raw and "'your initialization goes here" not in raw:
+            continue
+        own = [l for l in lines if re.search(r"^\s*(dim|if|select|for|while|do|const|exit)\b|[^=<>]=[^=]", l, re.I)]
+        if not own:
+            add("warning", f, 0, "%s - нетронутая заготовка tibbo_new.py: в обработчиках только вызовы библиотек, своего кода нет. "
+                "Если код уже написан - он не сохранился в этот файл: запиши его и проверь содержимое" % os.path.basename(f))
+
     # ---- line by line
     for f, lines in files:
         current = None       # (kind, name) of the procedure we are inside
@@ -427,6 +437,17 @@ def lint(paths, platform=None):
         if f.lower().endswith(BASIC_EXT):
             with open(f, encoding="utf-8", errors="replace") as fh:
                 raw_keep[f] = [keep_basic(l) for l in fh.read().split("\n")]
+
+    # names that exist only in Tibbo's newest platform files: the default compiler and the cloud do not know them
+    newer = (api or {}).get("newer_only") or {}
+    if newer:
+        newer_re = re.compile(r"(?<![\w.])(%s)\b" % "|".join(re.escape(k).replace(r"\.", r"\s*\.\s*") for k in newer), re.I)
+        for f, lines, is_basic in src:
+            for n, line in enumerate(lines, 1):
+                for m in newer_re.finditer(line):
+                    add("warning", f, n, "%s есть только в новых файлах платформ Tibbo: компилятор Tibbo по умолчанию, облачный "
+                        "компилятор и TIDE со старыми платформами ответят «undeclared identifier» / «is not member». Обойдись без него "
+                        "или собери с новыми платформами: tibbo_build.py --setup-node --yes --latest-platforms" % m.group(1))
 
     for f, lines, is_basic in src:
         stack = []  # [is_platform_branch(None|bool), taken]: code for other platforms is not checked against ours
@@ -568,4 +589,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except BrokenPipeError:      # the reader (head, grep -q) closed the pipe: not an error
+        try:
+            sys.stdout.close()
+        except OSError:
+            pass
+        os._exit(0)

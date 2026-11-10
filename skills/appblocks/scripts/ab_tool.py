@@ -414,6 +414,13 @@ def check_compile_pitfalls(d, errs, warns):
     by_feature = collections.defaultdict(list)
     for v in allvars:
         by_feature[(v.get("FEATURE"), v.get("FEATURE_SETTING"))].append(v)
+    # 0. LUIS (setup from the phone) is started with the Bluetooth name: Bluetooth off + LUIS on = boot.tbs
+    #    "undeclared identifier 'BT_NAME'" (checked with the compiler, Nov 2026)
+    one = lambda k: next((f["settings"] for f in F if f["id"] == k), None)
+    luis, bt = one("luis"), one("bt")
+    if (d.get("runtime") or "tios") == "tios" and luis and bt and str(luis.get("ENABLED", "0")) == "1" and str(bt.get("ENABLED", "0")) != "1":
+        errs.append("LUIS включён (luis.ENABLED = 1), а Bluetooth выключен (bt.ENABLED = 0): прошивка не соберётся - "
+                    "boot.tbs: undeclared identifier 'BT_NAME'. Включи Bluetooth или выключи LUIS")
     # 1. {{$ID}} of an STG setting: only its autovariable is visible to the logic
     stg_ids = {i for i, (k, _) in ids.items() if k == "stg_setting"}
     for f in F:
@@ -581,6 +588,12 @@ def check_hardware(d, warns):
         return
     slots = {f["settings"].get("SOCKET"): f["settings"].get("TIBBIT") for f in d["features"]
              if f["id"].startswith("tibbit_") and f["settings"].get("SOCKET")}
+    # a wide Tibbit (C2 connector #20, M2 ...) takes two sockets: nothing else may sit in the second one
+    for k, v in slots.items():
+        for other, m in slots.items():
+            if other != k and str(k) in ab_pairs.occupancy(d.get("device", ""), {other: m}, data):
+                warns.append(f"плата: S{k} (#{v}) занят широким #{m} из S{other} - он накрывает оба сокета. Убери #{v} из S{k}: "
+                             f"один #{m} обслуживает оба соседних модуля")
     res = ab_pairs.socket_warnings(d.get("device", ""), slots, None, data)
     if not res:
         return

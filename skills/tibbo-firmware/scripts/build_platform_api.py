@@ -6,7 +6,11 @@ headers: objects, properties (readable/writable, type), methods (number of argum
 enums and their constants, built-in functions, and the objects a project must switch on with "defines=" in the .tpr.
 Identical definitions are stored once ("variants") and platforms point to them, so the file stays small.
 
-Usage: python3 scripts/build_platform_api.py <dump.json>
+Usage: python3 scripts/build_platform_api.py <dump.json> [<dump of the compiler's own platform files>]
+
+The second dump is made with the platform files that come with the compiler (older than Tibbo's latest). Names that
+exist only in the latest files go to "newer_only": the default compiler, the cloud compiler and most TIDE installations
+do not know them, and the linter warns about them.
 """
 import json
 import os
@@ -68,9 +72,30 @@ def main(argv):
                 "events": {e.lower(): variant(events, e.lower(), pack_event(a)) for e, a in o["events"].items()},
                 "enums": {e.lower(): variant(enums, e.lower(), m) for e, m in o["enums"].items()}}
         platforms[p] = entry
+    newer = {}
+    if len(argv) > 1:
+        def names(pl):
+            out = set()
+            for o, v in (pl.get("objects") or {}).items():
+                for grp in ("props", "methods"):
+                    out.update("%s.%s" % (o.lower(), m.lower()) for m in (v.get(grp) or {}))
+            for vals in (pl.get("enums") or {}).values():
+                out.update(str(c).upper() for c in vals)
+            out.update(e.lower() for e in (pl.get("events") or {}))
+            return out
+        older = json.load(open(argv[1], encoding="utf-8"))
+        for p in dump:
+            if p in older and "objects" in dump[p] and "objects" in older[p]:
+                for n in names(dump[p]) - names(older[p]):
+                    newer.setdefault(n, []).append(p)
+    else:       # keep what the previous build found
+        try:
+            newer = json.load(open(os.path.join(ROOT, "data", "platform_api.json"), encoding="utf-8")).get("newer_only", {})
+        except (OSError, ValueError):
+            pass
     out = {"_source": "Tibbo BASIC compiler (github.com/tibbotech/tibbo-basic, feature/compiler) on github.com/tibbotech/platforms",
            "objects": objects, "events": events, "enums": enums, "functions": functions, "platforms": platforms,
-           "not_buildable": broken}
+           "not_buildable": broken, "newer_only": {k: sorted(v) for k, v in sorted(newer.items())}}
     path = os.path.join(ROOT, "data", "platform_api.json")
     json.dump(out, open(path, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     print("%s: %d platforms, %d objects (%d variants), %d events, %d enums (%d variants), %d KB; not buildable: %s" % (
@@ -80,4 +105,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except BrokenPipeError:      # the reader (head, grep -q) closed the pipe: not an error
+        try:
+            sys.stdout.close()
+        except OSError:
+            pass
+        os._exit(0)

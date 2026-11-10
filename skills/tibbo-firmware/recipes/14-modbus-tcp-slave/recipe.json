@@ -1,0 +1,11 @@
+{
+ "title": "Modbus TCP slave: регистры хранения, функции 03 и 06",
+ "platform": "TPP3W(G2)",
+ "also": [
+  "TPP2W(G2)",
+  "TPP3W(G3)",
+  "EM2000W",
+  "EM1000"
+ ],
+ "tibbits": []
+}

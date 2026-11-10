@@ -1,0 +1,1013 @@
+{
+ "name": "Кнопка переключает реле",
+ "device": "TPP2W(G2)",
+ "description": "Кнопка MD на плате включает и выключает реле 1. Показывает: событие, условие, запись в переменную реле.",
+ "shortDescription": "Кнопка MD на плате включает и выключает реле 1. Показывает: событие, условие, запись в переменную реле.",
+ "version": "0.1.19",
+ "runtime": "tios",
+ "features": [
+  {
+   "id": "boardsetting",
+   "settings": {
+    "ID": "la4yaarwfwfzd3oqi5g",
+    "POE": "0",
+    "5VDIRECT": "0",
+    "WIFIANTENNA": "0",
+    "GPRSANTENNA": "0",
+    "TPB": "tpb2lg2",
+    "VPK": "0",
+    "DIN": "0",
+    "POWERADAPTER": "apr-p0008",
+    "ASM": "",
+    "NOTES": ""
+   }
+  },
+  {
+   "id": "net",
+   "settings": {
+    "ID": "la4yaarwwm90xets4x7",
+    "ENABLED": "1",
+    "DHCP": "1",
+    "IP": "192.168.1.175",
+    "NM": "255.255.255.0",
+    "GI": "192.168.1.1"
+   }
+  },
+  {
+   "id": "general",
+   "settings": {
+    "ID": "la4yaarwnf2rzjyvxg",
+    "LEDPAT": "1",
+    "DEVICE_NAME": "01_button_relay",
+    "FIRMWAREVERSION": "1.0.0",
+    "INTERFACE_SWITCHING": "1",
+    "DEFAULT_INTERFACE": "PL_SOCK_INTERFACE_NET",
+    "TIMEZONE": "27",
+    "LOGGING": "sys.debugprint",
+    "BEEPFREQUENCY": "2700",
+    "LATITUDE": "0",
+    "LONGITUDE": "0",
+    "TIME_FORMAT": "hh:mm:ss tt"
+   }
+  },
+  {
+   "id": "sock",
+   "settings": {
+    "ID": "la4yaarwl5ih56oie9l"
+   }
+  },
+  {
+   "id": "wln",
+   "settings": {
+    "ID": "la4yaarw22p8qqoaf8c"
+   }
+  },
+  {
+   "id": "global_vars",
+   "settings": {
+    "ID": "la4yaarwpvwet6oxq0r",
+    "INTERVAL": "1",
+    "DEBUG_PRINT": "0",
+    "VARS": [],
+    "AUTOVARS": [
+     {
+      "id": "variable",
+      "settings": {
+       "ID": "lgd40mmhageozt2pwzp",
+       "VARNAME": "NETCP",
+       "DATATYPE": "float",
+       "NAME": "",
+       "FEATURE": "lgd40kc8cec0qbi75b",
+       "FEATURE_SETTING": "SETTINGID",
+       "MINIMUM": 0,
+       "MAXIMUM": 1,
+       "DEFAULT": "1",
+       "POLL_INTERVAL": ""
+      }
+     },
+     {
+      "id": "variable",
+      "settings": {
+       "ID": "lgd40mmhk0nj8jwizur",
+       "VARNAME": "NETIP",
+       "DATATYPE": "string",
+       "NAME": "",
+       "FEATURE": "lgd40lfjx7355bpcyj7",
+       "FEATURE_SETTING": "SETTINGID",
+       "MINIMUM": "0",
+       "MAXIMUM": 16,
+       "DEFAULT": "192.168.1.175",
+       "POLL_INTERVAL": ""
+      }
+     },
+     {
+      "id": "variable",
+      "settings": {
+       "ID": "rer3d1y07cnbj9vpf5",
+       "VARNAME": "lamp",
+       "DATATYPE": "boolean",
+       "NAME": "Tibbit 03_1",
+       "FEATURE": "r7510bfw8sksohruey",
+       "FEATURE_SETTING": "L1NAME",
+       "MINIMUM": 0,
+       "MAXIMUM": 1,
+       "DEFAULT": "1",
+       "POLL_INTERVAL": ""
+      }
+     },
+     {
+      "id": "variable",
+      "settings": {
+       "ID": "raeu7kpvu47gmnuryg",
+       "VARNAME": "relay2",
+       "DATATYPE": "boolean",
+       "NAME": "Tibbit 03_1",
+       "FEATURE": "r7510bfw8sksohruey",
+       "FEATURE_SETTING": "L2NAME",
+       "MINIMUM": 0,
+       "MAXIMUM": 1,
+       "DEFAULT": "1",
+       "POLL_INTERVAL": ""
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "tibbit_10",
+   "settings": {
+    "ID": "la4yapu8t5ciyfxklek",
+    "SOCKET": "11",
+    "TIBBIT": "10",
+    "PLATFORM": ""
+   }
+  },
+  {
+   "id": "tibbit_18",
+   "settings": {
+    "ID": "la4yatp7gi1i07kuyl5",
+    "SOCKET": "12",
+    "TIBBIT": "18",
+    "PLATFORM": ""
+   }
+  },
+  {
+   "id": "timers",
+   "settings": {
+    "ID": "la4ybyr9cyobksqxix6",
+    "DEBUG_PRINT": "0",
+    "TIMERS": []
+   }
+  },
+  {
+   "id": "stg",
+   "settings": {
+    "ID": "la4ybyra5zq8p0hs5z",
+    "ENABLED": "1",
+    "STG_DEBUG_PRINT": "0",
+    "STORAGE": "EEPROM",
+    "STG_TIMESTAMP": "0",
+    "REDUNDANCY": "0",
+    "STG_MAX_NUM_SETTINGS": "0",
+    "STG_RAM_ARRAY_SIZE": "0",
+    "STG_MAX_SETTING_NAME_LEN": "0",
+    "STG_MAX_SETTING_VALUE_LEN": "0",
+    "SETTINGS": [
+     {
+      "id": "stg_setting",
+      "settings": {
+       "ID": "lgd40kc8cec0qbi75b",
+       "GENERAL": "",
+       "ADVANCED": "",
+       "SETTINGID": "NETCP",
+       "NAME": "Ethernet DHCP",
+       "STORAGE": "E",
+       "SETTINGTYPE": "float",
+       "DATATYPE": "F",
+       "MIN": 0,
+       "MAX": 1,
+       "INITIALIZE": "A",
+       "DEFAULT": "1"
+      }
+     },
+     {
+      "id": "stg_setting",
+      "settings": {
+       "ID": "lgd40lfjx7355bpcyj7",
+       "GENERAL": "",
+       "ADVANCED": "",
+       "SETTINGID": "NETIP",
+       "NAME": "Ethernet IP",
+       "STORAGE": "E",
+       "SETTINGTYPE": "string",
+       "DATATYPE": "S",
+       "MIN": "0",
+       "MAX": 16,
+       "INITIALIZE": "A",
+       "DEFAULT": "192.168.1.175"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "cron",
+   "settings": {
+    "ID": "la4ybyrczr9rcin4hm",
+    "SCHEDULES": []
+   }
+  },
+  {
+   "id": "tbl",
+   "settings": {
+    "ID": "la4ybyrea4exe1ot4t",
+    "ENABLED": "1",
+    "TBL_DEBUG_PRINT": "1",
+    "WEBENABLED": "1",
+    "TABLES": []
+   }
+  },
+  {
+   "id": "commands",
+   "settings": {
+    "ID": "la4ybyrg5kk3ooc3hnc",
+    "COMMANDS": []
+   }
+  },
+  {
+   "id": "wifi",
+   "settings": {
+    "ID": "la4ybyri6mccvjdy2k4",
+    "ENABLED": "0",
+    "MODE": "station",
+    "DHCP": "1",
+    "IP": "1.0.0.1",
+    "NETMASK": "255.255.255.0",
+    "GATEWAY": "1.0.0.1",
+    "WAP": "",
+    "WSEC": "0",
+    "WPW": "",
+    "CHANNEL": "6",
+    "AUTOSTART": "1",
+    "CLK": "14",
+    "CS": "15",
+    "DI": "12",
+    "DO": "13",
+    "RST": "11",
+    "BUF": "5"
+   }
+  },
+  {
+   "id": "cell",
+   "settings": {
+    "ID": "la4ybyrjywqryk2qx1b",
+    "ENABLED": "0",
+    "CELL_MODE": "CELL__PPP_MODE_ISENABLED",
+    "CELL_APN": "internet.iot",
+    "CELL_UN": "myusername@realm",
+    "CELL_PW": "",
+    "CELL_PIN": "?",
+    "CELL_BAND_TYPE": "1",
+    "CELL__DEBUG_PRINT": "1",
+    "CELL_LOG_LEVEL": "2"
+   }
+  },
+  {
+   "id": "bt",
+   "settings": {
+    "ID": "la4ybyrl0c828g5s32qh",
+    "ENABLED": "0",
+    "DEVICENAME": "Кнопка переключает р",
+    "EMULATION": "PL_WLN_BT_EMULATION_MODE_MICROCHIP",
+    "TXBUF": "1",
+    "RXBUF": "1"
+   }
+  },
+  {
+   "id": "httpserver",
+   "settings": {
+    "ID": "la4ybyro7kwlvjtn7g",
+    "GENERAL": "",
+    "ADVANCED": "",
+    "ENABLED": "1",
+    "PORT": "80",
+    "SOCKETS": "4",
+    "TXBUF": "10",
+    "RXBUF": "10",
+    "VARBUF": "1",
+    "ENDPOINTS": [],
+    "DEBUG_PRINT": "0"
+   }
+  },
+  {
+   "id": "modbus_master",
+   "settings": {
+    "ID": "la4ybyrq92bdh8t9o66",
+    "DEBUG_PRINT": "0",
+    "TIMEOUT": "500",
+    "FRAME_DELAY": "2",
+    "MAX_REQUESTS": "20",
+    "MODBUSDEVICES": []
+   }
+  },
+  {
+   "id": "modbus_slave",
+   "settings": {
+    "ID": "la4ybyrs3om8ql55n93",
+    "DEBUG_PRINT": "0",
+    "SLAVEPROTOCOL": "modbus_TCP",
+    "DEVICEID": "1",
+    "SLAVE_SERIAL_PORT": "",
+    "SLAVE_TCP_PORT": "502",
+    "MODBUSTABLEITEMS": []
+   }
+  },
+  {
+   "id": "mqtt",
+   "settings": {
+    "ID": "la4ybyrv3jqx6o7tugw",
+    "GENERAL": "",
+    "CERTIFICATE": "",
+    "ENABLED": "0",
+    "MQTT_APP_CLIENT_ID": "Client_ID_1",
+    "MQTT_NAME": "MQTT_Name_1",
+    "MQTT_PASSWORD": "Password",
+    "MQTT_SERVER_HOST": "1.0.0.1",
+    "MQTT_DESTINATION_PORT": "1883",
+    "MQTT_TLS": "0",
+    "MQTT_DEBUG_PRINT": "1",
+    "CERTIFICATEFILE": "",
+    "TOPICS": []
+   }
+  },
+  {
+   "id": "unowiresensors",
+   "settings": {
+    "ID": "la4ybyrxyodue2r2gll",
+    "DEBUG_PRINT": "0",
+    "SENSORS": []
+   }
+  },
+  {
+   "id": "sntp",
+   "settings": {
+    "ID": "la4ybys0pirxo6trxdk",
+    "ENABLED": "1",
+    "DEBUGPRINT": "0",
+    "SNTP_SERVER": "216.239.35.0"
+   }
+  },
+  {
+   "id": "luis",
+   "settings": {
+    "ID": "la4ybys13xqa8mqzv98",
+    "ENABLED": "0",
+    "BTENABLED": "0",
+    "WEBENABLED": "0",
+    "START_ENABLED": "1",
+    "PASSWORD": "",
+    "GROUPS": [
+     {
+      "id": "luis_group",
+      "settings": {
+       "ID": "lgd42w7qnonmm1gy4o",
+       "GROUPID": "general1",
+       "NAME": "General",
+       "SETTINGS": [
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "lgd42zin0pgr8vlg8i",
+          "SETTINGID": "lgd40kc8cec0qbi75b",
+          "NAME": "Ethernet DHCP",
+          "CONTROL": "STATIC",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "ljggg23nvrvavt92hl8",
+             "LABEL": "Disabled",
+             "VALUE": "0"
+            }
+           },
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "ljggg23nnxolarsi3m9",
+             "LABEL": "Enabled",
+             "VALUE": "1"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        },
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "lgd432xm0d6uv9etmq6k",
+          "SETTINGID": "lgd40lfjx7355bpcyj7",
+          "NAME": "Ethernet IP",
+          "CONTROL": "IPCTRL",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "lgd432xmjqs5sq2e59",
+             "LABEL": "OPTION_LABEL",
+             "VALUE": "0"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "lcd_menu",
+   "settings": {
+    "ID": "la4ybys2o424gym4voe",
+    "ENABLED": "0",
+    "GROUPS": [
+     {
+      "id": "lcd_group",
+      "settings": {
+       "ID": "la4ybys22j9gj0r4i7l",
+       "FOLDERID": "GEN",
+       "NAME": "General",
+       "SETTINGS": [
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "la4ybys20a7e2appvgre",
+          "SETTINGID": "",
+          "NAME": "Setting",
+          "CONTROL": "EDIT",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "la4ybys27jx0p5bxvsn",
+             "LABEL": "OPTION_LABEL",
+             "VALUE": "0"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ds_man",
+   "settings": {
+    "ID": "la4ybys3i6i4ndntyjk",
+    "ENABLED": "0",
+    "GROUPS": [
+     {
+      "id": "luis_group",
+      "settings": {
+       "ID": "la4ybys37hmdm4y7gsw",
+       "GROUPID": "GEN",
+       "NAME": "General",
+       "SETTINGS": [
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "la9081eeu5pnw3zown",
+          "SETTINGID": "",
+          "NAME": "Device Name",
+          "CONTROL": "EDIT",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "la9081ee9jlmkt0h2nu",
+             "LABEL": "OPTION_LABEL",
+             "VALUE": "0"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        },
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "la9081ee40vovgwwjc8",
+          "SETTINGID": "",
+          "NAME": "Owner Name",
+          "CONTROL": "EDIT",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "la9081ee1w1tpjs41fn",
+             "LABEL": "OPTION_LABEL",
+             "VALUE": "0"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        },
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "la9081eecektcsgm61l",
+          "SETTINGID": "",
+          "NAME": "Password",
+          "CONTROL": "EDIT",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "la9081eeolm3zdq73o9",
+             "LABEL": "OPTION_LABEL",
+             "VALUE": "0"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "web_dashboard",
+   "settings": {
+    "ID": "la4ybys5li0dfepzmxd",
+    "GENERAL": "",
+    "SETTINGS": "",
+    "CONSOLE": "",
+    "ENABLED": "0",
+    "TABLESENABLED": "1",
+    "SETTINGSENABLED": "1",
+    "WIDGETENABLED": "1",
+    "INTERVAL": "1",
+    "DASHBOARD_TITLE": "Кнопка переключает реле",
+    "WIDGETS": [],
+    "USER": "admin",
+    "PASSWORD": "",
+    "GROUPS": [
+     {
+      "id": "luis_group",
+      "settings": {
+       "ID": "lgd40rm6or7xb6x5w9",
+       "GROUPID": "general",
+       "NAME": "General",
+       "SETTINGS": [
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "lgd40wgoo75af5hea98",
+          "SETTINGID": "lgd40kc8cec0qbi75b",
+          "NAME": "Ethernet DHCP",
+          "CONTROL": "STATIC",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "ljggg23nmhitv9n3d3a",
+             "LABEL": "Disabled",
+             "VALUE": "0"
+            }
+           },
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "ljggg23n89f55rp3af",
+             "LABEL": "Enabled",
+             "VALUE": "1"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        },
+        {
+         "id": "luis_item",
+         "settings": {
+          "ID": "lgd4191r4lr47kl3p83",
+          "SETTINGID": "lgd40lfjx7355bpcyj7",
+          "NAME": "Ethernet IP",
+          "CONTROL": "IPCTRL",
+          "OPTIONS": [
+           {
+            "id": "luis_item_option",
+            "settings": {
+             "ID": "lgd4191r9uh9y5vwx1e",
+             "LABEL": "OPTION_LABEL",
+             "VALUE": "0"
+            }
+           }
+          ],
+          "VALIDATION": "",
+          "STATUS": "",
+          "READONLY": "0"
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "WEB_ADMIN_WIDGET_COLUMNS": "10",
+    "WEB_ADMIN_WIDGET_ROWS": "15",
+    "CONSOLE_PREVIEW": "device",
+    "TABLES": [],
+    "WIDGET_GROUPS": []
+   }
+  },
+  {
+   "id": "lcd",
+   "settings": {
+    "ID": "la4ybys6wu4msyfgvpl",
+    "GENERAL": "",
+    "IMAGES_GROUP": "",
+    "SETTINGS": "",
+    "ENABLED": "0",
+    "BACKCOLOR": "#000000",
+    "FORECOLOR": "#ffffff",
+    "LOGFONT": "LCD_STD_FONT",
+    "WIDGETS": [],
+    "SCREENS": [
+     {
+      "id": "display_screen",
+      "settings": {
+       "ID": "maneaaj6nb8mkhojtd",
+       "NAME": "default",
+       "BACKCOLOR": "#000000",
+       "WIDGETS": []
+      }
+     }
+    ],
+    "IMAGES": [],
+    "LCD_SCREEN_WIDGET_COLUMNS": 320,
+    "LCD_SCREEN_WIDGET_ROWS": 240,
+    "GROUPS": [
+     {
+      "id": "luis_group",
+      "settings": {
+       "ID": "maneaaj98nzw3jl23dw",
+       "GROUPID": "group1",
+       "NAME": "General",
+       "SETTINGS": []
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "lcd_graph",
+   "settings": {
+    "ID": "la4ybys7q5e6ma9gg5",
+    "ENABLED": "0",
+    "MINY": "-100",
+    "MAXY": "100",
+    "STARTX": "0",
+    "STARTY": 0,
+    "WIDTH": 320,
+    "HEIGHT": 240,
+    "FILL": "#00ff00"
+   }
+  },
+  {
+   "id": "beep",
+   "settings": {
+    "ID": "la4ybys8081jtjpdww3u",
+    "FREQUENCY": "2700"
+   }
+  },
+  {
+   "id": "firmware_upgrade",
+   "settings": {
+    "ID": "la4yccu5sanrfi4715p"
+   }
+  },
+  {
+   "id": "fd",
+   "settings": {
+    "ID": "la4ydhyv8tikmtagxau",
+    "ENABLED": "1",
+    "FILES": "32",
+    "SECTORS": "100"
+   }
+  },
+  {
+   "id": "time",
+   "settings": {
+    "ID": "la4ydhyv00bl96t1hmcga"
+   }
+  },
+  {
+   "id": "filenum",
+   "settings": {
+    "ID": "la4ydhyvziizt845ean"
+   }
+  },
+  {
+   "id": "datetime",
+   "settings": {
+    "ID": "la4yh8r7j6mn7691xai"
+   }
+  },
+  {
+   "id": "log",
+   "settings": {
+    "ID": "lbep7an4k4doo6shwef",
+    "ENABLED": "0"
+   }
+  },
+  {
+   "id": "dhcp",
+   "settings": {
+    "ID": "lbq6bd5g2qkung10dgf"
+   }
+  },
+  {
+   "id": "kp",
+   "settings": {
+    "ID": "lbqaxireqjmgm0rnxkc"
+   }
+  },
+  {
+   "id": "wireless_module",
+   "settings": {
+    "ID": "lc8tkgz01rcv385griw",
+    "ENABLED": "1",
+    "MODULE": "WA2000C"
+   }
+  },
+  {
+   "id": "linked_setting",
+   "settings": {
+    "ID": "lgd40kcgmyt4cxgyfe",
+    "SETTINGID": "DHCP",
+    "LINKEDSETTING": "lgd40kc8cec0qbi75b",
+    "FEATURE": "la4yaarwwm90xets4x7"
+   }
+  },
+  {
+   "id": "linked_setting",
+   "settings": {
+    "ID": "lgd40lfxqnwfwfxekj",
+    "SETTINGID": "IP",
+    "LINKEDSETTING": "lgd40lfjx7355bpcyj7",
+    "FEATURE": "la4yaarwwm90xets4x7"
+   }
+  },
+  {
+   "id": "http",
+   "settings": {
+    "ID": "lj53lnjbjx1yuxk674g"
+   }
+  },
+  {
+   "id": "dns",
+   "settings": {
+    "ID": "lj53lnjcnflrytbzrvd",
+    "ENABLED": "1",
+    "DNS_DEBUG_PRINT": "0"
+   }
+  },
+  {
+   "id": "stgcmd_lib",
+   "settings": {
+    "ID": "maneaavdektbv2ihrip"
+   }
+  },
+  {
+   "id": "display_lib",
+   "settings": {
+    "ID": "maneaavdlztz9or4x4"
+   }
+  },
+  {
+   "id": "cgg",
+   "settings": {
+    "ID": "maneay11u40jhy1eq9a",
+    "GENERAL": "",
+    "SETTINGS": "",
+    "CONSOLE": "",
+    "ADVANCED": "",
+    "ENABLED": "0",
+    "SERVER": "192.168.1.139",
+    "SERVER_PORT": "1883",
+    "USERNAME": "",
+    "PASSWORD": "",
+    "DEBUG_PRINT": "0",
+    "WIDGETS": [],
+    "INTERVAL": "1",
+    "TLS": "0",
+    "GROUPS": [
+     {
+      "id": "luis_group",
+      "settings": {
+       "ID": "maneay115lx3d7m2ur",
+       "GROUPID": "group2",
+       "NAME": "General",
+       "SETTINGS": []
+      }
+     }
+    ],
+    "CONSOLE_PREVIEW": "cloud",
+    "TABLES": []
+   }
+  },
+  {
+   "id": "custom_features",
+   "settings": {
+    "ID": "maneay14svujxy99ds",
+    "FEATURES": []
+   }
+  },
+  {
+   "id": "tibbit_03_1",
+   "settings": {
+    "ID": "r7510bfw8sksohruey",
+    "SOCKET": "1",
+    "TIBBIT": "03_1",
+    "PLATFORM": "",
+    "NAME": "T03_1_S1",
+    "L1NAME": "lamp",
+    "L2NAME": "relay2"
+   }
+  },
+  {
+   "id": "tibbit_20",
+   "settings": {
+    "ID": "r2a1n02dnf0kl9vd1n",
+    "SOCKET": "2",
+    "TIBBIT": "20",
+    "PLATFORM": ""
+   }
+  },
+  {
+   "id": "node_button_released",
+   "settings": {
+    "ID": "r93m7gzd0nrx3v8nnr",
+    "DISPLAY_NAME": "",
+    "FEATURE": "",
+    "X": 0,
+    "Y": 0,
+    "INPUTS": [],
+    "OUTPUTS": [],
+    "GROUP": "",
+    "ARGUMENTS": []
+   }
+  },
+  {
+   "id": "node_comparison",
+   "settings": {
+    "ID": "rzqayd74n9k463gxzb",
+    "DISPLAY_NAME": "",
+    "FEATURE": "",
+    "X": 300,
+    "Y": 0,
+    "INPUTS": [],
+    "OUTPUTS": [],
+    "GROUP": "",
+    "ARGUMENTS": [
+     {
+      "id": "node_argument",
+      "settings": {
+       "ID": "rf2jtlw80lr93vtdkw",
+       "ARGVALUE": "{{$rer3d1y07cnbj9vpf5}}",
+       "TARGETPARAM": "operand1"
+      }
+     },
+     {
+      "id": "node_argument",
+      "settings": {
+       "ID": "r9jwg828amgtddka88",
+       "ARGVALUE": "=",
+       "TARGETPARAM": "operator"
+      }
+     },
+     {
+      "id": "node_argument",
+      "settings": {
+       "ID": "rprarkwyw4ir6zw7gp",
+       "ARGVALUE": "1",
+       "TARGETPARAM": "operand2"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "node_link",
+   "settings": {
+    "ID": "rrw8wdnjycxuf3q7ku",
+    "SOURCE": "",
+    "SOURCE_FEATURE": "r93m7gzd0nrx3v8nnr",
+    "SOURCE_PORT": "on_button_released",
+    "TARGET": "",
+    "TARGET_FEATURE": "rzqayd74n9k463gxzb",
+    "TARGET_PORT": "comp",
+    "ARGUMENTS": []
+   }
+  },
+  {
+   "id": "node_variable_set",
+   "settings": {
+    "ID": "rhkiv70w6bw0d9ncvq",
+    "DISPLAY_NAME": "",
+    "FEATURE": "",
+    "X": 600,
+    "Y": -100,
+    "INPUTS": [],
+    "OUTPUTS": [],
+    "GROUP": "",
+    "ARGUMENTS": [
+     {
+      "id": "node_argument",
+      "settings": {
+       "ID": "rjsur3su57cfijnhuo",
+       "ARGVALUE": "0",
+       "TARGETPARAM": "value"
+      }
+     }
+    ],
+    "VARIABLE": "rer3d1y07cnbj9vpf5"
+   }
+  },
+  {
+   "id": "node_link",
+   "settings": {
+    "ID": "rqfm3pip3m9fq5d2wv",
+    "SOURCE": "",
+    "SOURCE_FEATURE": "rzqayd74n9k463gxzb",
+    "SOURCE_PORT": "true_output",
+    "TARGET": "",
+    "TARGET_FEATURE": "rhkiv70w6bw0d9ncvq",
+    "TARGET_PORT": "set_value",
+    "ARGUMENTS": []
+   }
+  },
+  {
+   "id": "node_variable_set",
+   "settings": {
+    "ID": "r2a5w4zgi724rajd6u",
+    "DISPLAY_NAME": "",
+    "FEATURE": "",
+    "X": 600,
+    "Y": 100,
+    "INPUTS": [],
+    "OUTPUTS": [],
+    "GROUP": "",
+    "ARGUMENTS": [
+     {
+      "id": "node_argument",
+      "settings": {
+       "ID": "rhxzcyibsjga1akdxu",
+       "ARGVALUE": "1",
+       "TARGETPARAM": "value"
+      }
+     }
+    ],
+    "VARIABLE": "rer3d1y07cnbj9vpf5"
+   }
+  },
+  {
+   "id": "node_link",
+   "settings": {
+    "ID": "rdo8emx4pjue8wn44h",
+    "SOURCE": "",
+    "SOURCE_FEATURE": "rzqayd74n9k463gxzb",
+    "SOURCE_PORT": "false_output",
+    "TARGET": "",
+    "TARGET_FEATURE": "r2a5w4zgi724rajd6u",
+    "TARGET_PORT": "set_value",
+    "ARGUMENTS": []
+   }
+  }
+ ]
+}

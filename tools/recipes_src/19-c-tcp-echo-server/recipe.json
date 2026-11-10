@@ -1,0 +1,11 @@
+{
+ "title": "Tibbo C: TCP-сервер с эхом (рецепт 01 на C)",
+ "also": [
+  "TPP2W(G2)"
+ ],
+ "tibbits": [],
+ "platform": "TPP3W(G2)",
+ "raw": true,
+ "language": "Tibbo C",
+ "compiler": "cloud"
+}

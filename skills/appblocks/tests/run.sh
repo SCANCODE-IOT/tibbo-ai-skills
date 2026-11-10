@@ -194,4 +194,6 @@ ok = rc_t == 1 and "только в среде Zephyr" in out_t and "тольк�
 print("ok   Zephyr-only block in a TiOS project is an error" if ok else "FAIL runtime of blocks: rc=%s\n%s\n%s" % (rc_t, out_t[-600:], out_z[-400:]))
 sys.exit(0 if ok else 1)
 PY
+n=0; for f in recipes/[0-9]*.json; do n=$((n+1)); "$PY" scripts/ab_tool.py check "$f" >"$T/rc.out" 2>&1 || { echo "FAIL recipe $f"; cat "$T/rc.out"; fail=1; }; done
+[ "$n" -ge 6 ] && [ "$fail" = 0 ] && echo "ok   $n recipes pass the check" || { echo "FAIL recipes ($n found)"; fail=1; }
 rm -rf "$T"; exit $fail

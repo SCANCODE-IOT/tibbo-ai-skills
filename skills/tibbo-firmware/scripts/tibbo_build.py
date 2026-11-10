@@ -176,7 +176,8 @@ def parse_messages(output, root_hint=None):
     for line in output.replace("\r", "").split("\n"):
         if NOISE.search(line):
             continue
-        m = re.search(r"([^\\/:]*?[\\/]?[\w .()\-]+\.\w+)\((\d+)\):\s*(error|warning)\s+(C\d+):\s*(.*)", line)
+        # Tibbo BASIC: file(12): error C1013: ...   Tibbo C: file(12) : error C1328: ...
+        m = re.search(r"([^\\/:]*?[\\/]?[\w .()\-]+\.\w+)\((\d+)\)\s*:\s*(error|warning)\s+(C\d+):\s*(.*)", line)
         if m:
             f = re.sub(r"^.*?TIDEProjects[\\/]temp[\\/][^\\/]+[\\/]", "", line[:m.start(2) - 1])
             f = re.sub(r"^.*?[\\/](Platforms[\\/])", r"\1", f)
@@ -215,6 +216,8 @@ HINTS = [
     (r"undeclared identifier '(fd|kp|lcd|wln|ssi|bt|beep|rtc)'",
      "объект {0} на этой платформе выключен или его нет. Включается строкой defines= в [project] файла .tpr, например "
      "/dOBJECT_FD=FD_ENABLED (KP, LCD, WLN - так же); есть ли объект на платформе - python3 scripts/tibbo_lint.py <папка>"),
+    (r"member '(\w+)' not found",
+     "у объекта нет {0} (Tibbo C): python3 scripts/tibbo_lint.py <папка> подскажет похожее имя; список - references/tios-api.md"),
     (r"undeclared identifier 'elseif'", "в Tibbo BASIC пишут раздельно: else if ... then ... end if end if, либо select case"),
     (r"undeclared identifier 'return'", "return нет: значение функции присваивают её имени (f = 5), выход - exit function"),
     (r"undeclared identifier '(print|sleep|delay|wait|cstr|cint|int|integer_|printf)'",
@@ -936,4 +939,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except BrokenPipeError:      # the reader (head, grep -q) closed the pipe: not an error
+        try:
+            sys.stdout.close()
+        except OSError:
+            pass
+        os._exit(0)

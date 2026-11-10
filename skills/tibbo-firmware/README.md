@@ -11,7 +11,7 @@ Tibbo libraries, Tibbit selection, TPS socket layout and power supply checks.
 
 | Task | How the skill handles it |
 |---|---|
-| **Write firmware** | States the assumptions (platform, Tibbits, power, language), starts from one of 13 ready programs or from the project generator (`tibbo_new.py`: libraries with their dependencies, event hooks and callbacks), checks the code against the exact API of the platform (`tibbo_lint.py`) and **compiles it with Tibbo's compiler** (`tibbo_build.py`) until there are no errors. The result is a TIDE project (`.tpr`, `global.tbh`, `main.tbs`, `device.tbs`, `settings.txt`) plus a resource table (sockets, UARTs, I/O lines, buffer pages). |
+| **Write firmware** | States the assumptions (platform, Tibbits, power, language), starts from one of 20 ready programs or from the project generator (`tibbo_new.py`: libraries with their dependencies, event hooks and callbacks), checks the code against the exact API of the platform (`tibbo_lint.py`) and **compiles it with Tibbo's compiler** (`tibbo_build.py`) until there are no errors. The result is a TIDE project (`.tpr`, `global.tbh`, `main.tbs`, `device.tbs`, `settings.txt`) plus a resource table (sockets, UARTs, I/O lines, buffer pages). |
 | **Build and upload** | Compiles with Tibbo's compiler on Node.js (any OS), with your TIDE or - with your consent - in Tibbo's cloud; explains every compiler and linker error; finds devices on the network, uploads and runs the firmware through Tibbo's tide-proxy (experimental). Tells you what to set up for your own case. |
 | **Review firmware** | Runs a 34-item checklist - language and memory, event model, resources, network, libraries, hardware, power, storage and reliability - and reports findings as *critical / important / note* with file, procedure and a corrected fragment. |
 | **Debug by symptom** | Device hangs, library does nothing, socket refuses connections, data is cut, board resets when a relay switches, ADC reads zero, TLS fails - each with the usual causes. |
@@ -33,7 +33,7 @@ so they survive the next generation.
 | `references/platforms.md` | 46 platforms: available objects, ROM/RAM, TiOS version, exact `PL_IO_NUM_*` and line-to-socket mapping, `PLATFORM_ID` symbols. |
 | `references/libraries.md` | Tibbo libraries (STG, sock, DHCP, DNS, Wi-Fi, MQTT, HTTP, Modbus, SNTP, cellular, `tbtNN` Tibbit drivers…): `#define` options, API, required `callback_*`. |
 | `references/project-and-libs.md` | `.tpr` format, what the generated project looks like, "library → event" hook table, `settings.txt`, Wi-Fi and TLS patterns. |
-| `references/recipes.md`, `recipes/` | **13 complete projects** compiled by Tibbo's compiler: TCP server and client, DHCP, Wi-Fi, RS232-to-TCP, Modbus RTU master, MQTT, web server, settings, relays and inputs, SNTP, flash disk log, buttons and LEDs. |
+| `references/recipes.md`, `recipes/` | **20 complete projects** compiled by Tibbo's compiler (18 in Tibbo BASIC, 2 in Tibbo C): Modbus TCP slave, HTTP and HTTPS clients, Bluetooth, LCD with keypad, TCP server and client, DHCP, Wi-Fi, RS232-to-TCP, Modbus RTU master, MQTT, web server, settings, relays and inputs, SNTP, flash disk log, buttons and LEDs. |
 | `references/tide.md` | Building and uploading without the TIDE window: what the user needs depending on where the agent runs, `tmake`/`tupload`, debug and release, **catalog of compiler and linker errors**, TIDE menus. |
 | `references/linux.md` | Linux boards LTPP3(G2) and LTPP3: what applies, sockets and lines, logins, system update, PinMux. |
 | `references/tibbits.md` | Catalog of 84 Tibbits (checked against docs.tibbo.com, Oct 2026): purpose, lines used, serial/interrupt requirements, power, mating connectors. |
@@ -216,4 +216,4 @@ sh tests/run.sh
 Configurations with expected exit codes, AppBlocks editor rules, the state diagram, board SVG, `board`/`find`/`tibbit`
 commands, `tibbo_lint.py` on clean code and on code with seeded mistakes (`tests/lint/`), the generator, the build
 tool with stand-ins for TIDE, the Node.js compiler and a device. When Tibbo's compiler is installed
-(`TIBBO_BASIC_HOME`), the suite also compiles the generated projects and all 13 recipes.
+(`TIBBO_BASIC_HOME`), the suite also compiles the generated projects and the 18 recipes in Tibbo BASIC.

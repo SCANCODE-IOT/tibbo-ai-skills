@@ -1,0 +1,60 @@
+include "global.tbh"
+
+dim link_sock as byte
+dim connected as no_yes
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	connected = NO
+	link_sock = sock_get("LINK")
+	sock.num = link_sock
+	sock.protocol = PL_SOCK_PROTOCOL_TCP
+	sock.targetip = "192.168.1.50"
+	sock.targetport = 5000
+	sock.rxbuffrq(1)
+	sock.txbuffrq(1)
+	dhcp_start(PL_SOCK_INTERFACE_NET, "", "")    'answer comes to callback_dhcp_ok
+	sys.buffalloc()
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	wln_proc_timer()
+	dhcp_proc_timer()
+	sock.num = link_sock
+	if sock.statesimple = PL_SSTS_CLOSED then
+		connected = NO
+		sock.conect
+	elseif sock.statesimple = PL_SSTS_EST then
+		connected = YES
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_button_press()
+	'the MD button: say hello to the server
+	if connected = YES then
+		sock.num = link_sock
+		sock.setdata("HELLO" + chr(13) + chr(10))
+		sock.send
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sock_data_arrival()
+	wln_proc_data()
+	dhcp_proc_data()
+	if sock.num = link_sock then
+		sock.getdata(255)      'nothing to do with the answer
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_event(wln_event as pl_wln_events)
+	wln_proc_event(wln_event)
+end sub
+
+'-------------------------------------------------------------------
+sub on_wln_task_complete(completed_task as pl_wln_tasks)
+	wln_proc_task_complete(completed_task)
+end sub

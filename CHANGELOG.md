@@ -3,6 +3,45 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-11-10
+
+**Measured, and with more ready projects.** A set of control tasks shows what the skills change, AppBlocks gets ready
+projects for TiOS, firmware gets seven more programs including two in Tibbo C.
+
+### Control tasks (`evals/`)
+- **14 tasks with automatic checks** - firmware, hardware, traps, AppBlocks: `python3 evals/run.py --agent claude`
+  (presets for Codex and Gemini CLI, `--cmd` for any agent, `--no-skills` for the baseline). The result is checked with
+  Tibbo's compiler, `tibbo_lint.py`, `tps_check.py`, `ab_tool.py`.
+- **First results** ([evals/RESULTS.md](evals/RESULTS.md)): with the skills Claude Sonnet 5.5 and the small Haiku 5.5
+  solve 14 of 14; Sonnet 5.5 without the skills solves 4 of 14 and not one of its firmware projects builds.
+- Found by the first run: an agent delivered the untouched project skeleton (it builds and lints clean).
+  **`tibbo_lint.py` now warns about a skeleton without the user's code.**
+
+### AppBlocks: ready projects for TiOS
+- **Six recipes in `appblocks/recipes/`** (index: `references/recipes.md`): button and relay, interval, input with
+  off-delay, thermostat on a Modbus RTU sensor, MQTT commands and telemetry, web panel. Each passes `ab_tool.py check`,
+  the board check, Tibbo's code generator and Tibbo's compiler (`tools/check_ab_recipes.py`).
+- `ab_tool.py check`, found while building them and confirmed by the compiler: LUIS on with Bluetooth off is an error
+  (`undeclared identifier 'BT_NAME'`); a Tibbit in the second socket of a wide connector (#20 in S2 covers S4) is reported.
+
+### Firmware: seven more programs
+- **Recipes 14-20** (`tibbo-firmware/recipes/`): Modbus TCP slave, HTTP client, HTTPS client over TLS, Bluetooth LE to
+  TCP bridge (after Tibbo's BT-WLN-Echo-Test), LCD and keypad of TPS2L (after Tibbo's sample), and **two programs in
+  Tibbo C** (TCP echo server; relay by timer and button). Tibbo BASIC ones are built by Tibbo's Node.js compiler and by
+  the cloud compiler, Tibbo C ones by the cloud compiler: 20 recipes in total.
+- **`tibbo_lint.py` warns about names that exist only in Tibbo's newest platform files** (`PL_SST_EST_TLS_FAILED`,
+  `sock.tlsinitfromarray`): the default compiler, the cloud and older TIDE answer "undeclared identifier". The TLS
+  section of `project-and-libs.md` named that constant - corrected.
+- `tibbo_build.py` reads Tibbo C compiler messages (`file(12) : error C1328`) and explains "member not found".
+
+### Fixed
+- Scripts printed a Python traceback when their output was piped into `head` or `grep -q` (`tps_check.py board ... | head`).
+
+### Not checked
+- The new programs and AppBlocks projects were compiled, not run on a device; the AppBlocks projects were not opened
+  in the editor (Problems tab).
+- Codex, Gemini CLI and Kimi Code were not run on the control tasks.
+
 ## [2.2.1] - 2026-11-10
 
 ### AppBlocks: which blocks exist in which runtime

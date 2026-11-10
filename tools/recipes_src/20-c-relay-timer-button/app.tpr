@@ -1,0 +1,17 @@
+[project]
+platform=TPP2W(G2)
+src_lib_ver=2_01_05
+name=app
+output=app.tpc
+debug=on
+transport=udp_broadcast
+
+[file1]
+path=main.tc
+type=c
+location=project
+
+[file2]
+path=global.th
+type=cheader
+location=project

@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.2.1"
+  version: "2.3.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -21,6 +21,7 @@ OTA, переменные/таблицы/команды, облачные workfl
 |---|---|
 | `references/editor.md` | Как устроен редактор и проект: шаги Hardware/Features/Application, Import/Export, Run/Debug/Release, runtime, **правила потоков** (поток с события, нет циклов, параметры видны только следующему блоку, ASYNC теряет параметры), переменные, плагины, частые ошибки. **Читать перед объяснением, ревью или проектированием логики.** |
 | `references/format.md` | Формат экспорта JSON: верх, группы feature, узлы, связи, `{{$…}}`, правила правки, формат плагинов (§5). **Читать перед любой правкой JSON.** |
+| `references/recipes.md` + `recipes/` | **Начало нового проекта на TiOS:** 6 готовых проектов (кнопка и реле, интервал, вход с задержкой, термостат по Modbus RTU, MQTT, веб-панель) - проверены `check`, генератором и компилятором Tibbo. |
 | `references/blocks.md` | **Все 177 блоков редактора** по категориям палитры: порты (`portId`) с параметрами, настройки с вариантами и значениями по умолчанию, нужная feature, ASYNC; скрытые/устаревшие отдельно. Снято из реестра app.appblocks.io. **Основной справочник портов и полей.** |
 | `references/features.md` | Feature, сервисы-библиотеки, вложенные элементы (variable, timer, tbl_table…), поля `tibbit_NN`, периферия, виджеты LCD и веб-консоли - поля, варианты, ограничения по платам. |
 | `references/catalog.md` | Поля feature и узлов в экспортах Tibbo (ModbusMQTTGateway, bp_modbus_gateway_lcd) с примерами значений, поля Tibbit, структуры Modbus/LUIS. Полный список блоков и полей - blocks.md и features.md. |
@@ -106,7 +107,8 @@ python3 scripts/ab_api.py build p.json --out fw      # компилятор TIDE
 - Логику строй по правилам потоков: каждое действие достижимо из события; значения между потоками — через переменные;
   повторы — таймеры/On Time Period/команды; после ASYNC — только переменные.
 - Tibbit: сначала подбор и проверка раскладки/питания (tibbo-firmware), затем `tibbit_NN` с SOCKET и полями по образцу.
-- Минимальная основа для нового tios-проекта - пример `tbt22` (`appblocks.io/projects/tbt22.json`: TPP2W(G2), 47 feature,
+- **Новый tios-проект начинай с рецепта** (`references/recipes.md`): скопируй ближайший `recipes/NN-*.json` и меняй копию.
+- Минимальная основа, если рецепт не подходит, - пример `tbt22` (`appblocks.io/projects/tbt22.json`: TPP2W(G2), 47 feature,
   датчик #22 с разъёмом #21 и источник #10 с #18, несколько блоков); плату меняй полем `device` до добавления Tibbit.
 - **Проект на основе примера**: меняешь данные (настройки STG, команды, таблицы) — **оставляй ID тех, что переиспользуешь,
   а ненужные удаляй вместе со всеми ссылками на них**, включая панели (`web_dashboard`, `luis`, `ds_man`, `lcd_menu`, `cgg`:

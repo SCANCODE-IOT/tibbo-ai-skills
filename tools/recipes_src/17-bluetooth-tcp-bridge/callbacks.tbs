@@ -1,0 +1,15 @@
+@callback_dhcp_ok
+	'the library does NOT apply the address itself
+	if interface <> PL_SOCK_INTERFACE_WLN then exit sub
+	if renew = YES and wln.ip = ip then exit sub
+	if renew = YES then
+		sys.reboot()
+	end if
+	wln.ip = ip
+	wln.netmask = netmask
+	wln.gatewayip = gateway_ip
+@callback_wln_ok
+	dhcp_start(PL_SOCK_INTERFACE_WLN, "", "")
+@callback_wln_failure
+	dhcp_stop(PL_SOCK_INTERFACE_WLN)
+	wifi_retry = 20

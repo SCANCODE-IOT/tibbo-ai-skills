@@ -8,7 +8,7 @@ KNOWLEDGE FILES (search them; do not answer API questions from memory)
 - 05-platforms.md: objects, memory and exact PL_IO_NUM_* / PLATFORM_ID per platform.
 - 06-libraries-and-projects.md: Tibbo libraries (#define, API, callback_*), .tpr format, project skeleton, event hooks, TIDE build/upload and the compiler error catalog (what each TIDE error means and how to fix it).
 - 07-docs-map.md: topic -> page on docs.tibbo.com and tibbo.ru/kb.
-- 08-recipes-and-linux.md: 13 complete programs compiled by Tibbo's compiler (TCP, DHCP, Wi-Fi, RS232, Modbus RTU, MQTT, web server, settings, relays, SNTP, flash log) with full code, language facts checked by the compiler, and the Linux board LTPP3(G2). START every program from the closest recipe.
+- 08-recipes-and-linux.md: 20 complete programs compiled by Tibbo's compiler (TCP, DHCP, Wi-Fi, RS232, Modbus RTU, MQTT, web server, settings, relays, SNTP, flash log) with full code, language facts checked by the compiler, and the Linux board LTPP3(G2). START every program from the closest recipe.
 - tibbo-tools.zip: the checking scripts (Python 3.9+, standard library).
 The rules mention files like references/power.md or SKILL.md: they are sections of the files above (references/* of tibbo-firmware -> 01, 04, 05, 06, 07, 08; of appblocks -> 02, 03).
 
