@@ -3,6 +3,27 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-11-10
+
+### AppBlocks: which blocks exist in which runtime
+- **`ab_tool.py check` reports a block that does not exist in the project's runtime as an error.** 53 editor blocks
+  exist only on Zephyr (trigonometry, square root, power, rounding, string operations, camera, buffers, files, touch
+  widgets and others). Put into a TiOS project, such a block makes the AppBlocks code generator answer with HTTP 500
+  and no explanation (checked with Square Root and String Trim: fails on TiOS, generates on Zephyr). Features,
+  peripherals, items and widgets of another runtime give a warning.
+- `blocks.md` and `features.md` show the runtime ("только Zephyr") and what the board or project must have
+  ("нужно: camera", "нужно: touch", "нужно: network") for every block and feature; `ab_tool.py lookup` prints it too;
+  `ab_api.py code` / `build` explain an HTTP 500 and point to the check.
+- **The registry is rebuilt from a full dump of the editor (2026-11-10).** Besides the 9 blocks added in 2.2.0: binary
+  buffers in existing blocks (`bytes` output of On Serial Data Received and HTTP Request, `SEND_BUFFER` of Serial Data
+  Send, `BODY_BUFFER` of HTTP Request, `PAYLOAD_BUFFER` of MQTT Publish, `IMAGE_BUFFER` of LCD Image Widget), Execute
+  Command and LCD Line Graph Load From Table are asynchronous, limits (min/max) and "required" marks of settings, all
+  settings of the Camera peripheral, changed display peripherals and widgets.
+
+### Fixed
+- `tibbo-firmware/tests/run.sh` failed 4 checks when run from a copy installed from the zip (the stand-in for
+  `tmake` lost its executable bit). The skill itself was not affected.
+
 ## [2.2.0] - 2026-11-10
 
 **The agent now builds what it writes.** New projects come from a generator and from 13 ready programs, code is checked

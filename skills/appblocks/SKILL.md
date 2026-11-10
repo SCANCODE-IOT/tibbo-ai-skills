@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.2.0"
+  version: "2.2.1"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -44,6 +44,10 @@ OTA, переменные/таблицы/команды, облачные workfl
 
 1. Проект правь только скриптом Python по копии экспорта, не руками. Перед выдачей: `python3 scripts/ab_tool.py check p.json` - 0 ошибок.
 2. Порты, поля и значения блоков бери из `references/blocks.md` или `ab_tool.py lookup <блок>`. Не выдумывай блоки и поля.
+   **Сверяй среду блока с проектом** (`runtime` в JSON: `tios`, `zephyr`, `micropython`): 53 блока есть только на Zephyr
+   (тригонометрия, корень, степень, округление, часть операций со строками, камера, буферы, файлы и другие - пометка
+   «только Zephyr» в blocks.md). В проекте на TiOS такой блок ломает генерацию кода: сервер отвечает ошибкой 500 без
+   объяснений. `ab_tool.py check` показывает это как ошибку.
 3. Железо (Tibbit, сокеты, питание) - через `ab_tool.py tps` и `tps_check.py` из скилла tibbo-firmware.
 4. Любая запись в облако AppBlocks (create, update, OTA, команды устройствам) - только после явного «да» пользователя на конкретный вызов.
 5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.

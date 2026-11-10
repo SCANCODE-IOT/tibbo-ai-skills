@@ -95,7 +95,7 @@ rm -rf "$U"
 B=$(mktemp -d); cp -r tests/build/proj "$B/proj"
 # a stand-in for an installed TIDE, made here so that no *.exe ships with the skill: same folder layout as the real one
 FT="$B/fake_tide"; mkdir -p "$FT/Bin" "$FT/Platforms/TPP3W(G2)/firmware" "$FT/Platforms/src/2_01_03" "$FT/Platforms/src/2_01_05" "$FT/Platforms/src/2_00_01(For TR610 the original 2_00)"
-cp tests/build/fake_tmake.py "$FT/Bin/tmake.exe"; : > "$FT/Bin/tupload.exe"; printf x > "$FT/Bin/WinPcap_4_1_3.exe"
+cp tests/build/fake_tmake.py "$FT/Bin/tmake.exe"; chmod +x "$FT/Bin/tmake.exe"; : > "$FT/Bin/tupload.exe"; printf x > "$FT/Bin/WinPcap_4_1_3.exe"
 printf '<html><body><b>5.04.50</b> platform update</body></html>\n' > "$FT/whatsnew.html"
 printf "' test platform\n" > "$FT/Platforms/TPP3W(G2)/TPP3W(G2).tph"; printf x > "$FT/Platforms/TPP3W(G2)/firmware/tios-tpp3w(g2)-4_02_00.bin"
 env -u TIBBO_CLOUD_BUILD TIDE_DIR=/nonexistent "$PY" scripts/tibbo_build.py "$B/proj" --cloud >"$B/out" 2>&1; rc=$?

@@ -5,7 +5,7 @@ license: MIT (Tibbo reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Scripts need Python 3.9+ (standard library only). Network is optional.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.2.0"
+  version: "2.2.1"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 

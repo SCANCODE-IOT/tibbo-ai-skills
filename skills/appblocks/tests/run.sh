@@ -173,4 +173,25 @@ ok = rc0 == 0 and not bad and "ОШИБКА" not in out0
 print("ok   compile pitfalls and runtime limits (greenhouse2)" if ok else "FAIL compile pitfalls: " + ", ".join(bad) + "\n" + out0)
 sys.exit(0 if ok else 1)
 PY
+"$PY" - "$T" <<'PY' || fail=1
+import json, subprocess, sys
+T = sys.argv[1]
+reg = json.load(open("data/registry.json", encoding="utf-8"))
+def probe(example, src_type):
+    d = json.load(open("examples/" + example, encoding="utf-8"))
+    src = [f for f in d["features"] if f["id"] == src_type][0]
+    port = list(reg["nodes"][src_type]["out"])[0]
+    d["features"].append({"id": "node_sqrt", "settings": {"ID": "probe01", "DISPLAY_NAME": "", "FEATURE": "", "X": 0, "Y": 900,
+                          "INPUTS": [], "OUTPUTS": [], "GROUP": "", "ARGUMENTS": [], "VARIABLE": ""}})
+    d["features"].append({"id": "node_link", "settings": {"ID": "probe02", "SOURCE": "", "SOURCE_FEATURE": src["settings"]["ID"],
+                          "SOURCE_PORT": port, "TARGET": "", "TARGET_FEATURE": "probe01", "TARGET_PORT": "exec", "ARGUMENTS": []}})
+    json.dump(d, open(T + "/rt.json", "w", encoding="utf-8"), ensure_ascii=False)
+    r = subprocess.run([sys.executable, "scripts/ab_tool.py", "check", T + "/rt.json"], capture_output=True, text=True, encoding="utf-8")
+    return r.returncode, r.stdout
+rc_t, out_t = probe("sprinkler5.json", "node_cron_event")          # TiOS project
+rc_z, out_z = probe("ModbusMQTTGateway.json", "node_system")       # Zephyr project
+ok = rc_t == 1 and "только в среде Zephyr" in out_t and "только в среде" not in out_z
+print("ok   Zephyr-only block in a TiOS project is an error" if ok else "FAIL runtime of blocks: rc=%s\n%s\n%s" % (rc_t, out_t[-600:], out_z[-400:]))
+sys.exit(0 if ok else 1)
+PY
 rm -rf "$T"; exit $fail
