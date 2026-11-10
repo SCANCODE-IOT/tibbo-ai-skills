@@ -1,6 +1,6 @@
 # Блоки логики AppBlocks: порты, параметры, настройки
 
-Снято из реестра редактора app.appblocks.io (2026-11-02): 168 типов блоков, из них 123 в палитре и 45 скрытых (служебные и устаревшие, встречаются в старых проектах).
+Снято из реестра редактора app.appblocks.io (2026-11-02; 9 новых блоков камеры, буферов и файлов добавлены 2026-11-10, см. раздел в конце): 177 типов блоков, из них 123 в палитре и 45 скрытых (служебные и устаревшие, встречаются в старых проектах).
 Машинная версия - `data/registry.json` (её использует `ab_tool.py check` и `ab_tool.py lookup`). Пересборка: `scripts/extract_registry.js` в браузере на app.appblocks.io, затем `scripts/build_registry.py`.
 
 Как читать: **Входы/Выходы** - `portId` для `node_link` (SOURCE_PORT/TARGET_PORT) и параметры, которые порт передаёт следующему блоку (`{{$имя}}`) или принимает в ARGUMENTS (TARGETPARAM). **Настройки** - поля `settings` узла: `ID`→ref - ID элемента этого типа (variable, timer, tbl_table…), [варианты] - допустимые значения (`значение=подпись`), =… - значение по умолчанию. Общие поля (ID, DISPLAY_NAME, X, Y, GROUP, INPUTS, OUTPUTS, ARGUMENTS) не повторяются. **ASYNC** - после блока параметры предыдущих блоков недоступны (editor.md §4). Feature - сервис, который должен быть включён в проекте.
@@ -202,6 +202,27 @@
 | `node_modbus_response` | On Modbus Response | - | `response`(<параметры регистра>) | - | modbus_master |  |
 | `node_modbus_timeout` | On Modbus Timeout | - | `response`(device_id:word, register_address:word) | - | modbus_master |  |
 | `node_modbus_write` | Modbus Request | `modbus_poll` | `modbus_response`(response_data:word, device_id:word, register_address:word), `modbus_timeout` | `DEVICE`→modbus_device; `PROTOCOL` [modbus_TCP=TCP\|modbus_RTU=Serial] =modbus_RTU; `SERIAL_PORT`; `DEVICEIP` stringvariable =1.0.0.1; `DEVICEPORT` stringvariable =502 (..65535); `FUNCTIONCODE` [ReadCoilStatus=Read COIL/Output (0x01)\|ReadInputStatus=Read Contact/Discrete Input (0x02)\|ReadHoldingRegisters=Read Holding Register (0x03)\|ReadInputRegisters=Read Input Register (0x04)\|WriteSingleCoil=Write Single Coil (0x05)\|PresetSingleRegister=Write Single Register (0x06)] =ReadCoilStatus; `DEVICEID` stringvariable; `REGISTER_ADDRESS` stringvariable; `LENGTH` number =1 (..125); `VARTYPE` [INTEGER=Unsigned Integer\|SIGNED_INTEGER=Signed Integer\|FLOAT=Floating Point Number] =INTEGER; `ENDIAN` [BIG=Big Endian (ABCD)\|LITTLE=Little Endian (CDAB)] =BIG; `DATA` stringvariable | modbus_master | ASYNC |
+
+## Камера, буферы и файлы (добавлены в редактор после снимка, внесены 2026-11-10)
+
+Только для плат на Zephyr (у блоков камеры требование `camera`). На TiOS-платах TPP2/TPP3 этих блоков нет. Порты и
+настройки сняты с редактора; списки вариантов у `BUFFER` и `PROPERTY` редактор строит по проекту, здесь их нет.
+
+| Блок | Название | Входы | Выходы | Настройки | Feature | Особенности |
+|---|---|---|---|---|---|---|
+| `node_camera_frame` | On Camera Frame | - | `camera_frame`(frame:buffer, width:word, height:word, size:dword, seq:dword) | `MAX_FPS` =5 | camera_sensor | палитра Camera |
+| `node_camera_capture` | Capture Frame | `camera_capture` | `captured`(frame:buffer, width:word, height:word, size:dword, seq:dword), `failed` | `TIMEOUT` (мс) =500 | camera_sensor | палитра Camera |
+| `node_camera_set_property` | Set Camera Property | `camera_set_property`(value:integer) | `done`, `failed` | `PROPERTY` | camera_sensor | палитра Camera |
+| `node_buffer_from_text` | Text to Buffer | `buffer_from_text` | `done`(text_buffer:buffer) | `TEXT` | general | Data & Storage |
+| `node_buffer_jpeg` | JPEG | `jpeg_convert` | `done`(jpeg:buffer, size:dword), `failed` | `MODE` [encode\|decode] =encode; `BUFFER`; `QUALITY` [JPEGE_Q_BEST\|JPEGE_Q_HIGH\|JPEGE_Q_MED\|JPEGE_Q_LOW] =JPEGE_Q_HIGH; `MAX_SIZE` =32768; `SCALE` [fit\|0\|1\|2\|3] =fit; `MAX_IMAGE_SIZE` =38400 | general | Data & Storage |
+| `node_buffer_collect` | Collect Buffer | `collect_append`, `collect_finish`, `collect_clear` | `finished`(collected:buffer, size:dword), `overflow` | `BUFFER`; `MAX_SIZE` =4096; `FORMAT` [bytes\|text\|jpeg] | general | Data & Storage |
+| `node_file_write` | Write File | `file_write` | `done`(size:dword), `failed`(error:integer) | `BUFFER`; `PATH` =/lfs/capture.jpg; `MODE` [overwrite\|append] =overwrite | fd | Data & Storage |
+| `node_disk_usage` | Disk Usage | `disk_usage_get` | `disk_usage_result`(total_kb:dword, used_kb:dword, free_kb:dword, used_percent:byte), `disk_usage_error`(error_code:integer) | `MOUNT_POINT` [/lfs] =/lfs | general | Data & Storage |
+| `node_http_respond_buffer` | Respond with Buffer | `respond_buffer` | `done` | `BUFFER` | httpserver | Network; отдать буфер (например JPEG) в ответ HTTP-сервера |
+
+Вместе с ними появились функция **Camera Stream** (`camera_stream`: `ENABLED`, `PROTOCOL` = mjpeg - MJPEG по HTTP,
+`PORT` = 81) и периферия **Camera** (`camera_sensor`: датчики OV2640, OV3660, OV5640 или объявленный платой). Новый тип
+данных портов - `buffer`.
 
 ## Скрытые и служебные (нет в палитре)
 

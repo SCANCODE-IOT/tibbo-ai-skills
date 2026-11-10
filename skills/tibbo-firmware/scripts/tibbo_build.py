@@ -16,7 +16,8 @@ Three ways, chosen automatically:
 Usage:
   python3 scripts/tibbo_build.py <project folder or .tpr> [--local | --cloud] [--release | --debug]
                                  [--out app.tpc] [--firmware] [--json] [--cloud-ok]   (or --node)
-  python3 scripts/tibbo_build.py --setup-node [--yes]   # download and build Tibbo's Node.js compiler (asks first)
+  python3 scripts/tibbo_build.py --setup-node [--yes] [--latest-platforms]   # download and build Tibbo's Node.js
+                                 # compiler (asks first); --latest-platforms: newest platform files (TiOS) from GitHub
   python3 scripts/tibbo_build.py --doctor [<project>] [--json]   # what is available here, what the USER must do
                                                      # and, with a project, TIDE advice for THIS project
                                                      # (relay "Что сделать пользователю" to the user as is)
@@ -402,6 +403,22 @@ def project_advice(tpr, tide, info):
             steps.append("Проект связывается с устройством через WinPcap (так советует Tibbo), а он не установлен. "
                          "Установите %s из TIDE\\Bin (или Npcap с режимом совместимости WinPcap) и перезапустите TIDE; "
                          "либо File > Project Settings → Transport → UDP broadcast." % (info["winpcap_installers"][-1] if info["winpcap_installers"] else "WinPcap"))
+    js = node_compiler()
+    if js and plat and not own:
+        try:   # which TiOS line the Node.js compiler builds this platform for
+            real = next(p for p in (js.parents[3] / "platforms" / "Platforms").iterdir() if p.name.lower() == plat.lower())
+            tp = (real / (real.name + ".tp")).read_text("latin-1")
+            ver = re.search(r"(?mi)^version\s*=\s*(\S+)", tp).group(1)
+            facts.append("Компилятор на Node.js собирает эту платформу как %s" % ver)
+            fresh = known_platforms().get(plat.lower())
+            newest = max((f for f in (fresh[1] if fresh else [])), key=lambda f: vtuple(tios_version(f)), default=None)
+            if newest and vtuple(tios_version(newest))[:2] > vtuple(ver.split("-")[-1])[:2]:
+                steps.append("У Tibbo уже есть TiOS %s для %s, а компилятор на Node.js (и облачный) собирает для %s. "
+                             "Если на устройстве TiOS %s.x - поставьте свежие платформы: python3 scripts/tibbo_build.py "
+                             "--setup-node --yes --latest-platforms. Версию на устройстве покажет tibbo_device.py state."
+                             % (tios_version(newest), plat, ver.split("-")[-1], tios_version(newest).split(".")[0]))
+        except (StopIteration, OSError, AttributeError):
+            pass
     if not devices:
         steps.append("Устройство для этого проекта не выбрано: Debug > Select/Manage Target → щёлкнуть устройство → "
                      "Select. Не видно - Refresh; устройство должно быть в том же сегменте сети (через роутер TIDE его "
@@ -529,7 +546,7 @@ def has_c_sources(entries):
     return any(e.get("type", "").lower() in ("c", "htmlc") or e.get("path", "").lower().endswith(".tc") for e in entries)
 
 
-def setup_node(yes, update=False):
+def setup_node(yes, latest_platforms=False):
     """Download Tibbo's Node.js compiler from GitHub and build it (git, Node.js 18+ and npm needed)."""
     home = node_home()
     missing = [x for x in ("git", "node", "npm") if not shutil.which(x)]
@@ -550,6 +567,9 @@ def setup_node(yes, update=False):
         home.parent.mkdir(parents=True, exist_ok=True)
         steps.append((["git", "clone", "--depth", "1", "-b", NODE_BRANCH, NODE_REPO, str(home)], None))
     steps.append((["git", "-C", str(home), "submodule", "update", "--init", "--depth", "1", "platforms"], None))
+    if latest_platforms:   # newest platform files from github.com/tibbotech/platforms instead of the ones the compiler pins
+        steps.append((["git", "-C", str(home / "platforms"), "fetch", "--depth", "1", "origin", "HEAD"], None))
+        steps.append((["git", "-C", str(home / "platforms"), "checkout", "-q", "FETCH_HEAD"], None))
     steps.append(([npm, "install", "--no-audit", "--no-fund", "--ignore-scripts"], home / "server"))
     steps.append(([npm, "run", "build"], home / "server"))
     for cmd, cwd in steps:
@@ -807,7 +827,7 @@ def main(argv):
         return upload(opt("--upload"), opt("--target"), "--serial" in argv, "--yes" in argv)
 
     if "--setup-node" in argv:
-        return setup_node("--yes" in argv)
+        return setup_node("--yes" in argv, "--latest-platforms" in argv)
     flags = {"--local", "--node", "--cloud", "--release", "--debug", "--json", "--cloud-ok", "--out", "--firmware"}
     pos = [a for i, a in enumerate(argv) if not a.startswith("--") and (i == 0 or argv[i - 1] != "--out")]
     try:
