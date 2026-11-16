@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.4.0"
+  version: "2.4.1"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -56,8 +56,9 @@ AppBlocks Cloud — устройства, OTA, переменные/таблиц
    объяснений. `ab_tool.py check` показывает это как ошибку.
 3. Железо (Tibbit, сокеты, питание) - через `ab_tool.py tps` и `tps_check.py` из скилла tibbo-firmware. Источник
    питания ставь, как Tibbo: TPP2 - S11 + #18 в S12, TPP3 - S25 + #18 в S26 (power.md §2a скилла tibbo-firmware).
-   Включён AppBlocks Cloud (`cgg`) на TiOS - включи и `firmware_upgrade`, и `http` (ENABLED = 1), иначе не соберётся;
-   нет поля ENABLED - редактор берёт значение по умолчанию (часто 0). `check` это ловит.
+   Редактор при открытии проекта сам включает зависимости (AppBlocks Cloud → Firmware OTA → HTTP Client, блок HTTP
+   Request → HTTP Client) и создаёт переменные портов; генератор через API (`ab_api.py code/build`) этого не делает.
+   Поэтому в файле ставь их явно (ENABLED = 1, переменная порта) - `check` предупреждает «Редактор ... включит сам».
 4. Любая запись в облако AppBlocks (create, update, OTA, команды устройствам) - только после явного «да» пользователя на конкретный вызов.
 5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.
 6. **Скрипты запустить нельзя** (веб-чат): скажи «скриптами не проверено», дай файл и команды проверки, чтобы пользователь запустил их у себя, и попроси прислать вкладку Problems из редактора.
