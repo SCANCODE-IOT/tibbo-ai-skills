@@ -1,4 +1,4 @@
-# Каталог из 78 проектов appblocks.io (уроки и примеры, `https://appblocks.io/projects/<имя>.json`)
+# Каталог узлов и Tibbit в проектах appblocks.io (снимок 78 проектов; полный список проектов - examples-index.md; `https://appblocks.io/projects/<имя>.json`)
 
 Платы: {'TPP2W(G2)': 75, 'TPP3W(G2)': 3}. Runtime: {'(нет)': 39, 'tios': 34, 'zephyr': 5}.
 

@@ -194,6 +194,37 @@ ok = rc_t == 1 and "только в среде Zephyr" in out_t and "тольк�
 print("ok   Zephyr-only block in a TiOS project is an error" if ok else "FAIL runtime of blocks: rc=%s\n%s\n%s" % (rc_t, out_t[-600:], out_z[-400:]))
 sys.exit(0 if ok else 1)
 PY
+# regression (16 Nov 2026, found by building 79 appblocks.io projects): AppBlocks Cloud without Firmware OTA / HTTP,
+# and a block whose library is off (ENABLED missing = editor default 0), fail to compile
+"$PY" - "$T" <<'PY' || fail=1
+import json, subprocess, sys
+T = sys.argv[1]
+def run(path, edit):
+    d = json.load(open(path, encoding="utf-8")); edit(d)
+    json.dump(d, open(T + "/cg.json", "w", encoding="utf-8"), ensure_ascii=False)
+    r = subprocess.run([sys.executable, "scripts/ab_tool.py", "check", T + "/cg.json"], capture_output=True, text=True, encoding="utf-8")
+    return r.stdout
+def setf(k, v):
+    def e(d):
+        for f in d["features"]:
+            if f["id"] == k:
+                if v is None: f["settings"].pop("ENABLED", None)
+                else: f["settings"]["ENABLED"] = v
+    return e
+W = "examples/water_level_control_cloud.json"
+def node_http(d):
+    setf("http", None)(d)
+    d["features"].append({"id": "node_http", "settings": {"ID": "probe_http", "DISPLAY_NAME": "", "FEATURE": "", "X": 0, "Y": 900,
+                          "INPUTS": [], "OUTPUTS": [], "GROUP": "", "ARGUMENTS": [], "VARIABLE": ""}})
+res = {"ok": "AppBlocks Cloud" not in run(W, lambda d: None),
+       "no http": "а http выключена" in run(W, setf("http", None)),
+       "fw off": "а firmware_upgrade выключена (ENABLED=0)" in run(W, setf("firmware_upgrade", "0")),
+       "cgg off": "AppBlocks Cloud" not in run(W, lambda d: (setf("cgg", "0")(d), setf("http", None)(d))),
+       "node_http": "Поставь http.ENABLED = 1" in run(W, node_http)}
+bad = [k for k, v in res.items() if not v]
+print("ok   AppBlocks Cloud / HTTP library switched off" if not bad else "FAIL cloud/http checks: " + ", ".join(bad))
+sys.exit(1 if bad else 0)
+PY
 n=0; for f in recipes/[0-9]*.json; do n=$((n+1)); "$PY" scripts/ab_tool.py check "$f" >"$T/rc.out" 2>&1 || { echo "FAIL recipe $f"; cat "$T/rc.out"; fail=1; }; done
 [ "$n" -ge 6 ] && [ "$fail" = 0 ] && echo "ok   $n recipes pass the check" || { echo "FAIL recipes ($n found)"; fail=1; }
 rm -rf "$T"; exit $fail

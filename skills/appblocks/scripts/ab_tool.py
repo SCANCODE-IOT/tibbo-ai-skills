@@ -336,11 +336,17 @@ def check_registry(d, errs, warns, reg=None):
                         f"{rt_name.get(runtime, runtime)}. Генератор кода AppBlocks на таком проекте отвечает ошибкой 500 без "
                         "объяснений. Убери блок или собери то же из блоков этой среды (blocks.md, столбец «Особенности»)")
         ft = v.get("feat")
-        if ft and ft != "general" and ft in reg.get("features", {}):
+        freg = next((reg[kd][ft] for kd in ("features", "libraries", "peripherals") if ft in (reg.get(kd) or {})), None)
+        if ft and ft != "general" and freg is not None:
             if ft not in present:
-                errs.append(f"узел {k} {s.get('ID')}: нужна feature {ft}, её нет в проекте")
-            elif present[ft]["settings"].get("ENABLED", "1") == "0":
-                warns.append(f"узел {k} {s.get('ID')}: feature {ft} выключена (ENABLED=0) - блок не заработает")
+                if ft in (reg.get("features") or {}):   # a missing library/peripheral may come in with its feature (lcd-menu)
+                    errs.append(f"узел {k} {s.get('ID')}: нужна feature {ft}, её нет в проекте")
+            else:
+                on, why = enabled_state(present[ft]["settings"], freg)
+                if not on:
+                    errs.append(f"узел {k} {s.get('ID')} ({v.get('name')}): нужна {freg.get('name') or ft} ({ft}), а она выключена "
+                                f"({why}) - генератор не подключит её код, сборка упадёт «undeclared identifier» (проверено на "
+                                f"http-request: 'http_request'). Поставь {ft}.ENABLED = 1")
         for sk, sv in s.items():
             st = v["set"].get(sk)
             if not st or not st.get("o") or not isinstance(sv, (str, int)) or str(sv) == "" or REF.search(str(sv)):
@@ -404,6 +410,17 @@ ACTIVE_LOW_RELAYS = {"03_1", "03_2", "06", "07"}   # LOW = load on (docs.tibbo.c
 SERIAL_PORT_TIBBITS = {"05"}                      # checked by compilation (Oct 2026); #01/#02 likely the same, not verified
 
 
+def enabled_state(settings, freg):
+    """(on, why) for a feature/library: a missing ENABLED takes the editor's default (often 0 - old Tibbo examples were
+    saved before the field existed, and the current generator then leaves the library out)."""
+    if "ENABLED" in settings:
+        return str(settings["ENABLED"]) == "1", f"ENABLED={settings['ENABLED']}"
+    d = ((freg or {}).get("set") or {}).get("ENABLED", {}).get("d")
+    if d is None:
+        return True, ""
+    return str(d) == "1", f"поля ENABLED в файле нет, редактор берёт по умолчанию {d}"
+
+
 def check_compile_pitfalls(d, errs, warns):
     """Mistakes that pass the structural checks but fail in the editor (Problems) or in the TIDE compiler.
     Found while building the 'Smart Greenhouse' project (TPP3W(G2), tios, Oct 2026) and checked with POST /api/projects/build."""
@@ -414,6 +431,20 @@ def check_compile_pitfalls(d, errs, warns):
     by_feature = collections.defaultdict(list)
     for v in allvars:
         by_feature[(v.get("FEATURE"), v.get("FEATURE_SETTING"))].append(v)
+    # 0a. AppBlocks Cloud (cgg) needs Firmware OTA and HTTP Client switched on: otherwise the generated code uses
+    #     upload_started / device_firmware_upload_async / http_request_item that nothing declares (checked 16 Nov 2026
+    #     on Tibbo examples with cgg - all 9 failed; sprinkler5+cgg and water_level_control_cloud compile once
+    #     firmware_upgrade and http are set to 1)
+    reg = load_registry() or {}
+    one = lambda k: next((f["settings"] for f in F if f["id"] == k), None)
+    cgg = next((f["settings"] for f in F if f["id"] == "cgg" and str(f["settings"].get("ENABLED", "0")) == "1"), None)
+    if (d.get("runtime") or "tios") == "tios" and cgg:
+        for need in ("firmware_upgrade", "http"):
+            kd = "features" if need == "firmware_upgrade" else "libraries"
+            on, why = enabled_state(one(need) or {}, (reg.get(kd) or {}).get(need, {}))
+            if not on:
+                errs.append(f"AppBlocks Cloud (cgg) включён, а {need} выключена ({why if one(need) is not None else 'её нет в проекте'}): "
+                            f"прошивка не соберётся - «undeclared identifier 'upload_started'» и дальше. Поставь {need}.ENABLED = 1")
     # 0. LUIS (setup from the phone) is started with the Bluetooth name: Bluetooth off + LUIS on = boot.tbs
     #    "undeclared identifier 'BT_NAME'" (checked with the compiler, Nov 2026)
     one = lambda k: next((f["settings"] for f in F if f["id"] == k), None)

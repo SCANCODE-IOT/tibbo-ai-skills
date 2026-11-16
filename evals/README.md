@@ -2,7 +2,7 @@
 
 **English** · [Результаты на русском](RESULTS.md)
 
-14 requests a real user would type - firmware, hardware, traps, AppBlocks - each with automatic checks of the
+16 requests a real user would type - firmware, hardware, traps, AppBlocks - each with automatic checks of the
 result. The set answers two questions: *do the skills help* (the same model with and without them) and *does a new
 agent or model handle them* (Codex, Gemini CLI, Kimi Code and others).
 

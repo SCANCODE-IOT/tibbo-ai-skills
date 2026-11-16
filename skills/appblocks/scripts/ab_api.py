@@ -9,7 +9,7 @@ Read-only (safe):
   projects [--workspace W] [--search S] [--all]   list projects (node_* stripped by the server)
   project  <id> --out p.json           full project JSON (for ab_tool.py)
   versions <id>                        project versions
-  examples                             example projects (API; if it fails — the 78 tutorial/example projects of appblocks.io)
+  examples                             example projects (API; if it fails — the 79 tutorial/example projects of appblocks.io)
   example  <id|name> --out p.json      one example (API id, or appblocks.io name such as sprinkler5)
   workspaces                           workspaces of the account
   devices  [--workspace W]             devices (name, connected, app, fw)
@@ -19,7 +19,8 @@ Read-only (safe):
 Generate (sends the project to AppBlocks, changes nothing in the account):
   code <project.json> --outdir DIR     POST /api/projects/code -> generated firmware sources
   build <project.json> [--release] [--out prefix]  code + POST /api/projects/build: Tibbo's TIDE compiler (tios),
-                                       prints errors/warnings, exit 1 if it does not compile; --out saves prefix.tpc
+                                       prints errors/warnings, exit 1 if it does not compile; --out saves prefix.tpc.
+                                       Zephyr/MicroPython projects: refused (the API gives a template, see zephyr.md)
 Write (needs the user's explicit yes for this exact call; add --yes):
   create <project.json> [--workspace W] --yes      POST /api/projects
   update <id> <project.json> --yes                 PUT  /api/projects/:id
@@ -36,6 +37,11 @@ def utf8_stdio():
             pass
 
 BASE = os.environ.get("APPBLOCKS_BASE", "https://api.appblocks.io").rstrip("/")
+# Checked 16 Nov 2026: for runtime zephyr /api/projects/code returns the project template with /****MAIN****/-style
+# marks left empty (the editor fills them), and /api/projects/build then fails in CMake.
+ZEPHYR_API_NOTE = ("проект для среды %s: генератор AppBlocks через API отдаёт для неё шаблон с незаполненными метками "
+                   "/****...****/ (код логики подставляет редактор), %s. Собирай и загружай в редакторе AppBlocks; "
+                   "проверка проекта - ab_tool.py check. Подробнее - references/zephyr.md")
 
 
 def ssl_context():
@@ -275,6 +281,8 @@ def main():
         dump(r, opt(a, "--out"))
     elif c == "build":
         proj = json.load(open(a[1], encoding="utf-8"))
+        if (proj.get("runtime") or "tios") != "tios":
+            sys.exit(ZEPHYR_API_NOTE % (proj.get("runtime"), "собрать его через API нельзя"))
         files = call("POST", "/api/projects/code", {"params": {"project": proj, "debug": "--release" not in a}}, auth=bool(key(False)))
         # the build service wants "on"/"off": a JSON boolean (even false) gives a DEBUG build
         body = {"command": "build", "files": files, "debug": "off" if "--release" in a else "on",
@@ -302,6 +310,7 @@ def main():
         files = call("POST", "/api/projects/code", {"params": {"project": proj, "debug": True}}, auth=bool(key(False)))
         outdir = opt(a, "--outdir", "generated")
         os.makedirs(outdir, exist_ok=True)
+        holes = 0
         for f in files:
             p = os.path.join(outdir, f["name"].lstrip("/"))
             os.makedirs(os.path.dirname(p) or outdir, exist_ok=True)
@@ -310,6 +319,9 @@ def main():
                 c = json.dumps(c, ensure_ascii=False, indent=1)
             open(p, "w", encoding="utf-8").write(c)
             print(p)
+            holes += len(re.findall(r"/\*{4}[A-Z_]+\*{4}/", c))
+        if holes and (proj.get("runtime") or "tios") != "tios":
+            print("ВНИМАНИЕ: " + ZEPHYR_API_NOTE % (proj.get("runtime"), "это шаблон, а не готовый код (меток: %d)" % holes))
     elif c in ("create", "update"):
         if "--yes" not in a:
             sys.exit("запись в аккаунт: сначала покажи пользователю что и куда, получи явное «да», потом повтори с --yes")
