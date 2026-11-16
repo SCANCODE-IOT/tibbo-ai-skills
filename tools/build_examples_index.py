@@ -6,8 +6,9 @@ Tibbits, services in use and the result of `ab_tool.py check` and of a cloud bui
 
 DIR holds <name>.json downloaded from https://appblocks.io/projects/<name>.json (names from the /tutorials/ and
 /examples/ pages of the sitemap); files that are not projects are skipped. results.txt has lines
-"OK <name>", "FAIL <name> | <compiler output>", "SKIP <name> <reason>" (from `ab_api.py build`); without it the build
-column says "не собирали". Needs no network and no API key.
+"OK <name>", "FAIL <name> | <compiler message>" and "EDERR <name> | <editor error>; <editor error>": each project was
+first passed through the editor's own validation pass (its fixes applied, as the editor does on opening) and then built
+with Tibbo's compiler through the API. Without it the build column says "не собирали". Needs no network and no API key.
 """
 import collections, json, os, re, subprocess, sys
 
@@ -38,25 +39,22 @@ def kinds(sitemap):
 
 
 def builds(path):
-    res = {}
+    res, ed = {}, {}
     if not path:
-        return res
+        return res, ed
     for line in open(path, encoding="utf-8", errors="replace"):
-        m = re.match(r"(OK|FAIL|SKIP) (\S+)(.*)", line)
+        m = re.match(r"(OK|FAIL|EDERR) (\S+)(?: \| (.*))?", line.rstrip("\n"))
         if not m:
             continue
         st, name, rest = m.groups()
-        if st == "FAIL":
-            ids = re.findall(r"undeclared identifier '(\w+)'", rest)
-            if ids:
-                res[name] = "не собирается: '" + ids[0] + "'"
-            else:                              # line cut by parallel writes: keep a fuller verdict from another line
-                res.setdefault(name, "не собирается")
-        elif st == "SKIP":
-            res.setdefault(name, "Zephyr - через API не собрать" if "zephyr" in rest else "не собирали")
+        if st == "EDERR":
+            ed[name] = rest or ""
+        elif st == "FAIL":
+            ids = re.findall(r"undeclared identifier '(\w+)'", rest or "")
+            res[name] = "не собирается" + (f": '{ids[0]}'" if ids else "")
         else:
             res[name] = "собирается"
-    return res
+    return res, ed
 
 
 sys.path.insert(0, os.path.join(SK, "scripts"))
@@ -97,7 +95,7 @@ def short(err):
 
 def main():
     d_in, sitemap, bfile, date = args()
-    kind, bres = kinds(sitemap), builds(bfile)
+    kind, (bres, ederr) = kinds(sitemap), builds(bfile)
     rows, stats = [], collections.Counter()
     for fn in sorted(os.listdir(d_in)):
         if not fn.endswith(".json"):
@@ -119,12 +117,13 @@ def main():
         nodes = sum(f["id"].startswith("node_") and f["id"] != "node_link" for f in F)
         errs, warns = check(p)
         rt = d.get("runtime") or "tios"
-        stats[(d.get("device"), rt)] += 1
         stats["err"] += bool(errs)
         st = "0 ошибок" if not errs else "; ".join(dict.fromkeys(short(e) for e in errs))
+        ed = ederr.get(name)
+        ed = "—" if ed is None and rt != "tios" else ("0 ошибок" if not ed else ed)
         rows.append((name, kind.get(name, ""), d.get("name") or name, d.get("device") or "", rt,
                      " ".join(f"S{s}:#{m}" for s, m in tb), ", ".join(svc), nodes, st, warns,
-                     bres.get(name, "Zephyr - через API не собрать" if rt != "tios" else "не собирали")))
+                     bres.get(name, "Zephyr - через API не собрать" if rt != "tios" else "не собирали"), ed))
     boards = collections.Counter(r[3] for r in rows)
     rts = collections.Counter(r[4] for r in rows)
     built = collections.Counter(r[10].split(":")[0] for r in rows)
@@ -137,26 +136,26 @@ def main():
          "",
          "Платы: " + ", ".join(f"{k} - {v}" for k, v in boards.most_common()) + ". Среды: "
          + ", ".join(f"{k} - {v}" for k, v in rts.most_common()) + ".",
-         f"`ab_tool.py check`: без ошибок {len(rows) - stats['err']}, с ошибками {stats['err']}. Сборка компилятором Tibbo через"
-         " API: " + ", ".join(f"{k} - {v}" for k, v in built.most_common()) + ".",
+         "Сборка компилятором Tibbo (проект сначала прошёл проверку редактора с её автоисправлениями - как при открытии в",
+         "редакторе): " + ", ".join(f"{k} - {v}" for k, v in built.most_common()) + ".",
          "",
-         "**Как пользоваться.** Пример с ошибками не бери как есть: сначала исправь то, что пишет `check` (частые причины ниже).",
+         "**Как читать столбцы.**",
+         "- **check** - `ab_tool.py check` по файлу как он опубликован. Предупреждения «Редактор ... включит сам» (облако без",
+         "  OTA/HTTP, выключенная библиотека блока, нет переменной порта #05) - не поломка: редактор исправляет это сам при",
+         "  открытии (format.md §4). Но если собираешь файл через API (`ab_api.py build`), внеси исправления в файл.",
+         "- **Редактор** - ошибки, которые остаются после проверки редактора (их он не исправит; вкладка Problems). Проверку",
+         "  запускали кодом самого редактора вне его окна - в редакторе список может немного отличаться.",
+         "- **Сборка** - компилятор Tibbo после проверки редактора. Zephyr через API не собрать (zephyr.md §4) - собирай в редакторе.",
+         "",
          "Сокеты Tibbit смотри в столбце «Tibbit»: в проектах Tibbo источник питания почти всегда в S11 + #18 в S12 на TPP2 и",
          "S25 + #18 в S26 на TPP3 (power.md §2a скилла tibbo-firmware). В публичных примерах встречаются логин и пароль",
          "облака в открытом виде - в свой проект не переноси, задай свои через настройки.",
          "",
-         "Частые причины «не собирается»:",
-         "- **Cloud без OTA/HTTP** - включён AppBlocks Cloud (`cgg`), а `firmware_upgrade` и `http` выключены (в старых",
-         "  экспортах поля ENABLED нет, редактор берёт 0): «undeclared identifier 'upload_started'». Поставь обоим ENABLED = 1.",
-         "- **http выключена** - есть блок HTTP Request, а библиотека `http` выключена: «undeclared identifier 'http_request'».",
-         "- **нет переменной порта #05** - у Tibbit RS232/422/485 нет авто-переменной порта: ошибка компилятора.",
-         "- **Zephyr** - через API собрать нельзя (zephyr.md §4), собирай в редакторе.",
-         "",
-         "| Проект | Вид | Название | Плата | Среда | Tibbit (сокет:модель) | Сервисы | Блоков | check | Сборка |",
-         "|---|---|---|---|---|---|---|---|---|---|"]
+         "| Проект | Вид | Название | Плата | Среда | Tibbit (сокет:модель) | Сервисы | Блоков | check | Редактор | Сборка |",
+         "|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         L.append(f"| `{r[0]}` | {r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5] or '—'} | {r[6] or '—'} | {r[7]} | {r[8]}"
-                 + (f", предупр. {r[9]}" if r[9] else "") + f" | {r[10]} |")
+                 + (f", предупр. {r[9]}" if r[9] else "") + f" | {r[11]} | {r[10]} |")
     open(OUT, "w", encoding="utf-8", newline="\n").write("\n".join(L) + "\n")
     print(f"{OUT}: {len(rows)} projects")
 

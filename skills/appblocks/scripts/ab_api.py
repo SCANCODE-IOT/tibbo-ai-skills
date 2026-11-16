@@ -304,6 +304,10 @@ def main():
             print("сохранено:", opt(a, "--out") + ".tpc")
         size = len(tpc["data"]) if isinstance(tpc, dict) and "data" in tpc else None
         print(("компиляция: OK" + (f", {size} байт" if size else "")) if ok else "компиляция: ОШИБКА")
+        if not ok and "undeclared identifier" in out:
+            print("Подсказка: редактор AppBlocks при открытии проекта сам включает нужные функции и библиотеки и создаёт "
+                  "переменные портов, а генератор через API - нет. Посмотри предупреждения «Редактор ... включит сам» в "
+                  "`ab_tool.py check` и внеси это в файл (или открой проект в редакторе и собери там).")
         sys.exit(0 if ok else 1)
     elif c == "code":
         proj = json.load(open(a[1], encoding="utf-8"))

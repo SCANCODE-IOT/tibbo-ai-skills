@@ -344,9 +344,10 @@ def check_registry(d, errs, warns, reg=None):
             else:
                 on, why = enabled_state(present[ft]["settings"], freg)
                 if not on:
-                    errs.append(f"узел {k} {s.get('ID')} ({v.get('name')}): нужна {freg.get('name') or ft} ({ft}), а она выключена "
-                                f"({why}) - генератор не подключит её код, сборка упадёт «undeclared identifier» (проверено на "
-                                f"http-request: 'http_request'). Поставь {ft}.ENABLED = 1")
+                    warns.append(f"узел {k} {s.get('ID')} ({v.get('name')}): нужна {freg.get('name') or ft} ({ft}), а она выключена "
+                                 f"({why}). Редактор AppBlocks при открытии проекта включит её сам («... is required by ...»), "
+                                 f"а генератор через API (ab_api.py code/build) - нет: сборка упадёт «undeclared identifier». "
+                                 f"Поставь {ft}.ENABLED = 1")
         for sk, sv in s.items():
             st = v["set"].get(sk)
             if not st or not st.get("o") or not isinstance(sv, (str, int)) or str(sv) == "" or REF.search(str(sv)):
@@ -431,10 +432,10 @@ def check_compile_pitfalls(d, errs, warns):
     by_feature = collections.defaultdict(list)
     for v in allvars:
         by_feature[(v.get("FEATURE"), v.get("FEATURE_SETTING"))].append(v)
-    # 0a. AppBlocks Cloud (cgg) needs Firmware OTA and HTTP Client switched on: otherwise the generated code uses
-    #     upload_started / device_firmware_upload_async / http_request_item that nothing declares (checked 16 Nov 2026
-    #     on Tibbo examples with cgg - all 9 failed; sprinkler5+cgg and water_level_control_cloud compile once
-    #     firmware_upgrade and http are set to 1)
+    # 0a. AppBlocks Cloud (cgg) needs Firmware OTA and HTTP Client switched on. The editor does it itself when it opens
+    #     a project (validateFeatures: cgg on tios depends on firmware_upgrade, which depends on http and fd), the API
+    #     code generator does not - then upload_started / device_firmware_upload_async are undeclared. A warning, not an
+    #     error: checked 16 Nov 2026, all 9 such Tibbo examples compile after the editor's validation pass.
     reg = load_registry() or {}
     one = lambda k: next((f["settings"] for f in F if f["id"] == k), None)
     cgg = next((f["settings"] for f in F if f["id"] == "cgg" and str(f["settings"].get("ENABLED", "0")) == "1"), None)
@@ -443,8 +444,9 @@ def check_compile_pitfalls(d, errs, warns):
             kd = "features" if need == "firmware_upgrade" else "libraries"
             on, why = enabled_state(one(need) or {}, (reg.get(kd) or {}).get(need, {}))
             if not on:
-                errs.append(f"AppBlocks Cloud (cgg) включён, а {need} выключена ({why if one(need) is not None else 'её нет в проекте'}): "
-                            f"прошивка не соберётся - «undeclared identifier 'upload_started'» и дальше. Поставь {need}.ENABLED = 1")
+                warns.append(f"AppBlocks Cloud (cgg) включён, а {need} выключена ({why if one(need) is not None else 'её нет в проекте'}). "
+                             f"Редактор при открытии включит её сам (Cloud → Firmware OTA → HTTP Client), а генератор через API "
+                             f"(ab_api.py code/build) - нет: «undeclared identifier 'upload_started'». Поставь {need}.ENABLED = 1")
     # 0. LUIS (setup from the phone) is started with the Bluetooth name: Bluetooth off + LUIS on = boot.tbs
     #    "undeclared identifier 'BT_NAME'" (checked with the compiler, Nov 2026)
     one = lambda k: next((f["settings"] for f in F if f["id"] == k), None)
@@ -487,8 +489,9 @@ def check_compile_pitfalls(d, errs, warns):
     for f in F:
         t = f["id"][7:] if f["id"].startswith("tibbit_") else None
         if t in SERIAL_PORT_TIBBITS and not by_feature.get((f["settings"].get("ID"), "NAME")):
-            errs.append(f"{f['id']} S{f['settings'].get('SOCKET')}: нет авто-переменной порта (byte, FEATURE_SETTING = NAME, DEFAULT 1) - "
-                        f"генератор пишет `{f['settings'].get('NAME')}=0` и TIDE выдаст «undeclared identifier»")
+            warns.append(f"{f['id']} S{f['settings'].get('SOCKET')}: нет авто-переменной порта (byte, FEATURE_SETTING = NAME, DEFAULT 1). "
+                         f"Редактор при открытии создаст её сам («Variable ... created»), а генератор через API (ab_api.py "
+                         f"code/build) напишет `{f['settings'].get('NAME')}=0` и TIDE выдаст «undeclared identifier». Добавь переменную")
     # 4. 1-Wire sensors need Data Tables with the OWSENS table
     ow = next((f["settings"] for f in F if f["id"] == "unowiresensors"), {}) or {}
     if ow.get("SENSORS"):
