@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, python: "3.9" }
+          - { os: ubuntu-22.04, python: "3.9" }   # ubuntu-latest (26.04) has no Python 3.9 in setup-python
           - { os: ubuntu-latest, python: "3.12" }
           # Windows: Git Bash, console code page of the runner, no PYTHONUTF8
           - { os: windows-latest, python: "3.12" }
