@@ -39,7 +39,7 @@ Deep Code and other agents; a chat pack covers web chats.
 | Skill | What your AI can do with it |
 |---|---|
 | [**tibbo-firmware**](skills/tibbo-firmware/) | Write, review and debug Tibbo BASIC / Tibbo C firmware for TiOS (TPP2/TPP3, DS, EM, WM, WS devices); start a project from a generator or one of 20 ready programs (`tibbo_new.py`, `recipes/`); check the code against the exact API of your platform (`tibbo_lint.py`) and **compile it with Tibbo's own compiler** (`tibbo_build.py`); find devices on the network and upload firmware without opening TIDE (`tibbo_device.py`, experimental); choose Tibbits for a task, lay them out in TPS sockets and check lines, UART/INT, connectors, PoE and the +5 V power budget; draw the board and firmware state machines. Linux boards LTPP3(G2): Tibbits, power, sockets and first steps. |
-| [**appblocks**](skills/appblocks/) | Explain, review, edit and generate [AppBlocks](https://appblocks.io) projects (exported JSON); draw the logic flow; check the hardware through `tibbo-firmware`; start from one of 6 ready projects for TiOS; compile the generated firmware with Tibbo's TIDE compiler; set up MQTT with your own broker; work with the AppBlocks Cloud API (projects, devices, OTA, workflows) with confirmation before any write. |
+| [**appblocks**](skills/appblocks/) | Explain, review, edit and generate [AppBlocks](https://appblocks.io) projects (exported JSON); draw the logic flow; check the hardware through `tibbo-firmware`; start from one of 6 ready projects for TiOS; compile the generated firmware with Tibbo's TIDE compiler; set up MQTT with your own broker; work with the AppBlocks Cloud API (projects, devices, OTA, workflows) with confirmation before any write; explain **Zephyr**, which Tibbo is bringing to its boards (when to pick it over TiOS, what already runs on TPP2, how to move a project); find a ready project among the 79 on appblocks.io and know which of them do not build and why. |
 
 The two skills are designed to work together: AppBlocks hardware goes through the TPS checker of `tibbo-firmware`,
 and firmware that AppBlocks generates for TiOS is reviewed with the `tibbo-firmware` checklist.
@@ -56,7 +56,7 @@ flowchart LR
     N --> B[tibbo_build.py: Tibbo's compiler]
     B --> D[tibbo_device.py: upload, run]
     F --> R[(TiOS API · 46 platforms<br/>libraries · 84 Tibbits)]
-    A --> K[(177 editor blocks · 78 projects<br/>Cloud API reference)]
+    A --> K[(177 editor blocks · 79 projects<br/>Cloud API reference)]
     T --> S[Board SVG + power budget]
     A --> L[Logic flow SVG]
 ```
@@ -183,8 +183,8 @@ always try the firmware on real hardware. What the agent can reach in your setup
 
 ## Measured
 
-The repository has [14 control tasks with automatic checks](evals/README.md): the result is compiled by Tibbo's
-compiler and checked by the skills' tools. First run, 10 November 2026:
+The repository has [16 control tasks with automatic checks](evals/README.md): the result is compiled by Tibbo's
+compiler and checked by the skills' tools. First run (the first 14 tasks), 10 November 2026:
 
 | | Tasks solved | Checks passed |
 |---|---|---|
@@ -194,6 +194,8 @@ compiler and checked by the skills' tools. First run, 10 November 2026:
 
 Without the skills not one firmware project built. The checks are narrow ("builds and contains what was asked", not
 "works on the device"), and other agents have not been run yet: one command does it, see `evals/README.md`.
+Version 2.4 adds two tasks (supply placement, TiOS or Zephyr); Sonnet 5.5 with the skills solved them and three
+related tasks, 5 of 5.
 
 ## Repository layout
 

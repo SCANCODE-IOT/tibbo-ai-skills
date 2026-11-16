@@ -139,6 +139,17 @@
    ]
   },
   {
+   "id": "hw-place",
+   "group": "hardware",
+   "title": "Железо: куда поставить источник питания",
+   "prompt": "Контроллер на TPP2W(G2): одна линия RS485 (Modbus RTU), два реле и вход «сухой контакт». Питание - блок 12 В в шкафу. Разложи Tibbit по сокетам и сохрани конфигурацию в cfg.json в формате скрипта tps_check.py из скиллов Tibbo (ключи board, slots, power), если знаешь этот формат.",
+   "checks": [
+    {"id": "cfg", "type": "tps_check_ok", "file": "cfg.json", "what": "cfg.json проходит tps_check.py без ошибок"},
+    {"id": "supply_s11", "type": "cfg", "expr": "str((cfg.get('slots') or {}).get('S11', '')).lstrip('#') in ('09', '10') or \"'model': '09'\" in str((cfg.get('slots') or {}).get('S11', '')) or \"'model': '10'\" in str((cfg.get('slots') or {}).get('S11', ''))", "what": "источник 12 В (#09/#10) в S11, как в проектах Tibbo"},
+    {"id": "pair_s12", "type": "cfg", "expr": "str((cfg.get('slots') or {}).get('S12', '')).lstrip('#') == '18' or \"'model': '18'\" in str((cfg.get('slots') or {}).get('S12', ''))", "what": "#18 в S12"}
+   ]
+  },
+  {
    "id": "linux-basic",
    "group": "knowledge",
    "title": "Linux-плата: Tibbo BASIC не подходит",
@@ -171,6 +182,17 @@
    "checks": [
     {"id": "zephyr", "type": "regex", "where": "answer", "pattern": "Zephyr", "what": "сказано, что блок Square Root есть только на Zephyr"},
     {"id": "no_node", "type": "ab_no_node", "file": "out.json", "node": "node_sqrt", "what": "в проект на TiOS блок node_sqrt не добавлен (иначе генератор кода отвечает ошибкой 500)"}
+   ]
+  },
+  {
+   "id": "ab-runtime",
+   "group": "appblocks",
+   "title": "AppBlocks: TiOS или Zephyr",
+   "prompt": "Начинаю в AppBlocks новый проект для TPP2W(G2): опрос десяти датчиков по Modbus RTU и отправка в MQTT, плюс веб-панель. Какую среду (runtime) выбрать и почему? Ответь коротко.",
+   "checks": [
+    {"id": "zephyr", "type": "regex", "where": "answer", "pattern": "Zephyr", "what": "пользователю рассказано о Zephyr"},
+    {"id": "tios", "type": "regex", "where": "answer", "pattern": "TiOS", "what": "упомянута TiOS как поддерживаемая среда"},
+    {"id": "why", "type": "regex", "where": "answer", "pattern": "(?i)приоритет|вытесн|быстр", "what": "сказано, что даёт Zephyr (приоритеты задач или скорость интерфейса)"}
    ]
   },
   {

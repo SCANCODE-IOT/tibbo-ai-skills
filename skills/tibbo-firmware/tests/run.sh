@@ -36,6 +36,13 @@ out=$("$PY" scripts/tps_check.py check tests/onewire_62_21.json)
 echo "$out" | grep -q "обслуживает модуль" && { echo "FAIL #62+#21 pairing"; fail=1; } || echo "ok   #62+#21 pairing"
 out=$("$PY" scripts/tps_check.py check tests/greenhouse_tpp3.json)
 echo "$out" | grep -q "предупреждений 0" && echo "ok   greenhouse clean" || { echo "FAIL greenhouse"; echo "$out"; fail=1; }
+# power supply placement (Nov 2026, from 79 Tibbo projects): end of the board is the norm, UART/INT socket is a hint
+out=$("$PY" scripts/tps_check.py check tests/supply_in_uart_socket.json)
+echo "$out" | grep -q "ставит источник в конец платы: S11 + #18 в S12" && echo "ok   supply placement hint" || { echo "FAIL supply placement hint"; echo "$out"; fail=1; }
+out=$("$PY" scripts/tps_check.py check tests/supply_tpp2_s11.json)
+echo "$out" | grep -q "в конец платы" && { echo "FAIL supply at S11 flagged"; echo "$out"; fail=1; } || echo "ok   supply at S11 quiet"
+out=$("$PY" scripts/tps_check.py check tests/supply_tpp3_s25.json)
+echo "$out" | grep -q "предупреждений 0" && echo "$out" | grep -q "S17 или S19" && echo "ok   #33 in S25 is info" || { echo "FAIL #33 in S25"; echo "$out"; fail=1; }
 # tibbo_lint.py: API names checked against the TiOS reference
 "$PY" scripts/tibbo_lint.py tests/lint/good.tbs --platform "TPP3W(G2)" >/dev/null && echo "ok   lint clean code" || { echo "FAIL lint clean code"; fail=1; }
 out=$("$PY" scripts/tibbo_lint.py tests/lint/bad.tbs --platform "TPP3W(G2)"); rc=$?

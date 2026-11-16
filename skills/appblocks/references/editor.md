@@ -39,8 +39,9 @@
 - **Run** (справа сверху): режим **Debug** (по умолчанию: отладочная прошивка, консоль, точки останова, устройство
   останавливается без связи с редактором, мигает зелёный LED) или **Deploy Release Version**. **Download Release
   Binary** — .tpc для ручной загрузки через Device Explorer → Upload Application.
-- Для загрузки и отладки на устройстве нужен **Tibbo Desktop Extension** (настольная программа, находит устройства
-  в локальной сети; Windows — разрешить доступ к сети, macOS — разрешить Local Network Access в браузере).
+- Для загрузки и отладки на устройстве нужен **Tibbo Desktop Extension** - настольная программа, через которую
+  страница AppBlocks загружает прошивку в устройства Tibbo (так это описала Tibbo, ноябрь 2026); находит устройства
+  в локальной сети. Windows - разрешить доступ к сети, macOS - разрешить Local Network Access в браузере.
 - Симулятор — в AppBlocks Desktop: Run → **Start Simulator** (GPIO, датчики, LCD, MQTT/HTTP/сокеты, точки останова).
 - **Import / Export**: на странице нового приложения кнопки **Import** (выбрать .json → появится в списке проектов)
   и **Export** (скачать .json). Открыть проект по ссылке: `https://app.appblocks.io/app/project/new?url=<URL JSON>`.
@@ -50,7 +51,7 @@
 | Runtime | Платы | Особенности |
 |---|---|---|
 | **tios** | TPP2, TPP3, DS1101, DS1102, EM510 | Tibbo OS; Tibbit, LCD/клавиатура TPP2, DS Manager, 1-Wire. Одно событие за раз, остальные ждут. Сборка — .tpc/.pdb (Tibbo BASIC) |
-| **zephyr** | сотни плат (ESP32, nRF52840, RP2040…), а также TPP2/TPP3 | Приоритетные очереди (срочные потоки вытесняют); SNMP, SMTP, MbedTLS |
+| **zephyr** | ESP32, nRF52840, Raspberry Pi Pico и др.; для TPP2/TPP3 Tibbo готовит (примеры на TPP2W(G2) уже есть) | Приоритетные очереди (срочные потоки вытесняют); SNMP, SMTP, MbedTLS, камера, SD-карта; через API не собрать. **Подробно и что говорить пользователю - zephyr.md** |
 | micropython | часть Zephyr-плат (Pico) | |
 Сгенерированный код смотри через `ab_api.py code` (POST /api/projects/code). Для `tios` это Tibbo BASIC — его можно
 проверять скиллом tibbo-firmware.

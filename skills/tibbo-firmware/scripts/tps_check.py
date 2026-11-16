@@ -171,6 +171,15 @@ def poe_limit(sp, ambient, rep, where):
     return max(ok)
 
 
+PF_NOTE = {"-PF": ": сигнала «питание пропадает» у прошивки не будет; нужен (сохранить счётчики) - ставь источник в "
+                  "сокет со всеми линиями, на TPP3 например S17 или S19",
+           "-SDWN": ": источник всегда включён - для питания платы это нормально",
+           "SDWN": ": источник всегда включён - для питания платы это нормально"}
+# Where Tibbo puts the 5 V supply in its own AppBlocks projects (79 projects on appblocks.io, Nov 2026):
+# TPP2: S11 + #18 in S12 in 66 of 73; TPP3: the end of the board (S25 + #18 in S26, also S23, S27).
+SUPPLY_HOME = {"TPP2": (11, 12), "TPP3": (25, 26)}
+
+
 def check(cfg, tib, boards):
     rep = Report()
     bname = cfg.get("board")
@@ -226,6 +235,9 @@ def check(cfg, tib, boards):
                     msg = f"#{t['model']}: линия {ln['id']} → S{m_socks[i // 4]}.{letter}, а у этого сокета линии {letter} нет"
                     if ln["need"] >= 2:
                         rep.err(w, msg)
+                    elif t["category"] == "power" and t["model"] != "23":
+                        # the usual place of a supply in Tibbo's own projects (TPP3: S25, S27): the supply is always on
+                        rep.info(w, msg + PF_NOTE.get(ln["id"], ""))
                     elif not (t["model"] == "23"):
                         rep.warn(w, msg + (f" ({ln['if_missing']})" if ln["if_missing"] else ""))
             if needed and missing_needed == needed and t["model"] != "23" and t["category"] != "power":
@@ -257,6 +269,14 @@ def check(cfg, tib, boards):
             cpairs = [board["sockets"][f"S{s}"]["c_pair"] for s in u["sockets"]]
             conns = [placed.get(int(c[1:]), (None,))[0] for c in cpairs]
             is_supply = bool(t.get("supply_spec")) and t["model"] not in ("12", "23")
+            home = SUPPLY_HOME.get(board.get("family"))
+            first_s = board["sockets"].get(f"S{m_socks[0]}", {}) if m_socks else {}
+            if is_supply and home and m_socks and m_socks[0] not in (home[0], home[0] - 2, home[0] + 2):
+                rare = [x for x, ok in (("UART", first_s.get("uart") is not None), ("прерыванием", first_s.get("int") is not None),
+                                        ("АЦП", first_s.get("adc"))) if ok]
+                if rare:
+                    rep.info(w, f"#{t['model']} занимает сокет с {' и '.join(rare)}. Tibbo в своих проектах ставит источник в конец "
+                             f"платы: S{home[0]} + #18 в S{home[1]} - так сокеты с особыми линиями остаются свободными (power.md §2a)")
             if is_supply and not any(c in ("18", "19", "20", "21") for c in conns):
                 rep.warn(w, f"#{t['model']}: нет входного разъёма питания в {'/'.join(cpairs)} — поставь #18 (джек+клеммы): "
                             f"его одобряет AppBlocks; #20/#21 допускает документация, но редактор их не принимает")

@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.3.0"
+  version: "2.4.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -13,8 +13,11 @@ metadata:
 
 AppBlocks — визуальный конструктор прошивок Tibbo: проект = плата + Tibbit/периферия + сервисы (features) +
 логика из блоков. Из проекта генерируется прошивка: **`runtime: tios`** — Tibbo BASIC для TiOS (TPP2, TPP3, DS1101,
-DS1102, EM510), **`zephyr`** — Zephyr C (сотни плат и TPP2/TPP3), `micropython`. AppBlocks Cloud — устройства,
-OTA, переменные/таблицы/команды, облачные workflow, дашборды, HTTP API.
+DS1102, EM510), **`zephyr`** — Zephyr C (ESP32, nRF52840, Pico и др.; на TPP2/TPP3 Tibbo его вводит), `micropython`.
+AppBlocks Cloud — устройства, OTA, переменные/таблицы/команды, облачные workflow, дашборды, HTTP API.
+**Tibbo активно продвигает Zephyr**: когда пользователь выбирает среду, начинает проект, спрашивает о скорости,
+приоритетах, будущем TPS или о блоке «только Zephyr» - коротко расскажи о Zephyr по `references/zephyr.md` §1
+(что даёт, что уже есть на TPP2, что на TPS пока надёжнее TiOS), не молчи о нём.
 Ручной код на Tibbo BASIC — скилл tibbo-firmware; им же проверяй железо и код, сгенерированный для `tios`.
 
 | Файл | Когда открывать |
@@ -26,7 +29,9 @@ OTA, переменные/таблицы/команды, облачные workfl
 | `references/features.md` | Feature, сервисы-библиотеки, вложенные элементы (variable, timer, tbl_table…), поля `tibbit_NN`, периферия, виджеты LCD и веб-консоли - поля, варианты, ограничения по платам. |
 | `references/catalog.md` | Поля feature и узлов в экспортах Tibbo (ModbusMQTTGateway, bp_modbus_gateway_lcd) с примерами значений, поля Tibbit, структуры Modbus/LUIS. Полный список блоков и полей - blocks.md и features.md. |
 | `references/generated-code.md` | Что генерирует AppBlocks для `tios`: файлы TIDE-проекта, переменные → процедуры `var_X_*`, маркеры вставки кода, замеченные особенности. |
-| `references/catalog-examples.md` | Как блоки и Tibbit реально используются в **78 проектах appblocks.io** (59 типов узлов, 28 Tibbit): типичные связки, аргументы, сокеты. |
+| `references/zephyr.md` | **Zephyr**: что это, TiOS или Zephyr (таблица выбора), что есть только в одной среде, Zephyr на платах Tibbo (описания плат, загрузка, OTA, сборка только в редакторе), перевод проекта TiOS → Zephyr, **что сказать пользователю**. |
+| `references/examples-index.md` | **Все 79 проектов appblocks.io**: плата, среда, Tibbit по сокетам, сервисы, итог `check` и сборки компилятором Tibbo (какие примеры не собираются и почему). Искать готовый пример под задачу. |
+| `references/catalog-examples.md` | Как блоки и Tibbit реально используются в проектах appblocks.io (59 типов узлов, 28 Tibbit): типичные связки, аргументы, сокеты. |
 | `references/mqtt.md` | **MQTT**: feature `mqtt` и блоки, IP брокера через настройку, поведение библиотеки (публикация без связи теряется, переподключение), свой брокер Mosquitto (конфиг, проверка `mosquitto_sub/pub`, частые проблемы), приёмник на компьютере. |
 | `references/api.md` | AppBlocks Cloud API: авторизация, проекты (код, сборка, версии, OTA, бандлы), устройства, группы, workspaces, workflow, дашборды. |
 | `scripts/ab_pairs.py`, `data/appblocks_pairs.json` | Правила жёлтых треугольников на холсте Hardware (снято из кода редактора); вызывается из `ab_tool.py check`. |
@@ -49,7 +54,10 @@ OTA, переменные/таблицы/команды, облачные workfl
    (тригонометрия, корень, степень, округление, часть операций со строками, камера, буферы, файлы и другие - пометка
    «только Zephyr» в blocks.md). В проекте на TiOS такой блок ломает генерацию кода: сервер отвечает ошибкой 500 без
    объяснений. `ab_tool.py check` показывает это как ошибку.
-3. Железо (Tibbit, сокеты, питание) - через `ab_tool.py tps` и `tps_check.py` из скилла tibbo-firmware.
+3. Железо (Tibbit, сокеты, питание) - через `ab_tool.py tps` и `tps_check.py` из скилла tibbo-firmware. Источник
+   питания ставь, как Tibbo: TPP2 - S11 + #18 в S12, TPP3 - S25 + #18 в S26 (power.md §2a скилла tibbo-firmware).
+   Включён AppBlocks Cloud (`cgg`) на TiOS - включи и `firmware_upgrade`, и `http` (ENABLED = 1), иначе не соберётся;
+   нет поля ENABLED - редактор берёт значение по умолчанию (часто 0). `check` это ловит.
 4. Любая запись в облако AppBlocks (create, update, OTA, команды устройствам) - только после явного «да» пользователя на конкретный вызов.
 5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.
 6. **Скрипты запустить нельзя** (веб-чат): скажи «скриптами не проверено», дай файл и команды проверки, чтобы пользователь запустил их у себя, и попроси прислать вкладку Problems из редактора.
@@ -62,7 +70,7 @@ OTA, переменные/таблицы/команды, облачные workfl
 2. **Экспорт**: в редакторе кнопка **Export** скачивает `.json`; пользователь прикладывает файл.
 3. **Браузер** (§5) — смотреть проект в редакторе под входом пользователя.
 4. **Примеры**: `https://appblocks.io/projects/<имя>.json`, где имя — последний сегмент страниц
-   `appblocks.io/tutorials/*` и `appblocks.io/examples/*` (78 проектов: sprinkler1–6, accesscontrol1–6, modbusgateway,
+   `appblocks.io/tutorials/*` и `appblocks.io/examples/*` (79 проектов, список - examples-index.md: sprinkler1–6, accesscontrol1–6, modbusgateway,
    modbusmqtt, tbt22, hydroponics, http-server-tls…). `GET /api/projects/examples` в октябре 2026 отвечал 500.
 
 **Сеть.** Если агент работает в облачной песочнице со списком разрешённых сайтов, хосты AppBlocks доступны только после
