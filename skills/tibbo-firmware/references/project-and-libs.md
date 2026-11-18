@@ -264,6 +264,32 @@ must sit in a socket whose lines are a UART (`requires: serial`); interrupt-usin
 Use per-platform `#if PLATFORM_ID=TPP3WG2 ... #elif ... #else XXXX 'Unsupported platform #endif` blocks as the
 samples do so a wrong target fails at compile time.
 
+## 8a. Как на самом деле работают события sock и ser (по .tph Tibbo, проверено 18 ноября 2026)
+
+Здесь ошибаются чаще всего, в том числе ИИ. Если в справочнике нет нужной фразы - это не доказательство: открой `.tph`
+платформы (Platforms/sock.tph, ser.tph) и проверь, а не делай вывод из молчания.
+
+- **События сами выбирают сокет и порт.** «Socket-related events such as on_sock_data_arrival change currently
+  selected socket» (sock.tph, `sock.num`); то же для порта: «serial-port related events such as on_ser_data_arrival
+  change currently selected port» (ser.tph, `ser.num`). В `on_sock_event`, `on_sock_data_arrival`, `on_ser_data_arrival`
+  `sock.num` / `ser.num` уже указывают на источник события - на это опираются библиотеки Tibbo (`if sock.num = my_sock`).
+  После своих переключений внутри обработчика верни номер, если дальше работаешь с «тем» сокетом.
+- **UDP: одно событие - одна датаграмма.** `sock.getdata` в UDP отдаёт данные только текущей датаграммы; при выходе
+  из `on_sock_data_arrival` **датаграмма удаляется из RX-буфера** («the datagram is deleted from the RX buffer once the
+  on_sock_data_arrival event handler is exited», `sock.gendataarrivalevent`). Читай всё нужное внутри обработчика.
+  Обрабатываешь UDP в цикле с `doevents` - выключи `sock.gendataarrivalevent`, иначе обработчик внутри `doevents`
+  «украдёт» датаграммы.
+- **TCP: поток.** Несчитанное остаётся в буфере и событие придёт снова; за один вызов `sock.getdata` берёт не больше
+  255 байт (длина строки) и не больше, чем есть: читай в цикле `while sock.rxlen > 0` или полагайся на повтор события.
+- **Конец кадра на последовательном порту** (Modbus RTU, протоколы с паузой) - штатно через `ser.interchardelay`
+  (шаг 10 мс): данные «фиксируются» и `on_ser_data_arrival` приходит после паузы без символов. Свой таймер для склейки
+  кадра не нужен; для Modbus RTU на 9600 бод 3,5 символа ≈ 4 мс - ставь 1 (10 мс) и проверяй CRC (recipes.md).
+- **RTS/направление RS485** - `ser.rtsmap` и `ser.dircontrol`, а линию RTS включи как выход (`io.num` + `io.enabled = YES`)
+  на платформах, где это не делает TiOS сама (EM1000 и другие старые модули; см. docs вашего модуля).
+- **`sock.reconmode` в TCP**: 0 - переподключение не принимается; 1 - только с того же IP и порта; 2 - с того же IP,
+  любой порт; 3 - **с любого IP и порта: новый клиент выбивает текущего**. Для сервера «один клиент» режим 3 надо явно
+  оговорить; для нескольких клиентов - несколько сокетов на одном порту (sock.tph, PL_SOCK_RECONMODE_*).
+
 ## 9. Факты из docs.tibbo.com, важные для кода и ревью (сверка октябрь 2026)
 
 Ссылки - slug страницы `https://docs.tibbo.com/<slug>`; полный указатель тем - docs-map.md.

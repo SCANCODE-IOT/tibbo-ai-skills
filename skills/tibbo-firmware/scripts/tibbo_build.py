@@ -37,6 +37,7 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -900,11 +901,12 @@ def main(argv):
     errors = [m for m in res["messages"] if m["level"] == "error"]
     built_for = tpc_platform(res["tpc"]) if res["ok"] else None
     warnings = [m for m in res["messages"] if m["level"] == "warning"]
+    notes = build_record(tpr, out, built_for, mode, res, argv) if res["ok"] else []
     if "--json" in argv:
         print(json.dumps({"mode": mode, "ok": res["ok"], "platform": res["platform"], "debug": res["debug"],
                           "errors": errors, "warnings": warnings, "tpc": out if res["ok"] else None,
                           "tpc_bytes": len(res["tpc"] or b""), "built_for": built_for, "firmware": firmware,
-                          "library_files": res.get("library_files", [])},
+                          "library_files": res.get("library_files", []), "notes": notes},
                          ensure_ascii=False, indent=1))
     else:
         print("Сборка: %s, %s, %s" % ({"local": "TIDE на этом компьютере", "node": "компилятор Tibbo на Node.js (без TIDE, "
@@ -927,6 +929,8 @@ def main(argv):
                 print("Собрано для: %s (платформа и старшая версия TiOS)" % built_for)
             if res["debug"]:
                 print("Это debug-сборка: в устройстве она ждёт команд TIDE. Для работы без TIDE - --release.")
+            for n in notes:
+                print(n)
             if firmware and mode != "local":
                 print("Прошивка собрана без TIDE пользователя (платформы %s). Перед загрузкой сверьте TiOS устройства "
                       "(Device Explorer) с версией выше; не совпадает - соберите в TIDE или обновите TiOS."
@@ -936,6 +940,50 @@ def main(argv):
             if not errors and res.get("raw_tail"):
                 print("\n".join(res["raw_tail"]))
     return 0 if res["ok"] else 1
+
+
+def build_record(tpr, out, built_for, mode, res, argv):
+    """Remember the last build in <project>/.tibbo_build.json; return notes for the user: the exact command to repeat
+    the build, a change of the target TiOS line since the last build (platform files of the compiler were updated),
+    and the removal of the previous .tpc this script wrote into the project folder under another name."""
+    notes = []
+    rec_path = tpr.parent / ".tibbo_build.json"
+    try:
+        old = json.loads(rec_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        old = {}
+    out_abs = str(Path(out).resolve())
+    if old.get("built_for") and built_for and old["built_for"] != built_for:
+        notes.append("ВНИМАНИЕ: в прошлый раз этот проект собирался для %s (%s), теперь для %s - поменялись файлы платформ "
+                     "компилятора (обновление TIDE или --latest-platforms). Прежний .tpc - для другой TiOS; сверь TiOS "
+                     "устройства (references/platforms.md)." % (old["built_for"], old.get("when", "?"), built_for))
+    prev = old.get("tpc")
+    if prev and prev != out_abs and os.path.isfile(prev) and Path(prev).resolve().parent == tpr.parent.resolve():
+        try:
+            os.remove(prev)
+            notes.append("Удалён прежний %s (сборка %s): чтобы не залить в устройство старую прошивку." % (
+                Path(prev).name, old.get("kind", "?")))
+        except OSError:
+            pass
+    script = os.path.relpath(os.path.abspath(__file__)) if not os.path.isabs(sys.argv[0]) else os.path.abspath(__file__)
+    keep = [a for i, a in enumerate(argv) if a in ("--release", "--debug", "--node", "--local", "--cloud", "--firmware")
+            or (a == "--out") or (i > 0 and argv[i - 1] == "--out")]
+    target = str(tpr.parent) if tpr.suffix.lower() == ".tpr" else str(tpr)
+    cmd = "python3 %s %s%s" % (script, '"%s"' % target if " " in target else target, (" " + " ".join(keep)) if keep else "")
+    home = os.environ.get("TIBBO_BASIC_HOME")
+    if home and mode == "node":
+        cmd = ('set "TIBBO_BASIC_HOME=%s" && %s' if os.name == "nt" else "TIBBO_BASIC_HOME=%s %s") % (home, cmd)
+    if os.name == "nt":
+        cmd = cmd.replace("python3 ", "python ", 1)
+    notes.append("Повторить эту сборку: " + cmd)
+    try:
+        rec_path.write_text(json.dumps({"built_for": built_for, "tpc": out_abs, "mode": mode,
+                                        "kind": "debug" if res["debug"] else "release",
+                                        "when": time.strftime("%Y-%m-%d %H:%M"), "command": cmd},
+                                       ensure_ascii=False, indent=1), encoding="utf-8")
+    except OSError:
+        pass
+    return notes
 
 
 if __name__ == "__main__":

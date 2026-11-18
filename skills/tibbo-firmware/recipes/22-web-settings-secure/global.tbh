@@ -1,0 +1,13 @@
+'===================================================================
+' app - global header. Platform: TPP3W(G2)
+'===================================================================
+
+'DECLARATIONS: your own subs, functions and global variables (dim them in ONE .tbs file)
+declare uptime_s as dword
+declare poll_period as word
+declare pin_is_default as no_yes
+declare lock_left as word
+declare function http_var(byref q as string, byref key as string) as string
+declare function pin_check(byref given as string) as no_yes
+declare function pin_set(byref new_pin as string) as no_yes
+declare sub settings_save()

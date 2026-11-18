@@ -1,0 +1,5 @@
+include "global.tbh"
+
+'Callbacks of the libraries. Every one of them must exist, even if empty:
+'the linker reports a missing one as "unresolved address '?F:callback_...'".
+

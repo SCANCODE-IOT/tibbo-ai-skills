@@ -42,7 +42,13 @@ echo "$out" | grep -q "ставит источник в конец платы: S
 out=$("$PY" scripts/tps_check.py check tests/supply_tpp2_s11.json)
 echo "$out" | grep -q "в конец платы" && { echo "FAIL supply at S11 flagged"; echo "$out"; fail=1; } || echo "ok   supply at S11 quiet"
 out=$("$PY" scripts/tps_check.py check tests/supply_tpp3_s25.json)
-echo "$out" | grep -q "предупреждений 0" && echo "$out" | grep -q "S17 или S19" && echo "ok   #33 in S25 is info" || { echo "FAIL #33 in S25"; echo "$out"; fail=1; }
+echo "$out" | grep -q "предупреждений 0" && echo "$out" | grep -q "S3/S7/S11/S15" && echo "ok   #33 in S25 is info" || { echo "FAIL #33 in S25"; echo "$out"; fail=1; }
+# several supplies are diode-ORed: the margin is checked against the strongest one, the sum only as the ceiling
+out=$("$PY" scripts/tps_check.py check tests/two_supplies.json)
+echo "$out" | grep -q "держится только на сложении токов" && echo "$out" | grep -q "ошибок 0" && echo "ok   two supplies: no summing" || { echo "FAIL two supplies"; echo "$out"; fail=1; }
+# #61-1 draws more under load on its 24 V output; above 75 mA is an error
+out=$("$PY" scripts/tps_check.py check tests/t61_overload.json)
+echo "$out" | grep -q "больше предела 75 мА" && echo "ok   #61-1 24 V output limit" || { echo "FAIL #61-1 limit"; echo "$out"; fail=1; }
 # tibbo_lint.py: API names checked against the TiOS reference
 "$PY" scripts/tibbo_lint.py tests/lint/good.tbs --platform "TPP3W(G2)" >/dev/null && echo "ok   lint clean code" || { echo "FAIL lint clean code"; fail=1; }
 out=$("$PY" scripts/tibbo_lint.py tests/lint/bad.tbs --platform "TPP3W(G2)"); rc=$?
@@ -51,6 +57,7 @@ for want in "sock.conect" "ser.speed" "PL_SSTS_CONECTED" "PL_IO_NUM_99" "elseif"
 done
 [ "$rc" = 1 ] && echo "ok   lint seeded errors" || { echo "FAIL lint exit code $rc"; fail=1; }
 "$PY" scripts/tibbo_lint.py tests/lint/tpp2_adc.tbs --platform "TPP2W(G2)" | grep -q "объекта adc нет на платформе" && echo "ok   lint platform objects" || { echo "FAIL lint platform objects"; fail=1; }
+"$PY" scripts/tibbo_lint.py tests/lint/em1000.tbs --platform EM1000 >/dev/null && echo "ok   lint EM1000 constants from GEN-EM1000.tph" || { echo "FAIL lint EM1000 constants"; "$PY" scripts/tibbo_lint.py tests/lint/em1000.tbs --platform EM1000; fail=1; }
 "$PY" scripts/tibbo_lint.py tests/lint/tpp2_adc.tbs >/dev/null && echo "ok   lint without platform" || { echo "FAIL lint without platform"; fail=1; }
 # lint: 17 habits of other languages and platform mistakes, one per line of the fixture
 n=$("$PY" scripts/tibbo_lint.py tests/lint/habits --json | "$PY" -c "import json,sys; print(json.load(sys.stdin)['errors'])")
@@ -117,6 +124,11 @@ env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" s
 [ "$rc" = 0 ] && grep -q "TIDE на этом компьютере" "$B/out" && [ -f "$B/proj/test.tpc" ] && echo "ok   build local (tmake)" || { echo "FAIL build local (rc=$rc)"; cat "$B/out"; fail=1; }
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj/test.tpr" --release >"$B/out" 2>&1
 grep -q "release" "$B/out" && grep -q "debug = on" "$B/proj/test.tpr" && echo "ok   build release keeps the project unchanged" || { echo "FAIL build release"; cat "$B/out"; fail=1; }
+# every build prints the command to repeat it and remembers itself; an older .tpc of this script under another name goes
+env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" --out "$B/proj/old.tpc" >"$B/out" 2>&1
+env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" >"$B/out2" 2>&1
+grep -q "Повторить эту сборку:" "$B/out2" && [ -f "$B/proj/.tibbo_build.json" ] && [ ! -f "$B/proj/old.tpc" ] && grep -q "Удалён прежний old.tpc" "$B/out2" \
+  && echo "ok   build record: repeat command, old .tpc removed" || { echo "FAIL build record"; cat "$B/out" "$B/out2"; fail=1; }
 cp "$B/proj/main.tbs" "$B/main.good"; sed 's/sock\.num/sock.nmu/' "$B/main.good" > "$B/proj/main.tbs"
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" --json >"$B/out" 2>&1; rc=$?
 [ "$rc" = 1 ] && grep -q '"line": 2' "$B/out" && grep -q '"code": "C1013"' "$B/out" && echo "ok   build reports compiler errors" || { echo "FAIL build errors (rc=$rc)"; cat "$B/out"; fail=1; }

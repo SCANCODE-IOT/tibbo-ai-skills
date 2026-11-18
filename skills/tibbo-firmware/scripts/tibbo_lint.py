@@ -403,6 +403,18 @@ def lint(paths, platform=None):
                 if tpr is None or opt["define"].upper() in defs:
                     enabled_optional.add(o)   # no .tpr to look into: assume the project switches it on
 
+    # constants of this platform from Tibbo's compiler (platform_api.json): the enum variants it uses. platforms.md
+    # lists only what a platform's own .tph declares and misses the GEN-*.tph headers of EM1000/EM1202/NB1010/T1000...
+    exact_consts, enum_consts = None, set()
+    if exact:
+        for en, variants in api["enums"].items():
+            for var in variants:
+                enum_consts.update(c.split("=")[0].strip().upper() for c in var)
+        exact_consts = set()
+        for en, v in exact.get("enums", {}).items():
+            if en in api["enums"] and isinstance(v, int) and v < len(api["enums"][en]):
+                exact_consts.update(c.split("=")[0].strip().upper() for c in api["enums"][en][v])
+
     def exact_members(o):
         """Members of object o on this platform: {name: kind}, or None if the object is not there."""
         if o in exact["objects"]:
@@ -527,6 +539,9 @@ def lint(paths, platform=None):
                     hint = difflib.get_close_matches(c, constants, n=2, cutoff=0.8)
                     tip = " (похоже: %s)" % ", ".join(hint) if hint else ""
                     add("error", f, n, "%s: такой константы нет в TiOS%s" % (c, tip))
+                elif exact_consts is not None:
+                    if not other_platform and c in enum_consts and c not in exact_consts:
+                        add("error", f, n, "%s: этой константы нет на платформе %s (по данным компилятора Tibbo)" % (c, platform))
                 elif plat is not None and not other_platform and c in plat_specific and c not in plat_consts:
                     add("error", f, n, "%s: этой константы нет на платформе %s (platforms.md)" % (c, platform))
             if is_basic and re.search(r"(?<!\w)elseif(?!\w)", line, re.I):

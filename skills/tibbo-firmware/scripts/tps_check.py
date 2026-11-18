@@ -18,7 +18,8 @@ config.json:
   "wifi": null,                         // "WA2000" etc. if the Wi-Fi add-on is fitted
   "buzzer": true,                       // count buzzer current (50 mA)
   "ambient_c": 40,                      // max ambient temperature inside the box, C
-  "extra_5v_ma": 0                      // anything else powered from the 5V rail (sensors, LEDs...)
+  "extra_5v_ma": 0,                     // anything else powered from the 5V rail (sensors, LEDs...)
+  "loads": {"S5": 40}                   // load on a Tibbit's own output, mA (#61-1: 24 V loop output; default 40)
 }
 Exit code: 0 = no errors, 1 = errors found, 2 = bad input.
 """
@@ -42,6 +43,12 @@ def utf8_stdio():
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
 LETTERS = "ABCD"
+
+
+# Tibbits whose +5V draw depends on the load of their own output (docs.tibbo.com/tibbit_61-1: "5V/120mA (no load on 24V
+# output)", "can increase significantly, potentially reaching up to 500mA", 24V output "up to 75mA", keep "not above 50mA").
+# per_ma: 24 V x load / 5 V / ~75 % efficiency - 50 mA of loop load gives ~440 mA, 60 mA ~500 mA as Tibbo says.
+LOADED_24V = {"61_1": {"base": 120, "per_ma": 6.4, "default": 40, "max": 75, "rec": 50}}
 
 
 def load():
@@ -171,8 +178,8 @@ def poe_limit(sp, ambient, rep, where):
     return max(ok)
 
 
-PF_NOTE = {"-PF": ": сигнала «питание пропадает» у прошивки не будет; нужен (сохранить счётчики) - ставь источник в "
-                  "сокет со всеми линиями, на TPP3 например S17 или S19",
+PF_NOTE = {"-PF": ": сигнала «питание пропадает» у прошивки не будет. Нужен (сохранить счётчики) - ставь #33 в сокет со "
+                  "всеми линиями и прерыванием на D: TPP3 - S3/S7/S11/S15, TPP2 - S9/S11 (power.md §2a)",
            "-SDWN": ": источник всегда включён - для питания платы это нормально",
            "SDWN": ": источник всегда включён - для питания платы это нормально"}
 # Where Tibbo puts the 5 V supply in its own AppBlocks projects (79 projects on appblocks.io, Nov 2026):
@@ -409,7 +416,23 @@ def power_budget(cfg, board, units, ambient, rep):
             continue
         if t.get("supplies_ma", {}).get("+5V"):
             continue
-        if c.get("+5V"):
+        if t["model"] in LOADED_24V:
+            spec = LOADED_24V[t["model"]]
+            where = f"S{u['start']}"
+            load = (cfg.get("loads") or {}).get(where)
+            if load is None:
+                load = spec["default"]
+                rep.info(f"#{t['model']} {where}", f"ток по +5 В зависит от нагрузки выхода 24 В: {spec['base']} мА без нагрузки, "
+                         f"под нагрузкой до ~500 мА. Считаю {spec['default']} мА нагрузки (две петли 4-20 мА); свой ток "
+                         f"укажи в \"loads\": {{\"{where}\": мА}} (docs: tibbit_61-1)")
+            load = float(load)
+            if load > spec["max"]:
+                rep.err(f"#{t['model']} {where}", f"нагрузка выхода 24 В {load:g} мА больше предела {spec['max']} мА")
+            elif load > spec["rec"]:
+                rep.warn(f"#{t['model']} {where}", f"нагрузка выхода 24 В {load:g} мА: Tibbo советует не больше {spec['rec']} мА, "
+                         "иначе 24 В проседает")
+            cons.append((f"#{t['model']} {where} (24 В: {load:g} мА)", round(spec["base"] + spec["per_ma"] * load)))
+        elif c.get("+5V"):
             cons.append((f"#{t['model']} S{u['start']}", c["+5V"]))
         p15 += c.get("+15V", 0)
         m15 += c.get("-15V", 0)
@@ -446,21 +469,32 @@ def power_budget(cfg, board, units, ambient, rep):
             if lim:
                 sources.append((f"#{t['model']} S{u['start']}" + (f" ({u['vin']:g} В)" if u["vin"] and t["model"] != "23" else ""), lim))
     total = sum(v for _, v in cons)
-    cap = sum(v for _, v in sources)
+    # Several sources are diode-ORed. Tibbo: "you can either combine their current output or increase reliability", but
+    # through diodes the load is not shared evenly - the source with the higher voltage carries almost all of it up to its
+    # current limit. So the margin is checked against the largest single source; the sum is only the absolute ceiling.
+    cap_sum = sum(v for _, v in sources)
+    cap = max((v for _, v in sources), default=0)
     if not sources:
         rep.err("питание", "нет источника 5 В: укажи power.ext5v_ma (внешний стабилизированный 5 В на клеммы платы) "
                            "или поставь Tibbit-источник (#09/#10 9–18 В, #25/#33 8–60 В, #23 PoE)")
     else:
         util = total / cap if cap else 9
         margin_need = 0.7 if cellular else 0.8
-        if util > 1:
-            rep.err("питание", f"потребление по 5 В {total} мА больше возможностей источников {cap} мА")
+        if total > cap_sum:
+            rep.err("питание", f"потребление по 5 В {total} мА больше возможностей источников {cap_sum} мА")
+        elif util > 1:
+            rep.warn("питание", f"потребление по 5 В {total} мА больше самого сильного источника ({cap} мА) и держится "
+                                f"только на сложении токов ({cap_sum} мА). Через диоды ток делится неравномерно: один источник "
+                                f"берёт почти всё и упирается в своё ограничение. На объект - один источник с запасом "
+                                f"(#25/#33 вместо #10) или меньше нагрузки (power.md §2)")
         elif util > margin_need:
             rep.warn("питание", f"загрузка источников 5 В {util:.0%} — мало запаса"
                                 + (" (сотовый модем даёт пиковые токи, держи загрузку ≤70%)" if cellular else " (держи ≤80%)"))
         if len(sources) > 1:
-            rep.info("питание", "несколько источников 5 В работают параллельно через диоды — токи суммируются (docs: tibbit_power)")
-    return {"consumers": cons, "sources": sources, "total_5v_ma": total, "capacity_5v_ma": cap, "rail_15v": rail15}
+            rep.info("питание", "несколько источников 5 В соединены через диоды: запас считаю по самому сильному, второй - резерв. "
+                                "Tibbo разрешает и сложение токов, но делятся они неравномерно - на него не рассчитывай (docs: tibbit_power)")
+    return {"consumers": cons, "sources": sources, "total_5v_ma": total, "capacity_5v_ma": cap, "capacity_sum_5v_ma": cap_sum,
+            "rail_15v": rail15}
 
 
 # ------------------------------------------------------------------ output
@@ -478,7 +512,11 @@ def print_report(rep, res):
         print(f"  {p['total_5v_ma']:>6} мА  ИТОГО потребление")
         for n, v in p["sources"]:
             print(f"  {v:>6} мА  источник: {n}")
-        print(f"  {p['capacity_5v_ma']:>6} мА  ИТОГО источники")
+        if len(p["sources"]) > 1:
+            print(f"  {p['capacity_5v_ma']:>6} мА  запас считаю по самому сильному источнику (вместе: {p['capacity_sum_5v_ma']} мА, "
+                  f"но через диоды ток делится неравномерно)")
+        else:
+            print(f"  {p['capacity_5v_ma']:>6} мА  ИТОГО источник")
         if p["rail_15v"]:
             r = p["rail_15v"]
             print(f"  ±15 В: +{r['plus_ma']} / −{r['minus_ma']} мА из {r['capacity_ma']} мА")
