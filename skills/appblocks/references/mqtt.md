@@ -83,5 +83,5 @@ mosquitto_pub -h localhost -t greenhouse/cmd -m water1    # послать ко�
 - Для больших объёмов и дашбордов: Telegraf → InfluxDB → Grafana или Node-RED; для учебного проекта хватает SQLite.
 
 ## 7. Проверка
-1. `ab_tool.py check` - 0 ошибок; 2. `ab_api.py build` - компилируется; 3. брокер + `mosquitto_sub` видят
+1. `ab_tool.py check` - 0 ошибок; 2. `ab_api.py build --cloud-ok` (с согласия) - компилируется; 3. брокер + `mosquitto_sub` видят
 `…/tele` после старта устройства; 4. `mosquitto_pub` команды - устройство реагирует (debug-вывод `sys.debugprint`).

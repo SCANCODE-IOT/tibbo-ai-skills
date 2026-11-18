@@ -29,11 +29,11 @@ for it in json.load(open(os.path.join(R, "index.json"), encoding="utf-8"))["reci
     ok = ok and h.returncode == 0
     if not offline:
         out = tempfile.mkdtemp(prefix="abr-")
-        g = run(os.path.join(AB, "scripts", "ab_api.py"), "code", f, "--outdir", out)
+        g = run(os.path.join(AB, "scripts", "ab_api.py"), "code", f, "--cloud-ok", "--outdir", out)
         gen = g.returncode == 0 and os.path.exists(os.path.join(out, "main.tbs"))
         res.append("code " + ("OK" if gen else "FAIL"))
         for attempt in (1, 2):          # the build service sometimes fails without any compiler message: try once more
-            b = run(os.path.join(AB, "scripts", "ab_api.py"), "build", f, "--release", "--out", os.path.join(out, "fw"))
+            b = run(os.path.join(AB, "scripts", "ab_api.py"), "build", f, "--cloud-ok", "--release", "--out", os.path.join(out, "fw"))
             if b.returncode == 0 or "error" in b.stdout:
                 break
         res.append("build " + (b.stdout.strip().splitlines()[-1] if b.stdout.strip() else "FAIL"))

@@ -1,7 +1,7 @@
 # Что генерирует AppBlocks (runtime `tios`)
 
 Проверено на проекте пользователя (TPP2W(G2), #13 в S9, #17 в S7, #10+#18, DHCP) через `POST /api/projects/code`
-(`ab_api.py code p.json --outdir gen`). Результат — **обычный проект TIDE на Tibbo BASIC**, его можно открыть в TIDE,
+(`ab_api.py code p.json --cloud-ok --outdir gen`, с согласия пользователя: проект уходит на сервер Tibbo). Результат — **обычный проект TIDE на Tibbo BASIC**, его можно открыть в TIDE,
 собрать и проверять скиллом tibbo-firmware.
 
 ## Файлы
@@ -68,7 +68,7 @@
 - Задача сборки (`/api/tasks`) живёт 3 минуты; для просмотра кода сборка не нужна — хватает `/api/projects/code`.
 
 ## Компиляция и что показал компилятор TIDE (проект «Умная теплица», TPP3W(G2), октябрь 2026)
-Проверять сгенерированный код компилятором: `ab_api.py build p.json [--out fw]` (POST `/api/projects/code`, затем
+Проверять сгенерированный код компилятором: `ab_api.py build p.json --cloud-ok [--out fw]` (POST `/api/projects/code`, затем
 `/api/projects/build` без ключа - тот же компилятор TIDE, что у Tibbo; вывод `output`, при успехе `tpc`). Ошибки ниже
 `check` теперь ловит сам (`check_compile_pitfalls`), но новые случаи находит только компилятор.
 - **Настройка STG в выражении** через `{{$ID stg_setting}}` → генератор оставляет `$<ID>` → `undeclared identifier '$…'`.

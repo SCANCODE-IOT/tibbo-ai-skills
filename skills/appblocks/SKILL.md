@@ -60,6 +60,9 @@ AppBlocks Cloud — устройства, OTA, переменные/таблиц
    Request → HTTP Client) и создаёт переменные портов; генератор через API (`ab_api.py code/build`) этого не делает.
    Поэтому в файле ставь их явно (ENABLED = 1, переменная порта) - `check` предупреждает «Редактор ... включит сам».
 4. Любая запись в облако AppBlocks (create, update, OTA, команды устройствам) - только после явного «да» пользователя на конкретный вызов.
+   **Генерация кода и сборка (`ab_api.py code` / `build`) отправляют проект на сервер Tibbo:** спроси один раз за разговор
+   («Можно отправить проект на сервер Tibbo, чтобы проверить сборку?»); «да» - добавляй `--cloud-ok`, «нет» - отдай файл
+   для Import и пиши «сборкой не проверено». Без флага скрипт ничего не отправит.
 5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.
 6. **Скрипты запустить нельзя** (веб-чат): скажи «скриптами не проверено», дай файл и команды проверки, чтобы пользователь запустил их у себя, и попроси прислать вкладку Problems из редактора.
 7. Скрипты лежат в папке скилла: запускай их с путём от неё или перейди в неё. На Windows - `python` вместо `python3`.
@@ -99,8 +102,8 @@ python3 scripts/ab_tool.py check   p.json        # битые связи и сс
 python3 scripts/ab_tool.py lookup  node_table   # порты и настройки блока (или feature/элемента) из реестра
 python3 scripts/ab_tool.py flow    p.json flow.svg
 python3 scripts/ab_tool.py tps     p.json --vin 24 --out cfg.json && python3 <tps_check.py> check cfg.json --svg board.svg
-python3 scripts/ab_api.py code p.json --outdir gen   # что сгенерирует AppBlocks (для tios — Tibbo BASIC)
-python3 scripts/ab_api.py build p.json --out fw      # компилятор TIDE у Tibbo: ошибки компиляции, fw.tpc (ключ не нужен)
+python3 scripts/ab_api.py code p.json --cloud-ok --outdir gen   # что сгенерирует AppBlocks (для tios — Tibbo BASIC)
+python3 scripts/ab_api.py build p.json --cloud-ok --out fw      # компилятор TIDE у Tibbo: ошибки компиляции, fw.tpc (ключ не нужен)
 ```
 - Напряжение питания в проекте не хранится (только `POWERADAPTER`) — спроси или прими 24 В и напиши допущение.
 - Ответ: что делает устройство (по цепочкам, человеческим языком) → картинки платы и логики → проблемы → что проверить.
