@@ -3,6 +3,53 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.5.0] - 2026-11-18
+
+**Fixes from testing with three users.** Three agents played a beginner (a teacher with a school greenhouse in
+AppBlocks), a mid-level engineer (Modbus -> MQTT gateway in Tibbo BASIC) and an expert with 10+ years of Tibbo
+(review of his own code, EM1000, TPP3W(G3), SNMP, power) and went through whole projects with the skills. Their
+findings were checked against Tibbo's sources, fixed, and the same three users ran again: 8/10, 8/10 and 8/10
+(first round 8, 8 and 7).
+
+### Facts
+- **Power: several supplies are not summed.** Supplies are diode-ORed; Tibbo allows combining, but the load is not
+  shared evenly. `tps_check.py` checks the margin against the strongest source; load above it but below the sum is a
+  warning, above the sum an error (`power.md` §1).
+- **#61-1 under load:** 120 mA only without load on its 24 V output; `tps_check.py` counts the loop load (`loads`,
+  default 40 mA) and checks the 24 V limit (75 mA, recommended 50).
+- **#33 -PF:** Tibbo's data disagree (editor: -SDWN on B, -PF on C; AppBlocks code generator: A and D with an
+  interrupt). Put #33 in a socket with all lines and an interrupt on D; if -PF is on C, poll every 10 ms; periodic
+  saving is the main protection (`power.md` §2a).
+- **Linter on older platforms:** EM1000, EM1202, EM1206, NB1010, T1000 and others had 3-5 constants; constants now come
+  from Tibbo's compiler data (`PL_IO_NUM_9_TX0` on EM1000 is accepted).
+- **Events and sockets** (`project-and-libs.md` §8a): events select `sock.num`/`ser.num` themselves, a UDP datagram is
+  deleted when the handler exits, `ser.interchardelay` ends a frame, `sock.reconmode` for TCP and UDP (port
+  switchover), `targetip`/`targetport`, `connectiontout`; review checklist for server sockets.
+- **Libraries** (`libraries.md`): MQTT 2_01_05 (what TIDE builds) has no `retain` parameter and always sets RETAIN,
+  does not call `connect_lost`, does not resend QoS 1; SNMP answers always as v1 with community `public`.
+- Relay ratings (#03-1 1 A / 30 V, #06 16 A / 48 V, #07 1 A), pump inrush current.
+
+### Recipes for a site
+- **21 Modbus RTU master:** poll table for several slaves, timeout in ms, frame search by slave, function and CRC,
+  exceptions, guard pause, retries, offline slaves asked rarely, float/dword in four word orders.
+- **22 settings page:** POST form (PIN not in the URL), factory PIN must be changed first, lockout after 5 wrong PINs.
+
+### Behaviour of the agent
+- One live version of each file, "Open: <file>" and one next step; beginners - terms explained, small project first;
+  full purchase list without invented prices; city and time zone asked; warn who can press buttons on a web page;
+  short hardware answers; numbers from the code; agree on scope before large work.
+- **AppBlocks: the project goes to Tibbo's server only with consent** - `ab_api.py code`/`build` need `--cloud-ok`.
+- **How to disable part of the AppBlocks logic** - remove the incoming wire or a switch variable (`editor.md` §4а).
+
+### Builds
+- `tibbo_build.py` prints the command to repeat the build, remembers the target TiOS and warns when it changes (the
+  compiler's platform files were updated), names an older `.tpc` in the folder (never deletes it); hint for an
+  unclosed block ("'If' expected").
+
+### Checked
+- Control tasks: with the skills 16 of 16 (70 of 70 checks), without them 4 of 16 (44 of 70).
+- 83 recipe builds on all listed platforms, both test suites, chat pack and Kimi kit.
+
 ## [2.4.1] - 2026-11-16
 
 **Correction: the published AppBlocks projects are fine.** 2.4.0 said that 9 projects with AppBlocks Cloud and others

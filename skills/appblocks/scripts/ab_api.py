@@ -17,8 +17,8 @@ Read-only (safe):
   get <path>                           any GET path
   tls                                  which CA store is used for HTTPS and whether api.appblocks.io verifies
 Generate (sends the project to AppBlocks, changes nothing in the account):
-  code <project.json> --outdir DIR     POST /api/projects/code -> generated firmware sources
-  build <project.json> [--release] [--out prefix]  code + POST /api/projects/build: Tibbo's TIDE compiler (tios),
+  code <project.json> --cloud-ok --outdir DIR  POST /api/projects/code -> generated firmware sources
+  build <project.json> --cloud-ok [--release] [--out prefix]  code + POST /api/projects/build: Tibbo's TIDE compiler (tios),
                                        prints errors/warnings, exit 1 if it does not compile; --out saves prefix.tpc.
                                        Zephyr/MicroPython projects: refused (the API gives a template, see zephyr.md)
 Write (needs the user's explicit yes for this exact call; add --yes):
@@ -94,6 +94,17 @@ def key(required=True):
     if not k and required:
         sys.exit("нет ключа: задай APPBLOCKS_API_KEY или APPBLOCKS_API_KEY_FILE")
     return k
+
+
+CLOUD_NOTE = ("Проект уйдёт на сервер Tibbo (api.appblocks.io): файл JSON целиком - логика, настройки и всё, что в нём "
+              "записано (адреса, логины). Там генерируется код и работает компилятор. Спроси пользователя ОДИН раз за "
+              "разговор, можно ли отправлять проект Tibbo для проверки сборки; согласен - повтори команду с --cloud-ok и "
+              "дальше в этом разговоре добавляй его сам. Не согласен - отдай файл для Import в редактор и напиши "
+              "«сборкой не проверено». Для своих скриптов и CI: переменная APPBLOCKS_CLOUD_OK=1.")
+
+
+def cloud_ok(a):
+    return "--cloud-ok" in a or os.environ.get("APPBLOCKS_CLOUD_OK") == "1"
 
 
 def call(method, path, body=None, auth=True, raw=False):
@@ -279,6 +290,8 @@ def main():
         if isinstance(r, dict):
             r.pop("key", None)
         dump(r, opt(a, "--out"))
+    elif c in ("build", "code") and not cloud_ok(a):
+        sys.exit(CLOUD_NOTE)
     elif c == "build":
         proj = json.load(open(a[1], encoding="utf-8"))
         if (proj.get("runtime") or "tios") != "tios":

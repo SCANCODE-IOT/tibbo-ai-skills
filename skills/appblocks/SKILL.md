@@ -5,7 +5,7 @@ license: MIT (Tibbo examples and reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Install next to the tibbo-firmware skill. Scripts need Python 3.9+ (standard library only); cloud commands need network access to api.appblocks.io.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.4.1"
+  version: "2.5.0"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -22,7 +22,7 @@ AppBlocks Cloud — устройства, OTA, переменные/таблиц
 
 | Файл | Когда открывать |
 |---|---|
-| `references/editor.md` | Как устроен редактор и проект: шаги Hardware/Features/Application, Import/Export, Run/Debug/Release, runtime, **правила потоков** (поток с события, нет циклов, параметры видны только следующему блоку, ASYNC теряет параметры), переменные, плагины, частые ошибки. **Читать перед объяснением, ревью или проектированием логики.** |
+| `references/editor.md` | Как устроен редактор и проект: шаги Hardware/Features/Application, Import/Export, Run/Debug/Release, runtime, **правила потоков** (поток с события, нет циклов, параметры видны только следующему блоку, ASYNC теряет параметры), переменные, плагины, частые ошибки, **как временно отключить часть логики** (§4а). **Читать перед объяснением, ревью или проектированием логики.** |
 | `references/format.md` | Формат экспорта JSON: верх, группы feature, узлы, связи, `{{$…}}`, правила правки, формат плагинов (§5). **Читать перед любой правкой JSON.** |
 | `references/recipes.md` + `recipes/` | **Начало нового проекта на TiOS:** 6 готовых проектов (кнопка и реле, интервал, вход с задержкой, термостат по Modbus RTU, MQTT, веб-панель) - проверены `check`, генератором и компилятором Tibbo. |
 | `references/blocks.md` | **Все 177 блоков редактора** по категориям палитры: порты (`portId`) с параметрами, настройки с вариантами и значениями по умолчанию, нужная feature, ASYNC; скрытые/устаревшие отдельно. Снято из реестра app.appblocks.io. **Основной справочник портов и полей.** |
@@ -60,10 +60,22 @@ AppBlocks Cloud — устройства, OTA, переменные/таблиц
    Request → HTTP Client) и создаёт переменные портов; генератор через API (`ab_api.py code/build`) этого не делает.
    Поэтому в файле ставь их явно (ENABLED = 1, переменная порта) - `check` предупреждает «Редактор ... включит сам».
 4. Любая запись в облако AppBlocks (create, update, OTA, команды устройствам) - только после явного «да» пользователя на конкретный вызов.
+   **Генерация кода и сборка (`ab_api.py code` / `build`) отправляют проект на сервер Tibbo:** спроси один раз за разговор
+   («Можно отправить проект на сервер Tibbo, чтобы проверить сборку?»); «да» - добавляй `--cloud-ok`, «нет» - отдай файл
+   для Import и пиши «сборкой не проверено». Без флага скрипт ничего не отправит.
 5. Ключ API не печатай и не сохраняй. Пароли - через настройки, не открытым текстом в проекте.
 6. **Скрипты запустить нельзя** (веб-чат): скажи «скриптами не проверено», дай файл и команды проверки, чтобы пользователь запустил их у себя, и попроси прислать вкладку Problems из редактора.
 7. Скрипты лежат в папке скилла: запускай их с путём от неё или перейди в неё. На Windows - `python` вместо `python3`.
 8. Обновление скиллов (оба сразу) - `../tibbo-firmware/scripts/skills_update.py` (`--check` - узнать версии).
+9. **Одна живая версия проекта:** правь тот же JSON (копию делай перед правкой), не плоди `_v2`/`_final`; в конце ответа
+   с файлами - «Открывай: <файл>» и один следующий шаг. Новичку (учитель, школьник, «впервые») - коротко, термины
+   одной фразой, сначала маленький проект на 10-15 блоков. Закупку - полным списком (плата, Tibbit, блок питания,
+   корпус, адаптеры), цены не выдумывай. Город и часовой пояс спроси. Остальное - tibbo-firmware SKILL.md §4а.
+10. **Кнопки управления на веб-панели** (полив, «стоп», реле) видит каждый, кто откроет страницу: скажи об этом и
+   предложи защиту: у функции Web Console два входа - `USER`/`PASSWORD` (администратор) и `USER_REGULAR`/`USER_PASSWORD`
+   (обычный пользователь), задай оба пароля; что видит каждая роль, проверь в редакторе (features.md).
+11. **Временно отключить часть логики** - отсоединить входящий провод или поставить выключатель-переменную
+   (editor.md §4а); не выключай функции и не удаляй блоки.
 
 ## 1. Откуда взять проект
 1. **API** (лучший путь): `ab_api.py projects` → `ab_api.py project <id> --out p.json`. Ключ `abk_…` из Settings →
@@ -90,8 +102,8 @@ python3 scripts/ab_tool.py check   p.json        # битые связи и сс
 python3 scripts/ab_tool.py lookup  node_table   # порты и настройки блока (или feature/элемента) из реестра
 python3 scripts/ab_tool.py flow    p.json flow.svg
 python3 scripts/ab_tool.py tps     p.json --vin 24 --out cfg.json && python3 <tps_check.py> check cfg.json --svg board.svg
-python3 scripts/ab_api.py code p.json --outdir gen   # что сгенерирует AppBlocks (для tios — Tibbo BASIC)
-python3 scripts/ab_api.py build p.json --out fw      # компилятор TIDE у Tibbo: ошибки компиляции, fw.tpc (ключ не нужен)
+python3 scripts/ab_api.py code p.json --cloud-ok --outdir gen   # что сгенерирует AppBlocks (для tios — Tibbo BASIC)
+python3 scripts/ab_api.py build p.json --cloud-ok --out fw      # компилятор TIDE у Tibbo: ошибки компиляции, fw.tpc (ключ не нужен)
 ```
 - Напряжение питания в проекте не хранится (только `POWERADAPTER`) — спроси или прими 24 В и напиши допущение.
 - Ответ: что делает устройство (по цепочкам, человеческим языком) → картинки платы и логики → проблемы → что проверить.

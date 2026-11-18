@@ -1,0 +1,159 @@
+include "global.tbh"
+
+'Settings page that is safe enough for a site network:
+' - the form is sent by POST: the PIN never appears in the address bar, browser history or proxy logs;
+' - the factory PIN (DEFAULT_PIN) only lets you set a new one: nothing else can be changed until it is replaced;
+' - after MAX_TRIES wrong PINs the page is locked for LOCK_S seconds;
+' - the PIN and the settings live in EEPROM (stor), the PIN is never sent back to the browser.
+'HTTP is not encrypted: anyone on the same network segment can read the traffic. Keep the device in a closed
+'network or behind a VPN; for the internet use TLS (G3 boards) or the cloud. Pages: index.html (status, no PIN),
+'settings.html (form). Built with Tibbo's compiler; not run on a device.
+
+const HTTP_SOCKETS = 4
+const DEFAULT_PIN = "0000"
+const PIN_MIN = 6				'length of a new PIN
+const MAX_TRIES = 5
+const LOCK_S = 60
+'EEPROM layout (addresses from 1): marker, PIN (16 bytes), poll period (2 bytes)
+const EE_MARK = 1
+const EE_PIN = 2
+const EE_PERIOD = 18
+const EE_MARK_VALUE = &hA5
+
+dim uptime_s as dword
+dim poll_period as word
+dim pin_is_default as no_yes
+dim lock_left as word
+dim tries as byte
+dim half as byte
+dim pin as string(16)
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	dim i as byte
+	dim s as string
+
+	net.ip = "192.168.1.40"
+	net.netmask = "255.255.255.0"
+	net.gatewayip = "192.168.1.1"
+
+	for i = 0 to HTTP_SOCKETS - 1
+		sock.num = i
+		sock.txbuffrq(4)
+		sock.varbuffrq(1)			'GET query or POST body lands here (sock.httprqstring)
+		sock.protocol = PL_SOCK_PROTOCOL_TCP
+		sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+		sock.reconmode = PL_SOCK_RECONMODE_3	'browsers reconnect from new ports - normal for HTTP
+		sock.httpportlist = "80"
+		sock.connectiontout = 20
+	next i
+	sys.buffalloc()
+
+	'first start: write the factory PIN and defaults
+	s = stor.getdata(EE_MARK, 1)
+	if len(s) < 1 or asc(s) <> EE_MARK_VALUE then
+		pin = DEFAULT_PIN
+		poll_period = 10
+		settings_save()
+		s = chr(EE_MARK_VALUE)
+		i = stor.setdata(s, EE_MARK)
+	end if
+	s = stor.getdata(EE_PIN, 16)
+	i = instr(1, s, chr(0), 1)
+	if i > 0 then s = left(s, i - 1)
+	pin = s
+	s = stor.getdata(EE_PERIOD, 2)
+	poll_period = asc(left(s, 1)) * 256 + asc(right(s, 1))
+	pin_is_default = NO
+	if pin = DEFAULT_PIN then pin_is_default = YES
+	tries = 0
+	lock_left = 0
+	uptime_s = 0
+	half = 0
+end sub
+
+'-------------------------------------------------------------------
+sub settings_save()
+	dim s as string(16)
+	dim n as byte
+
+	s = pin
+	while len(s) < 16
+		s = s + chr(0)
+	wend
+	n = stor.setdata(s, EE_PIN)
+	s = chr(poll_period / 256) + chr(poll_period and 255)
+	n = stor.setdata(s, EE_PERIOD)
+end sub
+
+'-------------------------------------------------------------------
+function pin_check(byref given as string) as no_yes
+	'YES if the PIN is right; counts wrong attempts and locks the page
+	pin_check = NO
+	if lock_left > 0 then exit function
+	if given = pin and len(given) > 0 then
+		tries = 0
+		pin_check = YES
+		exit function
+	end if
+	tries = tries + 1
+	if tries >= MAX_TRIES then
+		tries = 0
+		lock_left = LOCK_S
+	end if
+end function
+
+'-------------------------------------------------------------------
+function pin_set(byref new_pin as string) as no_yes
+	pin_set = NO
+	if len(new_pin) < PIN_MIN or len(new_pin) > 16 then exit function
+	if new_pin = DEFAULT_PIN then exit function
+	pin = new_pin
+	pin_is_default = NO
+	settings_save()
+	pin_set = YES
+end function
+
+'-------------------------------------------------------------------
+function http_var(byref q as string, byref key as string) as string
+	'value of key in "a=1&b=2" (form-urlencoded): + is a space, %XX is a byte
+	dim p, e, i as byte
+	dim raw, r as string
+	dim c as string(1)
+
+	http_var = ""
+	p = instr(1, "&" + q, "&" + key + "=", 1)
+	if p = 0 then exit function
+	p = p + len(key) + 1				'first character of the value in q
+	e = instr(p, q, "&", 1)
+	if e = 0 then
+		raw = mid(q, p, len(q) - p + 1)
+	else
+		raw = mid(q, p, e - p)
+	end if
+	r = ""
+	i = 1
+	while i <= len(raw)
+		c = mid(raw, i, 1)
+		if c = "+" then
+			r = r + " "
+		else if c = "%" and i + 2 <= len(raw) then
+			r = r + chr(val("&h" + mid(raw, i + 1, 2)))
+			i = i + 2
+		else
+			r = r + c
+		end if
+		i = i + 1
+	wend
+	http_var = r
+end function
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	half = half + 1					'the timer comes every 0.5 s
+	if half >= 2 then
+		half = 0
+		uptime_s = uptime_s + 1
+		if lock_left > 0 then lock_left = lock_left - 1
+	end if
+end sub

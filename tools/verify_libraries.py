@@ -22,7 +22,7 @@ def build(lib, platform, callbacks=None):
     if callbacks is not None:
         env["TIBBO_NEW_CALLBACKS"] = ",".join(callbacks)
     g = subprocess.run([sys.executable, os.path.join(SK, "scripts", "tibbo_new.py"), os.path.join(d, "p"), "--platform", platform,
-                        "--name", "app"] + (["--libs", lib] if lib else []), capture_output=True, text=True, env=env)
+                        "--name", "app"] + (["--libs", lib] if lib else []), capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     if g.returncode:
         shutil.rmtree(d); return "refused", g.stdout.strip()
     c = subprocess.run(["node", NODE, os.path.join(d, "p"), "-o", os.path.join(d, "x.tpc")], capture_output=True, text=True)

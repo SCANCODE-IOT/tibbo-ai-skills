@@ -1,0 +1,64 @@
+<?
+include "global.tbh"
+dim q, msg, given, p1, p2 as string
+dim v as word
+?>
+<html>
+<head><title>Settings</title><meta name="viewport" content="width=device-width"></head>
+<body>
+<h1>Settings</h1>
+<?
+	'POST body ("pin=...&period=...") arrives in the VAR buffer, the same place as a GET query
+	q = sock.httprqstring
+	msg = ""
+	if instr(1, q, "pin=", 1) > 0 then
+		given = http_var(q, "pin")
+		if lock_left > 0 then
+			msg = "Locked after wrong PINs. Try again in " + str(lock_left) + " s."
+		else if pin_check(given) = NO then
+			msg = "Wrong PIN."
+		else
+			p1 = http_var(q, "newpin")
+			p2 = http_var(q, "newpin2")
+			if p1 <> "" or pin_is_default = YES then
+				if p1 <> p2 then
+					msg = "New PINs do not match."
+				else if pin_set(p1) = NO then
+					msg = "New PIN: 6-16 characters, not the factory one."
+				else
+					msg = "PIN changed."
+				end if
+			end if
+			if pin_is_default = NO and http_var(q, "period") <> "" then
+				v = val(http_var(q, "period"))
+				if v >= 1 and v <= 3600 then
+					poll_period = v
+					settings_save()
+					msg = msg + " Saved."
+				else
+					msg = msg + " Period: 1-3600 s."
+				end if
+			end if
+		end if
+	end if
+	if msg <> "" then
+		sock.setdata("<p><b>" + msg + "</b></p>")
+		sock.send()
+	end if
+	if pin_is_default = YES then
+		sock.setdata("<p>The factory PIN is still set. Set your own PIN first: other settings are locked until then.</p>")
+		sock.send()
+	end if
+?>
+<form method="post" action="settings.html" autocomplete="off">
+<p>PIN: <input type="password" name="pin" maxlength="16"></p>
+<p>Poll period, s: <input type="number" name="period" min="1" max="3600" value="<?
+	sock.setdata(str(poll_period))
+	sock.send()
+?>"></p>
+<p>New PIN (6-16): <input type="password" name="newpin" maxlength="16"> again: <input type="password" name="newpin2" maxlength="16"></p>
+<p><input type="submit" value="Save"></p>
+</form>
+<p><a href="index.html">Status</a></p>
+</body>
+</html>

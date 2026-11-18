@@ -38,7 +38,7 @@ Deep Code and other agents; a chat pack covers web chats.
 
 | Skill | What your AI can do with it |
 |---|---|
-| [**tibbo-firmware**](skills/tibbo-firmware/) | Write, review and debug Tibbo BASIC / Tibbo C firmware for TiOS (TPP2/TPP3, DS, EM, WM, WS devices); start a project from a generator or one of 20 ready programs (`tibbo_new.py`, `recipes/`); check the code against the exact API of your platform (`tibbo_lint.py`) and **compile it with Tibbo's own compiler** (`tibbo_build.py`); find devices on the network and upload firmware without opening TIDE (`tibbo_device.py`, experimental); choose Tibbits for a task, lay them out in TPS sockets and check lines, UART/INT, connectors, PoE and the +5 V power budget; draw the board and firmware state machines. Linux boards LTPP3(G2): Tibbits, power, sockets and first steps. |
+| [**tibbo-firmware**](skills/tibbo-firmware/) | Write, review and debug Tibbo BASIC / Tibbo C firmware for TiOS (TPP2/TPP3, DS, EM, WM, WS devices); start a project from a generator or one of 22 ready programs (`tibbo_new.py`, `recipes/`); check the code against the exact API of your platform (`tibbo_lint.py`) and **compile it with Tibbo's own compiler** (`tibbo_build.py`); find devices on the network and upload firmware without opening TIDE (`tibbo_device.py`, experimental); choose Tibbits for a task, lay them out in TPS sockets and check lines, UART/INT, connectors, PoE and the +5 V power budget; draw the board and firmware state machines. Linux boards LTPP3(G2): Tibbits, power, sockets and first steps. |
 | [**appblocks**](skills/appblocks/) | Explain, review, edit and generate [AppBlocks](https://appblocks.io) projects (exported JSON); draw the logic flow; check the hardware through `tibbo-firmware`; start from one of 6 ready projects for TiOS; compile the generated firmware with Tibbo's TIDE compiler; set up MQTT with your own broker; work with the AppBlocks Cloud API (projects, devices, OTA, workflows) with confirmation before any write; explain **Zephyr**, which Tibbo is bringing to its boards (when to pick it over TiOS, what already runs on TPP2, how to move a project); find a ready project among the 79 on appblocks.io and know what the editor fixes in them on opening. |
 
 The two skills are designed to work together: AppBlocks hardware goes through the TPS checker of `tibbo-firmware`,
@@ -51,7 +51,7 @@ flowchart LR
     C -->|AppBlocks project or cloud| A[appblocks]
     A -->|hardware of the project| T[tps_check.py]
     F --> T
-    F --> G[tibbo_new.py + 20 recipes:<br/>project that compiles]
+    F --> G[tibbo_new.py + 22 recipes:<br/>project that compiles]
     G --> N[tibbo_lint.py: exact API of the platform]
     N --> B[tibbo_build.py: Tibbo's compiler]
     B --> D[tibbo_device.py: upload, run]

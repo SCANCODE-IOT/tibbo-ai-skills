@@ -601,6 +601,18 @@ Enums: `modbusProtocol`(modbus_TCP, modbus_RTU); `modbusFunc`(ReadCoilStatus, Re
 
 ## mqtt/mqtt.tbh
 
+**Две версии - разный API (проверено по исходникам 18 ноября 2026).** Ниже описан API из github.com/tibbotech/libraries
+(master). Компилятор и TIDE с `src_lib_ver = 2_01_05` собирают **старую** версию, и в ней:
+- `mqtt_publish(topic, data, qos)` и `mqtt_start_publish(topic, qos, length)` - **без** параметра `retain`; вызов с
+  четырьмя аргументами не соберётся;
+- флаг RETAIN ставится **всегда** (`chr(PUBLISH+1+(qos*2))`): брокер хранит каждое последнее сообщение и отдаёт его новым
+  подписчикам - после отказа устройства на панели будет висеть старое значение как текущее. Нужно иначе - копируй в
+  проект версию из master (там `retain as boolean`) или делай в данных метку времени;
+- `callback_mqtt_connect_lost` объявлен, но не вызывается: потерю связи лови по `callback_mqtt_connect_ok` и своему
+  таймеру (project-and-libs.md); в master его вызывают;
+- PUBACK библиотека только печатает в отладку и сообщения QoS 1 не повторяет: доставку QoS 1 гарантирует не
+  библиотека, а твой код (храни неподтверждённое сообщение и шли заново). LWT (Last Will) в CONNECT нет ни в одной версии.
+
 **Предел сообщения.** `mqtt_publish(byref topic, byref data, …)` строит пакет одной строкой `chr(0)+chr(len(topic))+topic+data`
 (`dim buf as string`, 255 байт): данные длиннее ~(253 - длина топика) обрезаются без ошибки, `MQTT_LARGE_PACKETS` и
 `MQTT_TX_BUFF` этого не меняют. Длинную телеметрию шли несколькими сообщениями (проверено на коде библиотеки из AppBlocks, ноябрь 2026).
@@ -818,6 +830,12 @@ Callbacks YOU must implement:
 Enums: `en_smtp_status_codes`(EN_STATUS_SMTP_OK, EN_STATUS_SMTP_NOT_INITIALIZED, EN_STATUS_SMTP_BUSY, EN_STATUS_SMTP_INVALID_SOCKET, EN_STATUS_SMTP_INVALID_INTERFACE, EN_STATUS_SMTP_DNS_FAILED, EN_STATUS_SMTP_CONNECTION_FAILED, EN_STATUS_SMTP_AUTH_FAILED, EN_STATUS_SMTP_SEND_FAILED, EN_STATUS_SMTP_TIMEOUT, EN_STATUS_SMTP_INSUFFICIENT_BUFFER_SPACE); `en_smtp_response_codes`(SMTP_RESP_NONE, SMTP_RESP_220_READY, SMTP_RESP_221_CLOSING, SMTP_RESP_250_OK, SMTP_RESP_251_FORWARD, SMTP_RESP_354_START_MAIL, SMTP_RESP_421_NOT_AVAILABLE, SMTP_RESP_450_MAILBOX_BUSY, SMTP_RESP_451_ACTION_ABORTED, SMTP_RESP_452_INSUFFICIENT_STORAGE, SMTP_RESP_500_SYNTAX_ERROR, SMTP_RESP_501_PARAMETER_ERROR…); `en_smtp_state`(SMTP_STATE_IDLE, SMTP_STATE_DNS_LOOKUP, SMTP_STATE_CONNECTING, SMTP_STATE_WAIT_GREETING, SMTP_STATE_SEND_EHLO, SMTP_STATE_WAIT_EHLO, SMTP_STATE_SEND_STARTTLS, SMTP_STATE_WAIT_STARTTLS, SMTP_STATE_TLS_HANDSHAKE, SMTP_STATE_SEND_EHLO_TLS, SMTP_STATE_WAIT_EHLO_TLS, SMTP_STATE_SEND_AUTH…)
 
 ## snmp/snmp.tbh
+
+**Что умеет на самом деле (по snmp.tbs из tibbotech/libraries, 18 ноября 2026).** Запросы v1 и v2c принимает и
+сверяет community с паролем из `snmp_initialize`, но **ответы и трапы всегда уходят как SNMPv1 с community `public`**
+(строка зашита в коде). GETBULK и SNMPv3 нет. Для мониторинга, который ждёт v2c-ответов или своего community,
+проверь на стенде. Свои community и SNMPv3 есть в Zephyr: функция SNMP Agent в AppBlocks (`READ_COMMUNITY`,
+`WRITE_COMMUNITY`, `V3_ENABLED`; appblocks/references/features.md, zephyr.md).
 
 
 API:

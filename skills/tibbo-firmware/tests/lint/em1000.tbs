@@ -1,0 +1,8 @@
+' EM1000: I/O constants come from GEN-EM1000.tph (checked with Tibbo's compiler data, Nov 2026)
+sub on_sys_init()
+	io.num = PL_IO_NUM_9_TX0
+	io.enabled = YES
+	ser.num = 0
+	ser.rtsmap = PL_IO_NUM_2
+	ser.ctsmap = PL_INT_NUM_0
+end sub

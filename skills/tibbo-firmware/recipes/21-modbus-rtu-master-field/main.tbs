@@ -1,0 +1,378 @@
+include "global.tbh"
+
+'Modbus RTU master for a real site: several slaves on one RS485 line (Tibbit #05 in socket S5 = serial port 1,
+'terminal block #20 in S6). What recipe 06 does not do and this one does:
+' - a poll table: any number of requests (slave, function 03/04, first register, count);
+' - timeout in milliseconds (sys.timercountms), not in 0.5 s ticks;
+' - the answer is searched in the received bytes by slave, function and CRC: noise, a late answer of the previous
+'   slave or two frames glued together do not break the next request;
+' - exception answers (function + &h80) are checked by CRC too;
+' - a pause (guard) after every answer or timeout before the next request - slow slaves keep up;
+' - retries, then the slave is marked offline and asked rarely, so one dead meter does not slow down the others;
+' - 32-bit values with a configurable word order (float and dword), the float is built from its IEEE 754 bits.
+'Change the constants and mb_setup_table(). Built with Tibbo's compiler; not run on a device - check on the bench.
+
+const MB_PORT = 1				'S5 is serial port 1 on TPP2/TPP3
+const MB_BAUD = 9600
+const MB_TIMEOUT_MS = 300		'how long to wait for an answer
+const MB_GUARD_MS = 30			'pause after an answer/timeout before the next request (>= 3.5 characters)
+const MB_RETRIES = 2			'extra attempts for one request
+const MB_OFFLINE_AFTER = 3		'cycles in a row without an answer -> the slave is offline
+const MB_OFFLINE_EVERY = 10		'an offline slave is asked once in this many cycles
+const MB_CYCLE_MS = 1000		'start of the poll cycles, ms
+const MB_MAX_REQ = 8			'size of the poll table
+const MB_MAX_REGS = 64			'size of mb_reg
+
+'word order of 32-bit values: ABCD - high word first (Modbus "big endian"), CDAB - low word first,
+'BADC / DCBA - the bytes inside each word are swapped too
+enum en_mb_order
+	MB_ORDER_ABCD,
+	MB_ORDER_CDAB,
+	MB_ORDER_BADC,
+	MB_ORDER_DCBA
+end enum
+
+enum en_mb_state
+	MB_IDLE,
+	MB_WAIT,
+	MB_GUARD
+end enum
+
+dim mb_reg(MB_MAX_REGS) as word	'all values read, in the order of the table
+dim rq_slave(MB_MAX_REQ) as byte
+dim rq_func(MB_MAX_REQ) as byte
+dim rq_first(MB_MAX_REQ) as word
+dim rq_count(MB_MAX_REQ) as byte
+dim rq_dest(MB_MAX_REQ) as byte	'where in mb_reg the values go
+dim rq_fails(MB_MAX_REQ) as byte	'cycles in a row without a valid answer
+dim rq_ok(MB_MAX_REQ) as no_yes	'the last answer was valid (the data is fresh)
+dim rq_exc(MB_MAX_REQ) as byte	'last exception code, 0 = none
+dim mb_nreq as byte
+
+dim mb_state as en_mb_state
+dim mb_cur as byte				'current request in the table
+dim mb_try as byte
+dim mb_retry as no_yes
+dim mb_t0 as dword				'time of the last send / of the end of the last exchange
+dim mb_cycle_t0 as dword
+dim mb_cycle as word
+dim mb_rx as string				'bytes received for the current request
+dim mb_timeouts, mb_crc_errors, mb_exceptions as word
+
+declare function mb_crc(byref s as string) as word
+declare sub mb_setup_table()
+declare sub mb_send()
+declare sub mb_next()
+declare sub mb_done(ok as no_yes)
+declare sub mb_report()
+declare function mb_try_parse() as no_yes
+declare function mb_dword(idx as byte, order as en_mb_order) as dword
+declare function mb_float(idx as byte, order as en_mb_order) as real
+declare function mb_elapsed(t as dword) as dword
+
+'-------------------------------------------------------------------
+sub mb_setup_table()
+	'slave, function (3 = holding, 4 = input registers), first register, count. Example: three meters with
+	'a float value (2 registers) each and a temperature sensor with one register.
+	mb_nreq = 0
+	rq_slave(0) = 1: rq_func(0) = 3: rq_first(0) = 0: rq_count(0) = 2
+	rq_slave(1) = 2: rq_func(1) = 3: rq_first(1) = 0: rq_count(1) = 2
+	rq_slave(2) = 3: rq_func(2) = 3: rq_first(2) = 0: rq_count(2) = 2
+	rq_slave(3) = 10: rq_func(3) = 4: rq_first(3) = 1: rq_count(3) = 1
+	mb_nreq = 4
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_init()
+	dim d as dword
+	dim i, pos as byte
+
+	io.num = PL_IO_NUM_11_TX1		'TX of S5 is an output
+	io.enabled = YES
+	io.num = PL_IO_NUM_1			'S5C - the direction line of #05
+	io.enabled = YES
+
+	ser.num = MB_PORT
+	ser.enabled = NO
+	ser.mode = PL_SER_MODE_UART
+	ser.interface = PL_SER_SI_HALFDUPLEX
+	ser.rtsmap = PL_IO_NUM_1
+	ser.dircontrol = PL_SER_DCP_LOWFORINPUT	'LOW = receive, as Tibbit #05 needs
+	ser.flowcontrol = PL_SER_FC_DISABLED
+	ser.parity = PL_SER_PR_NONE
+	ser.bits = PL_SER_BB_8
+	d = ser.div9600
+	d = d * 9600 / MB_BAUD
+	ser.baudrate = d
+	ser.interchardelay = 1			'10 ms of silence commits the data (3.5 characters at 9600 = 4 ms)
+	ser.rxbuffrq(1)
+	ser.txbuffrq(1)
+	sys.buffalloc()
+	ser.enabled = YES
+
+	mb_setup_table()
+	pos = 0
+	for i = 0 to mb_nreq - 1
+		rq_dest(i) = pos
+		pos = pos + rq_count(i)
+		rq_fails(i) = 0
+		rq_ok(i) = NO
+		rq_exc(i) = 0
+	next i
+	mb_state = MB_IDLE
+	mb_retry = NO
+	mb_cur = 0
+	mb_cycle = 0
+	mb_timeouts = 0
+	mb_crc_errors = 0
+	mb_exceptions = 0
+	mb_cycle_t0 = sys.timercountms
+	sys.onsystimerperiod = 1		'on_sys_timer every 10 ms: the poller runs from it
+end sub
+
+'-------------------------------------------------------------------
+function mb_crc(byref s as string) as word
+	'CRC-16/Modbus
+	dim crc as word
+	dim i, j as byte
+
+	crc = &hFFFF
+	for i = 1 to len(s)
+		crc = crc xor asc(mid(s, i, 1))
+		for j = 0 to 7
+			if (crc and 1) <> 0 then
+				crc = (crc shr 1) xor &hA001
+			else
+				crc = crc shr 1
+			end if
+		next j
+	next i
+	mb_crc = crc
+end function
+
+'-------------------------------------------------------------------
+function mb_elapsed(t as dword) as dword
+	'ms since t; sys.timercountms wraps through 0 after 49 days - the subtraction of dwords handles it
+	mb_elapsed = sys.timercountms - t
+end function
+
+'-------------------------------------------------------------------
+sub mb_send()
+	dim rq as string(8)
+	dim crc as word
+
+	rq = chr(rq_slave(mb_cur)) + chr(rq_func(mb_cur)) + chr(rq_first(mb_cur) / 256) + chr(rq_first(mb_cur) and 255) + chr(0) + chr(rq_count(mb_cur))
+	crc = mb_crc(rq)
+	rq = rq + chr(crc and 255) + chr(crc / 256)	'CRC goes low byte first
+	ser.num = MB_PORT
+	ser.rxclear()					'drop leftovers of the previous exchange
+	mb_rx = ""
+	ser.setdata(rq)
+	ser.send()
+	mb_t0 = sys.timercountms
+	mb_state = MB_WAIT
+end sub
+
+'-------------------------------------------------------------------
+sub mb_done(ok as no_yes)
+	'end of one request: success, or all attempts failed
+	if ok = YES then
+		rq_fails(mb_cur) = 0
+	else
+		rq_ok(mb_cur) = NO
+		if rq_fails(mb_cur) < 255 then rq_fails(mb_cur) = rq_fails(mb_cur) + 1
+	end if
+	mb_cur = mb_cur + 1
+	mb_t0 = sys.timercountms
+	mb_state = MB_GUARD
+end sub
+
+'-------------------------------------------------------------------
+sub mb_next()
+	'start the next request of the table, skipping offline slaves except every MB_OFFLINE_EVERY-th cycle
+	while mb_cur < mb_nreq
+		if rq_fails(mb_cur) < MB_OFFLINE_AFTER or (mb_cycle mod MB_OFFLINE_EVERY) = 0 then
+			mb_try = 0
+			mb_send()
+			exit sub
+		end if
+		mb_cur = mb_cur + 1
+	wend
+	'the cycle is over
+	mb_state = MB_IDLE
+	mb_report()
+end sub
+
+'-------------------------------------------------------------------
+sub mb_report()
+	'example of using the values: floats of the three meters and the sensor register. Replace with MQTT, web, logic.
+	dim i as byte
+	dim f as real
+	dim s as string
+
+	s = "cycle " + str(mb_cycle)
+	for i = 0 to 2
+		if rq_ok(i) = YES then
+			f = mb_float(rq_dest(i), MB_ORDER_ABCD)
+			s = s + " m" + str(i + 1) + "=" + ftostr(f, FTOSTR_MODE_AUTO, 6)
+		else
+			s = s + " m" + str(i + 1) + "=--"
+		end if
+	next i
+	if rq_ok(3) = YES then s = s + " t=" + str(mb_reg(rq_dest(3)))
+	s = s + " timeouts=" + str(mb_timeouts) + " crc=" + str(mb_crc_errors) + " exc=" + str(mb_exceptions)
+	sys.debugprint(s + chr(13) + chr(10))
+end sub
+
+'-------------------------------------------------------------------
+function mb_try_parse() as no_yes
+	'look for a valid answer to the current request in mb_rx: skip bytes until a frame with our slave, our function
+	'(or exception) and a correct CRC is found. YES = handled (valid data or exception), NO = wait for more bytes.
+	dim n, len_need, i, f as byte
+	dim crc as word
+	dim frame as string
+
+	mb_try_parse = NO
+	while len(mb_rx) >= 5
+		n = len(mb_rx)
+		len_need = 0
+		if asc(left(mb_rx, 1)) = rq_slave(mb_cur) then
+			f = asc(mid(mb_rx, 2, 1))
+			if f = rq_func(mb_cur) then
+				len_need = 5 + asc(mid(mb_rx, 3, 1))	'slave, function, byte count, data, CRC
+			else if f = (rq_func(mb_cur) or &h80) then
+				len_need = 5						'slave, function+&h80, exception code, CRC
+			end if
+		end if
+		if len_need > 0 then
+			if n < len_need then exit function		'the rest of the frame has not arrived yet
+			frame = left(mb_rx, len_need)
+			crc = mb_crc(left(frame, len_need - 2))
+			if asc(mid(frame, len_need - 1, 1)) = (crc and 255) and asc(mid(frame, len_need, 1)) = crc / 256 then
+				if len_need = 5 then
+					rq_exc(mb_cur) = asc(mid(frame, 3, 1))
+					mb_exceptions = mb_exceptions + 1
+					rq_ok(mb_cur) = NO
+				else
+					if asc(mid(frame, 3, 1)) <> rq_count(mb_cur) * 2 then goto skip	'wrong length - not our answer
+					for i = 0 to rq_count(mb_cur) - 1
+						mb_reg(rq_dest(mb_cur) + i) = asc(mid(frame, 4 + i * 2, 1)) * 256 + asc(mid(frame, 5 + i * 2, 1))
+					next i
+					rq_exc(mb_cur) = 0
+					rq_ok(mb_cur) = YES
+				end if
+				mb_try_parse = YES
+				exit function
+			end if
+			mb_crc_errors = mb_crc_errors + 1
+		end if
+skip:
+		mb_rx = right(mb_rx, n - 1)				'not a frame start - drop one byte and look again
+	wend
+end function
+
+'-------------------------------------------------------------------
+sub on_ser_data_arrival()
+	dim s as string
+
+	if ser.num <> MB_PORT then exit sub			'the event selects the port that has data
+	s = ser.getdata(255)
+	if mb_state <> MB_WAIT then exit sub			'a late answer after a timeout: ignore it
+	if len(mb_rx) + len(s) > 255 then mb_rx = ""	'string limit: drop old garbage
+	mb_rx = mb_rx + s
+	if mb_try_parse() = YES then
+		mb_done(YES)		'valid data, or an exception: the slave is alive (no retry; rq_exc tells what is wrong)
+	end if
+end sub
+
+'-------------------------------------------------------------------
+sub on_sys_timer()
+	select case mb_state
+	case MB_WAIT:
+		if mb_elapsed(mb_t0) >= MB_TIMEOUT_MS then
+			mb_timeouts = mb_timeouts + 1
+			if mb_try < MB_RETRIES then
+				mb_try = mb_try + 1
+				mb_retry = YES				'the same request again, after the pause
+				mb_t0 = sys.timercountms
+				mb_state = MB_GUARD
+			else
+				mb_done(NO)
+			end if
+		end if
+	case MB_GUARD:
+		if mb_elapsed(mb_t0) >= MB_GUARD_MS then
+			if mb_retry = YES then
+				mb_retry = NO
+				mb_send()
+			else
+				mb_next()
+			end if
+		end if
+	case MB_IDLE:
+		if mb_elapsed(mb_cycle_t0) >= MB_CYCLE_MS then
+			mb_cycle_t0 = sys.timercountms
+			mb_cycle = mb_cycle + 1
+			mb_cur = 0
+			mb_next()
+		end if
+	end select
+end sub
+
+'-------------------------------------------------------------------
+function mb_dword(idx as byte, order as en_mb_order) as dword
+	'two registers mb_reg(idx), mb_reg(idx+1) -> 32 bits in the order the device uses
+	dim w1, w2 as word
+	dim r as dword
+
+	w1 = mb_reg(idx)
+	w2 = mb_reg(idx + 1)
+	select case order
+	case MB_ORDER_CDAB:
+		r = w2: r = r * 65536 + w1
+	case MB_ORDER_BADC:
+		w1 = (w1 and 255) * 256 + w1 / 256
+		w2 = (w2 and 255) * 256 + w2 / 256
+		r = w1: r = r * 65536 + w2
+	case MB_ORDER_DCBA:
+		w1 = (w1 and 255) * 256 + w1 / 256
+		w2 = (w2 and 255) * 256 + w2 / 256
+		r = w2: r = r * 65536 + w1
+	case else:
+		r = w1: r = r * 65536 + w2
+	end select
+	mb_dword = r
+end function
+
+'-------------------------------------------------------------------
+function mb_float(idx as byte, order as en_mb_order) as real
+	'IEEE 754 single from its bits, by arithmetic - does not depend on how TiOS stores real in memory
+	dim bits, mant as dword
+	dim e as integer
+	dim f as real
+	dim hi as word
+
+	bits = mb_dword(idx, order)
+	hi = bits / 65536
+	e = (hi / 128) and 255
+	mant = bits and &h7FFFFF
+	if e = 0 and mant = 0 then
+		mb_float = 0
+		exit function
+	end if
+	f = mant
+	f = f / 8388608
+	if e <> 0 then f = f + 1				'denormals (e = 0) have no hidden 1
+	if e = 0 then e = 1
+	e = e - 127
+	while e > 0
+		f = f * 2
+		e = e - 1
+	wend
+	while e < 0
+		f = f / 2
+		e = e + 1
+	wend
+	if (hi and &h8000) <> 0 then f = -f
+	mb_float = f
+end function

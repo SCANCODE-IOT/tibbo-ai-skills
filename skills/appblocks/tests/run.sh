@@ -89,6 +89,9 @@ encfail=0
 for cmd in "lookup node_math_compound" "check examples/sprinkler5.json" "summary examples/sprinkler5.json"; do
   env -u PYTHONUTF8 PYTHONIOENCODING=cp1251 "$PY" scripts/ab_tool.py $cmd >/dev/null 2>"$T/err" || { echo "FAIL cp1251 console: ab_tool.py $cmd"; cat "$T/err"; encfail=1; }
 done
+# code/build send the project to Tibbo's server: without --cloud-ok nothing is sent, the agent is told to ask first
+out=$(env -u APPBLOCKS_CLOUD_OK APPBLOCKS_BASE=http://127.0.0.1:9 "$PY" scripts/ab_api.py build examples/sprinkler5.json 2>&1); rc=$?
+[ "$rc" != 0 ] && echo "$out" | grep -q "Спроси пользователя ОДИН раз" && echo "ok   build asks before sending the project to Tibbo" || { echo "FAIL cloud consent: $out"; fail=1; }
 env -u PYTHONUTF8 PYTHONIOENCODING=cp1251 "$PY" scripts/ab_api.py >/dev/null 2>"$T/err"; [ $? = 2 ] || { echo "FAIL cp1251 console: ab_api.py"; cat "$T/err"; encfail=1; }
 grep -q UnicodeEncodeError "$T/err" && { echo "FAIL cp1251 console: ab_api.py"; encfail=1; }
 [ "$encfail" = 0 ] && echo "ok   non-UTF-8 console" || fail=1
