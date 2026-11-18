@@ -100,5 +100,5 @@ jobs:
         run: |
           env -u PYTHONUTF8 python scripts/ab_api.py tls | tee "$RUNNER_TEMP/tls.txt"
           [ "${{ matrix.store }}" = default ] || grep -q "${{ matrix.store }}" "$RUNNER_TEMP/tls.txt"
-          env -u PYTHONUTF8 python scripts/ab_api.py code examples/sprinkler5.json --outdir "$RUNNER_TEMP/gen" > "$RUNNER_TEMP/files.txt"
+          env -u PYTHONUTF8 python scripts/ab_api.py code examples/sprinkler5.json --cloud-ok --outdir "$RUNNER_TEMP/gen" > "$RUNNER_TEMP/files.txt"
           grep -q "main.tbs" "$RUNNER_TEMP/files.txt"

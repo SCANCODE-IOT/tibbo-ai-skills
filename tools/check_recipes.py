@@ -16,7 +16,7 @@ for name in sorted(os.listdir(R)):
     if not os.path.isdir(d) or (only and not any(o in name for o in only)):
         continue
     meta = json.load(open(os.path.join(d, "recipe.json"), encoding="utf-8"))
-    l = subprocess.run([sys.executable, os.path.join(SK, "scripts", "tibbo_lint.py"), d, "--json"], capture_output=True, text=True)
+    l = subprocess.run([sys.executable, os.path.join(SK, "scripts", "tibbo_lint.py"), d, "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     for x in json.loads(l.stdout)["findings"]:
         print("  LINT", name, os.path.basename(x["file"]), x["line"], x["level"], x["message"][:150]); bad += 1
     for p in [meta["platform"]] + meta.get("also", []):
@@ -31,7 +31,8 @@ for name in sorted(os.listdir(R)):
             continue
         how = ["--cloud", "--cloud-ok"] if meta.get("compiler") == "cloud" else ["--node"]
         b = subprocess.run([sys.executable, os.path.join(SK, "scripts", "tibbo_build.py"), t, *how, "--json"],
-                           capture_output=True, text=True, env={k: v for k, v in env.items() if k != "APPBLOCKS_API_KEY"})
+                           capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           env={k: v for k, v in env.items() if k != "APPBLOCKS_API_KEY"})
         shutil.rmtree(os.path.dirname(t), ignore_errors=True)
         try:
             j = json.loads(b.stdout)
