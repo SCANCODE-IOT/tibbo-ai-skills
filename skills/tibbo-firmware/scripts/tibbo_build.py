@@ -234,8 +234,11 @@ HINTS = [
     (r"expects (\d+) arguments \((\d+) passed\)|argument count mismatch for function '(\w+)'",
      "не то число аргументов: сверить с references/tios-api.md (для on_* событий - точная сигнатура там же)"),
     (r"unknown base", "возможно, строки склеены через &: в Tibbo BASIC это +, а &h1F и &b1010 - числа"),
-    (r"'Then' expected|'If' expected|invalid expression",
-     "синтаксис: сравнения = <> < >, логика and/or/not (не != && ||), каждый if закрыт end if"),
+    (r"'(If|Wend|Next|Loop|Sub|Function|Select)' expected",
+     "выше остался незакрытый блок: компилятор ждёт end {0} (или wend/next/loop) - найди if/while/for/select без "
+     "закрывающей строки над этой; «else if» в Tibbo BASIC закрывается одним end if"),
+    (r"'Then' expected|invalid expression",
+     "синтаксис: сравнения = <> < >, логика and/or/not (не != && ||), после условия if - then"),
     (r"too large to fit", "программа больше памяти платформы: уберите лишние библиотеки и ресурсы или возьмите плату с большей памятью"),
     (r"requires more variable memory", "не хватает RAM под переменные: уменьшите массивы и строки (string(32) вместо string)"),
 ]
@@ -945,7 +948,7 @@ def main(argv):
 def build_record(tpr, out, built_for, mode, res, argv):
     """Remember the last build in <project>/.tibbo_build.json; return notes for the user: the exact command to repeat
     the build, a change of the target TiOS line since the last build (platform files of the compiler were updated),
-    and the removal of the previous .tpc this script wrote into the project folder under another name."""
+    and a previous .tpc of this script under another name (it is never deleted: only named)."""
     notes = []
     rec_path = tpr.parent / ".tibbo_build.json"
     try:
@@ -958,13 +961,10 @@ def build_record(tpr, out, built_for, mode, res, argv):
                      "компилятора (обновление TIDE или --latest-platforms). Прежний .tpc - для другой TiOS; сверь TiOS "
                      "устройства (references/platforms.md)." % (old["built_for"], old.get("when", "?"), built_for))
     prev = old.get("tpc")
-    if prev and prev != out_abs and os.path.isfile(prev) and Path(prev).resolve().parent == tpr.parent.resolve():
-        try:
-            os.remove(prev)
-            notes.append("Удалён прежний %s (сборка %s): чтобы не залить в устройство старую прошивку." % (
-                Path(prev).name, old.get("kind", "?")))
-        except OSError:
-            pass
+    if prev and prev != out_abs and os.path.isfile(prev):
+        # never delete it: the user (or another step) may still need it - say which file is the current one
+        notes.append("В папке остался прежний %s (сборка %s, %s): текущая прошивка - %s. Старый файл не заливай; не нужен - "
+                     "удали сам." % (Path(prev).name, old.get("kind", "?"), old.get("when", "?"), Path(out).name))
     script = os.path.relpath(os.path.abspath(__file__)) if not os.path.isabs(sys.argv[0]) else os.path.abspath(__file__)
     keep = [a for i, a in enumerate(argv) if a in ("--release", "--debug", "--node", "--local", "--cloud", "--firmware")
             or (a == "--out") or (i > 0 and argv[i - 1] == "--out")]

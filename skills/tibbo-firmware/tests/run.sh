@@ -124,11 +124,11 @@ env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" s
 [ "$rc" = 0 ] && grep -q "TIDE на этом компьютере" "$B/out" && [ -f "$B/proj/test.tpc" ] && echo "ok   build local (tmake)" || { echo "FAIL build local (rc=$rc)"; cat "$B/out"; fail=1; }
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj/test.tpr" --release >"$B/out" 2>&1
 grep -q "release" "$B/out" && grep -q "debug = on" "$B/proj/test.tpr" && echo "ok   build release keeps the project unchanged" || { echo "FAIL build release"; cat "$B/out"; fail=1; }
-# every build prints the command to repeat it and remembers itself; an older .tpc of this script under another name goes
+# every build prints the command to repeat it and remembers itself; an older .tpc under another name is named, never deleted
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" --out "$B/proj/old.tpc" >"$B/out" 2>&1
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" >"$B/out2" 2>&1
-grep -q "Повторить эту сборку:" "$B/out2" && [ -f "$B/proj/.tibbo_build.json" ] && [ ! -f "$B/proj/old.tpc" ] && grep -q "Удалён прежний old.tpc" "$B/out2" \
-  && echo "ok   build record: repeat command, old .tpc removed" || { echo "FAIL build record"; cat "$B/out" "$B/out2"; fail=1; }
+grep -q "Повторить эту сборку:" "$B/out2" && [ -f "$B/proj/.tibbo_build.json" ] && [ -f "$B/proj/old.tpc" ] && grep -q "остался прежний old.tpc" "$B/out2" \
+  && echo "ok   build record: repeat command, old .tpc named, not deleted" || { echo "FAIL build record"; cat "$B/out" "$B/out2"; fail=1; }
 cp "$B/proj/main.tbs" "$B/main.good"; sed 's/sock\.num/sock.nmu/' "$B/main.good" > "$B/proj/main.tbs"
 env -u TIBBO_BASIC_COMPILER TIBBO_BASIC_HOME=/nonexistent TIDE_DIR="$FT" "$PY" scripts/tibbo_build.py "$B/proj" --json >"$B/out" 2>&1; rc=$?
 [ "$rc" = 1 ] && grep -q '"line": 2' "$B/out" && grep -q '"code": "C1013"' "$B/out" && echo "ok   build reports compiler errors" || { echo "FAIL build errors (rc=$rc)"; cat "$B/out"; fail=1; }
