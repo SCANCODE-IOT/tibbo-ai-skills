@@ -72,6 +72,9 @@ SNMP, SMTP); работает не с платой Tibbo (ESP32, nRF52840, Raspb
 - Обновление прошивки по сети (Firmware OTA) на устройствах Tibbo под Zephyr требует раздела `ota_staging_partition`
   (функция Flash Devices; appblocks.io/docs/features/flash_devices).
 - Сервер Tibbo собирает Zephyr командой `west build` для платы `tpp2g2` (видно в журнале сборки).
+- **Попробовать Zephyr на TPS без железа** - симулятор плат TPP на Renode от Tibbo (github.com/tibbotech/tide-proxy,
+  папка `sim`, запуск в Docker): исполняет `zephyr.elf` для tpp2g2/tpp3g2/tpp2g3/tpp3g3 без изменений, берёт плату и
+  Tibbit прямо из JSON проекта AppBlocks. Подробно - tibbo-firmware references/tide.md §4a.
 - **Через API собрать проект Zephyr нельзя**: `/api/projects/code` отдаёт для Zephyr шаблон, где метки вида
   `/****MAIN****/` не заполнены (код логики подставляет редактор), и сборка падает на CMake. `ab_api.py code` и
   `build` об этом предупреждают. Проект Zephyr собирай и загружай в редакторе AppBlocks.
