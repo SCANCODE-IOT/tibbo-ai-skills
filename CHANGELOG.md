@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.5.1] - 2026-11-19
+
+- **Renode TPP simulator** (`tide.md` §4a): Tibbo opened it - github.com/tibbotech/tide-proxy, folder `sim` (answer from
+  Tibbo, 19 Nov 2026). How to run it in Docker (web UI on port 3100, relay for tide-proxy on 65530, device web
+  servers on 18001+), how to connect TIDE (`TIDE_PROXY_SIM_RELAY`, interface `renode-sim`), what it runs (unmodified
+  Zephyr `zephyr.elf` for TPP2/TPP3 G2 and G3; TIDE uploads only with Tibbo's real monitor; Tibbo BASIC only with a
+  TiOS image - not promised), boards from an AppBlocks project JSON, which Tibbits and field devices are modelled,
+  limits. Written from Tibbo's README, not yet tried in practice - the skill says so.
+- `appblocks/references/zephyr.md`: the simulator as a way to try Zephyr on TPS without hardware.
+
 ## [2.5.0] - 2026-11-18
 
 **Fixes from testing with three users.** Three agents played a beginner (a teacher with a school greenhouse in

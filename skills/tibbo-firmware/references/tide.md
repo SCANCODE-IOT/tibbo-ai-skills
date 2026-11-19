@@ -198,7 +198,8 @@ python3 scripts/tibbo_build.py --upload app.tpc --target COM3 --serial --yes # �
 - **Симулятор TiOS в TIDE** - программа запускается на компьютере, без устройства (Windows, только TIDE).
 - **Симулятор AppBlocks** - в редакторе AppBlocks: Run → Start Simulator (GPIO, датчики, LCD, MQTT/HTTP/сокеты).
 - **Симулятор плат TPP на Renode** - github.com/tibbotech/tide-proxy, папка `sim` (README оттуда, сверено 19 ноября
-  2026). Моделирует TPP2/TPP3 поколений G2 (STM32F207) и G3 (STM32F439): экран 320×240, флеш AT45, EEPROM с MAC,
+  2026). **Описано по README Tibbo, на практике пока не проверено** - подавай как инструкцию Tibbo, не как
+  проверенный факт; не получается - смотри README в репозитории (он новее) и спроси Tibbo. Моделирует TPP2/TPP3 поколений G2 (STM32F207) и G3 (STM32F439): экран 320×240, флеш AT45, EEPROM с MAC,
   Ethernet, кнопки, светодиоды, линии ввода-вывода; несколько плат сразу на «DIN-рейке».
   - **Запуск** (Docker Desktop на Windows/macOS или Docker на Linux), в клоне tide-proxy:
     `docker compose -f sim/docker/docker-compose.yml up -d --build`. Веб-интерфейс - http://localhost:3100,
