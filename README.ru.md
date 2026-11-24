@@ -14,6 +14,7 @@ Claude · ChatGPT / Codex · Gemini · Kimi · DeepSeek · GLM
 [![Skills](https://img.shields.io/badge/skills-2-6f42c1)](#скиллы)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20·%20stdlib%20only-3776ab)](#требования)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-open%20standard-2ea44f)](https://agentskills.io)
+[![Telegram](https://img.shields.io/badge/Telegram-новости-26A5E4?logo=telegram&logoColor=white)](https://t.me/tibbotechnologyru)
 
 [English](README.md) · **Русский**
 
@@ -142,7 +143,8 @@ flowchart LR
 где они стоят. Плагин Claude Code: `/plugin marketplace update scancode`, затем `/plugin update tibbo-skills@scancode`.
 Приложения Claude, приложение Kimi и веб-чаты: замените файлы на новые.
 **Пошагово для каждой платформы: [docs/INSTALL.ru.md → Как обновить](docs/INSTALL.ru.md#как-обновить).**
-Чтобы узнавать о новых версиях: **Watch → Custom → Releases** на этой странице.
+Чтобы узнавать о новых версиях: **Watch → Custom → Releases** на этой странице или подпишитесь
+на наш [Telegram-канал](https://t.me/tibbotechnologyru) - там новые версии, рецепты и новости Tibbo.
 
 ## Примеры запросов
 
@@ -259,7 +261,7 @@ Tibbo периодически выпускает новые библиотек�
 ## Участие
 
 Самое ценное - сообщения об ошибках с реальным проектом или реальной ошибкой редактора.
-См. [CONTRIBUTING.md](CONTRIBUTING.md).
+См. [CONTRIBUTING.md](CONTRIBUTING.md). О новых версиях пишем в [Telegram-канале](https://t.me/tibbotechnologyru).
 
 ## Лицензия
 

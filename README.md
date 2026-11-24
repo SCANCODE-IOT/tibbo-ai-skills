@@ -14,6 +14,7 @@ Claude · ChatGPT / Codex · Gemini · Kimi · DeepSeek · GLM
 [![Skills](https://img.shields.io/badge/skills-2-6f42c1)](#the-skills)
 [![Python](https://img.shields.io/badge/python-3.9%2B%20·%20stdlib%20only-3776ab)](#requirements)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-open%20standard-2ea44f)](https://agentskills.io)
+[![Telegram](https://img.shields.io/badge/Telegram-news%20(RU)-26A5E4?logo=telegram&logoColor=white)](https://t.me/tibbotechnologyru)
 
 **English** · [Русский](README.ru.md)
 
@@ -143,7 +144,8 @@ Or run `python tools/install.py --update` from the unpacked repository: it updat
 installed. Claude Code plugin: `/plugin marketplace update scancode`, then `/plugin update tibbo-skills@scancode`.
 Claude apps, the Kimi app and web chats: replace the files with the new ones.
 **Every platform step by step: [docs/INSTALL.md → Updating](docs/INSTALL.md#updating).**
-To get notified about new versions: **Watch → Custom → Releases** on this page.
+To get notified about new versions: **Watch → Custom → Releases** on this page, or follow our
+[Telegram channel](https://t.me/tibbotechnologyru) (in Russian) - new versions, recipes and Tibbo news.
 
 ## Usage examples
 
@@ -261,7 +263,7 @@ please [open an issue](https://github.com/scancode-iot/tibbo-ai-skills/issues).
 ## Contributing
 
 Bug reports with a real project or a real editor error are the most valuable contribution.
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). News about new versions - in our [Telegram channel](https://t.me/tibbotechnologyru).
 
 ## License
 
