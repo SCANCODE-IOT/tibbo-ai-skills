@@ -5,7 +5,7 @@ license: MIT (Tibbo reference data - see NOTICE)
 compatibility: Any agent that reads SKILL.md (Claude, Codex, Gemini CLI, Kimi Code, Deep Code, OpenCode and others). Scripts need Python 3.9+ (standard library only). Network is optional.
 metadata:
   author: Scancode (SCANCODE-IOT)
-  version: "2.5.1"
+  version: "2.5.2"
   repository: https://github.com/SCANCODE-IOT/tibbo-ai-skills
 ---
 
@@ -74,6 +74,7 @@ metadata:
 | `references/tibbits.md` | Каталог из 84 Tibbit: назначение, форм-фактор, линии, совместимые разъёмы, питание. |
 | `references/tibbit-selection.md` | Подбор Tibbit под задачу: процедура, типовые наборы, ограничения соседства. |
 | `references/power.md` | **Любой вопрос о питании:** источники, PoE, бюджет 5 В и ±15 В, температурные ограничения. |
+| `references/aggregate.md` | **AggreGate** (SCADA/HMI, IoT-платформа Tibbo Systems): кто есть кто, четыре способа связать Tibbo с AggreGate, библиотека AGG (агент на Tibbo BASIC), Embedded AggreGate на LTPP. |
 | `references/docs-map.md` | Тема → страница docs.tibbo.com и её русский перевод на tibbo.ru/kb. |
 | `references/github-map.md` | Какой репозиторий tibbotech смотреть под задачу (примеры, Modbus, MQTT, TLS, компилятор, tide-proxy). |
 

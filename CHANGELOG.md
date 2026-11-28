@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.5.2] - 2026-11-28
+
+- **AggreGate** (`tibbo-firmware/references/aggregate.md`, new): who is who (Tibbo Technology makes the hardware,
+  Tibbo Systems makes AggreGate - different companies), what AggreGate is (products, 50+ drivers from the 6.4 docs,
+  SCADA/HMI with IEC 61131-3, licensing bound to the server), four ways to connect Tibbo hardware (Modbus TCP or MQTT,
+  AGG agent library on TiOS, Embedded AggreGate on LTPP, DS converter with Modbus Gateway) and when to pick which,
+  the AGG library in practice (descriptor file, A-variables/functions/events, event hooks, 4 buffer pages, remote
+  firmware upload, the CA-Test-AGG-lib sample), and what is not confirmed (Embedded AggreGate on LTPP3(G2)).
+  Sources: aggregate.digital, docs.tibbo.com/lib_agg, github.com/tibbotech/CA-Test-AGG-lib, tibbo.com.
+
 ## [2.5.1] - 2026-11-19
 
 - **Renode TPP simulator** (`tide.md` §4a): Tibbo opened it - github.com/tibbotech/tide-proxy, folder `sim` (answer from

@@ -34,9 +34,9 @@ GROUPS = [
       (AB, "references/catalog-examples.md"), (AB, "references/examples-index.md")]),
     ("04-tios-api.md", "TiOS API: objects, properties, methods, events, enums", [(FW, "references/tios-api.md")]),
     ("05-platforms.md", "Tibbo platforms: objects, memory, PL_IO_NUM_*, PLATFORM_ID", [(FW, "references/platforms.md")]),
-    ("06-libraries-and-projects.md", "Tibbo libraries, project format, event hooks, TIDE build and compiler errors, GitHub map",
+    ("06-libraries-and-projects.md", "Tibbo libraries, project format, event hooks, TIDE build and compiler errors, GitHub map, AggreGate",
      [(FW, "references/libraries.md"), (FW, "references/project-and-libs.md"), (FW, "references/tide.md"),
-      (FW, "references/github-map.md")]),
+      (FW, "references/github-map.md"), (FW, "references/aggregate.md")]),
     ("07-docs-map.md", "Where to read more: docs.tibbo.com and tibbo.ru/kb", [(FW, "references/docs-map.md")]),
 ]
 MAX_PROMPT, MAX_FILES, MAX_KB = 8000, 10, 350
