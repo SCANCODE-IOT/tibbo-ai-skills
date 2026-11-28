@@ -18,6 +18,8 @@ Practical notes (checked by building in TIDE with libraries 2_01_05, October 202
 
 ## aggregate/aggregate.tbh
 
+Когда и как применять агент AggreGate, образец CA-Test-AGG-lib и другие способы подключения к AggreGate - `aggregate.md`.
+
 Config defines (set before include):
 - `AGG_DEBUG_PRINT` = 0 — AGGREGATE AGENT LIBRARY
 - `AGG_LOGIN_CONTROL` = 0
